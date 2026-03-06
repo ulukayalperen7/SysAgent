@@ -1,15 +1,25 @@
-<div class="dashboard-layout">
-  
-  <div class="left-panel">
-    <app-terminal-window></app-terminal-window>
+<div class="dashboard-page">
+
+  <header class="dashboard-header">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="subtitle">Real-time system overview and AI command terminal</p>
+    </div>
+    <div class="status-indicator">
+      <span class="pulse"></span>
+      <span class="status-text">Agent Online</span>
+    </div>
+  </header>
+
+  <div class="metrics-row">
+    <app-metric-card title="CPU Usage" value="45" unit="%" color="#00d2ff"></app-metric-card>
+    <app-metric-card title="RAM Usage" value="8.2" unit="GB" color="#3fb950"></app-metric-card>
+    <app-metric-card title="Active Ports" value="12" unit="" color="#f85149"></app-metric-card>
+    <app-metric-card title="Disk I/O" value="320" unit="MB/s" color="#d29922"></app-metric-card>
   </div>
 
-  <div class="right-panel">
-    <div class="metrics-grid">
-      <app-metric-card title="CPU Usage" value="45" unit="%" color="#00d2ff"></app-metric-card>
-      <app-metric-card title="RAM Usage" value="8.2" unit="GB" color="#3fb950"></app-metric-card>
-      <app-metric-card title="Active Ports" value="12" unit="" color="#f85149"></app-metric-card>
-    </div>
+  <div class="terminal-section">
+    <app-terminal-window></app-terminal-window>
   </div>
 
 </div>

@@ -1,33 +1,42 @@
 .metric-card {
   background-color: #161b22;
-  border: 1px solid #30363d;
-  border-left: 4px solid; /* Rengi TS dosyasından dinamik gelecek */
-  border-radius: 8px;
-  padding: 1.5rem;
-  min-width: 150px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  
+  border: 1px solid #21262d;
+  border-left: 3px solid; /* Rengi TS dosyasından dinamik gelecek */
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 180px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+
+  &:hover {
+    border-color: #30363d;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
   .metric-title {
-    font-size: 0.9rem;
-    color: #8b949e;
+    font-size: 0.72rem;
+    color: #484f58;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
   }
 
   .metric-data {
     display: flex;
     align-items: baseline;
-    gap: 4px;
+    gap: 0.3rem;
 
     .metric-value {
-      font-size: 2rem;
-      font-weight: bold;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
     .metric-unit {
-      font-size: 1rem;
-      color: #8b949e;
+      font-size: 0.85rem;
+      color: #484f58;
+      font-weight: 500;
     }
   }
 }

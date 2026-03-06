@@ -1,5 +1,19 @@
 <div class="history-container">
-  <h2>Execution History & Rollbacks</h2>
+  <header class="history-header">
+    <div>
+      <h2>Execution History & Rollbacks</h2>
+      <p class="subtitle">
+        Every row represents a SysAgent task. Destructive actions are quarantined and can be rolled
+        back using the <strong>Undo</strong> action where available.
+      </p>
+    </div>
+    <div class="status-legend">
+      <span class="legend-item"><span class="dot completed"></span>Completed</span>
+      <span class="legend-item"><span class="dot rolled_back"></span>Rolled Back</span>
+      <span class="legend-item"><span class="dot pending"></span>Pending</span>
+      <span class="legend-item"><span class="dot failed"></span>Failed</span>
+    </div>
+  </header>
   
   <div class="table-wrapper">
     <table>

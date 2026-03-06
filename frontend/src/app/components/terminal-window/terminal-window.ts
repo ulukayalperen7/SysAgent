@@ -11,9 +11,9 @@ import { CommonModule } from '@angular/common';
 export class TerminalWindow {
   
   logs: { sender: string, text: string, type?: string }[] = [
-    { sender: 'system', text: 'SysAgent v1.0 başlatıldı...', type: 'info' },
-    { sender: 'system', text: 'Sistem metrikleri okunuyor...', type: 'info' },
-    { sender: 'system', text: 'Ajan hazır. Komut bekleniyor...', type: 'success' }
+    { sender: 'system', text: 'SysAgent v0.1 bootstrapped on localhost.', type: 'info' },
+    { sender: 'system', text: 'Monitoring local system metrics...', type: 'info' },
+    { sender: 'system', text: 'Agent ready. Type a command or natural language intent.', type: 'success' }
   ];
 
   onCommandEnter(event: any) {
@@ -22,7 +22,11 @@ export class TerminalWindow {
       this.logs.push({ sender: 'user', text: `> ${command}` });
       
       setTimeout(() => {
-        this.logs.push({ sender: 'system', text: 'İşlem AI tarafından planlanacak: Dry-Run bekleniyor...', type: 'warning' });
+        this.logs.push({
+          sender: 'system',
+          text: 'Planned command will be generated as a dry-run script. Awaiting UI approval...',
+          type: 'warning'
+        });
       }, 500);
 
       event.target.value = '';

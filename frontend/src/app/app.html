@@ -1,8 +1,20 @@
-<nav style="padding: 1rem; background-color: #1e1e2f; color: white; display: flex; gap: 20px;">
-  <strong style="font-size: 1.2rem; color: #00d2ff;">SysAgent OS</strong>
-  <a routerLink="/home" style="color: white; text-decoration: none;">Home</a>
-  <a routerLink="/dashboard" style="color: white; text-decoration: none;">Dashboard</a>
-  <a routerLink="/history" style="color: white; text-decoration: none;">History</a>
-</nav>
+<div class="app-shell">
+  <nav class="top-nav">
+    <div class="brand">
+      <div class="brand-icon">SA</div>
+      <div class="brand-text">
+        <span class="brand-title">SysAgent</span>
+        <span class="brand-subtitle">Local OS Command Center</span>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/history" routerLinkActive="active">History</a>
+    </div>
+  </nav>
 
-<router-outlet></router-outlet>
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,1 +1,79 @@
-<p>home works!</p>
+<div class="home-page">
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-badge">AI-Powered &middot; Privacy-First &middot; Local Only</div>
+    <h1>Your AI System<br/>Administrator</h1>
+    <p class="hero-description">
+      SysAgent turns natural language into safe, auditable OS-level actions on your local machine.
+      Built for air-gapped and high-security environments — it never executes anything without your
+      explicit approval.
+    </p>
+    <div class="hero-actions">
+      <a routerLink="/dashboard" class="cta primary">
+        <span class="cta-icon">▸</span>
+        Open Dashboard
+      </a>
+      <a routerLink="/history" class="cta ghost">View History</a>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="feature-card">
+      <div class="feature-icon privacy">🔒</div>
+      <h3>Privacy-First</h3>
+      <p>
+        Runs fully local using on-device LLMs like Llama 3 via Ollama.
+        No system logs, file trees, or commands ever leave your machine.
+      </p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon dryrun">⚡</div>
+      <h3>Dry-Run by Default</h3>
+      <p>
+        Every action is generated as a script first. SysAgent pauses and waits for your
+        <strong>Approve / Reject</strong> decision before touching the OS.
+      </p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon undo">↩️</div>
+      <h3>Quarantine & Undo</h3>
+      <p>
+        Destructive operations move files to quarantine instead of deleting them.
+        One-click <strong>Undo</strong> rollback from the History tab.
+      </p>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-it-works">
+    <h2>How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h4>Describe your intent</h4>
+          <p>Type a natural language command like "Kill the process on port 8080".</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h4>Review the dry-run script</h4>
+          <p>SysAgent generates the shell command and presents it for approval.</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h4>Approve or reject</h4>
+          <p>Execute with confidence, or reject and refine. Full audit trail in History.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>

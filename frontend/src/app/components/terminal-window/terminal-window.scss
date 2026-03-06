@@ -1,25 +1,29 @@
 .terminal-container {
-  background-color: #0d1117; 
+  background-color: #0d1117;
   border: 1px solid #30363d;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  height: 60vh; 
+  height: 50vh;
+  min-height: 360px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 
   .terminal-header {
     background-color: #161b22;
-    padding: 10px 15px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid #21262d;
+    flex-shrink: 0;
 
     .mac-btns {
       display: flex;
       gap: 8px;
       .btn {
-        width: 12px; height: 12px; border-radius: 50%;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
         &.close { background-color: #ff5f56; }
         &.min { background-color: #ffbd2e; }
         &.max { background-color: #27c93f; }
@@ -29,25 +33,37 @@
     .title {
       flex: 1;
       text-align: center;
-      color: #8b949e;
-      font-size: 0.85rem;
+      color: #484f58;
+      font-size: 0.8rem;
       font-family: 'Courier New', Courier, monospace;
     }
   }
 
   .terminal-body {
     flex: 1;
-    padding: 15px;
+    padding: 1rem 1.25rem;
     overflow-y: auto;
-    background-color: #0a0a0a;
-    font-size: 0.95rem;
+    background-color: #010409;
+    font-size: 0.88rem;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: #21262d;
+      border-radius: 3px;
+    }
 
     .log-line {
-      margin-bottom: 6px;
-      line-height: 1.4;
+      margin-bottom: 4px;
+      line-height: 1.5;
+      padding: 1px 0;
 
-      &.user { color: #ffffff; font-weight: bold; }
-      &.sys { color: #8b949e; }
+      &.user { color: #e6edf3; font-weight: 600; }
+      &.sys { color: #6e7681; }
       &.success { color: #3fb950; }
       &.warning { color: #d29922; }
     }
@@ -55,27 +71,31 @@
 
   .terminal-input-area {
     display: flex;
-    background-color: #0a0a0a;
-    padding: 15px;
-    border-top: 1px dashed #30363d;
+    align-items: center;
+    background-color: #010409;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid #21262d;
+    flex-shrink: 0;
 
     .prompt {
       color: #3fb950;
       margin-right: 10px;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 0.88rem;
+      white-space: nowrap;
     }
 
     input {
       flex: 1;
       background: transparent;
       border: none;
-      color: #ffffff;
-      font-size: 0.95rem;
+      color: #e6edf3;
+      font-size: 0.88rem;
       font-family: 'Courier New', Courier, monospace;
       outline: none;
 
       &::placeholder {
-        color: #484f58;
+        color: #30363d;
       }
     }
   }

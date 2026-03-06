@@ -1,4 +1,4 @@
-<p>action-btn works!</p>
-<button class="btn" [class]="type" (click)="handleClick()">
-  {{ label }}
+<button class="btn" [ngClass]="type" (click)="handleClick()">
+  <ng-content select="[icon]"></ng-content>
+  <span class="label">{{ label }}</span>
 </button>

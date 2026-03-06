@@ -1,21 +1,30 @@
 .btn {
-  padding: 8px 16px;
+  padding: 0.45rem 0.95rem;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-family: inherit;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  gap: 0.4rem;
   border: 1px solid transparent;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   background-color: transparent;
+
+  .label {
+    line-height: 1;
+  }
 }
+
 .primary { background-color: #238636; color: #fff; border-color: rgba(240, 246, 252, 0.1); }
 .primary:hover { background-color: #2ea043; }
+
 .danger { color: #f85149; border-color: #f85149; }
-.danger:hover { background-color: rgba(248, 81, 73, 0.1); }
+.danger:hover { background-color: rgba(248, 81, 73, 0.12); }
+
 .warning { color: #d29922; border-color: #d29922; }
-.warning:hover { background-color: rgba(210, 153, 34, 0.1); }
+.warning:hover { background-color: rgba(210, 153, 34, 0.12); }
+
 .outline { color: #c9d1d9; border-color: #30363d; }
 .outline:hover { background-color: #30363d; }
