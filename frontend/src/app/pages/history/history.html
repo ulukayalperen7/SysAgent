@@ -1,1 +1,35 @@
-<p>history works!</p>
+<div class="history-container">
+  <h2>Execution History & Rollbacks</h2>
+  
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Task ID</th>
+          <th>Date</th>
+          <th>Intent</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let task of tasks">
+          <td class="font-mono">{{ task.id }}</td>
+          <td>{{ task.date }}</td>
+          <td>{{ task.intent }}</td>
+          <td>
+            <app-status-badge [status]="task.status"></app-status-badge>
+          </td>
+          <td>
+            <app-action-btn 
+              *ngIf="task.canUndo" 
+              label="Undo" 
+              type="danger" 
+              (onClick)="handleUndo(task.id)">
+            </app-action-btn>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,1 +1,15 @@
-<p>dashboard works!</p>
+<div class="dashboard-layout">
+  
+  <div class="left-panel">
+    <app-terminal-window></app-terminal-window>
+  </div>
+
+  <div class="right-panel">
+    <div class="metrics-grid">
+      <app-metric-card title="CPU Usage" value="45" unit="%" color="#00d2ff"></app-metric-card>
+      <app-metric-card title="RAM Usage" value="8.2" unit="GB" color="#3fb950"></app-metric-card>
+      <app-metric-card title="Active Ports" value="12" unit="" color="#f85149"></app-metric-card>
+    </div>
+  </div>
+
+</div>

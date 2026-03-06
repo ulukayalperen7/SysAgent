@@ -1,0 +1,27 @@
+<div class="terminal-container">
+  <div class="terminal-header">
+    <div class="mac-btns">
+      <span class="btn close"></span>
+      <span class="btn min"></span>
+      <span class="btn max"></span>
+    </div>
+    <div class="title">sysagent@local:~</div>
+  </div>
+
+  <div class="terminal-body font-mono">
+    <div *ngFor="let log of logs" 
+         class="log-line" 
+         [ngClass]="{'user': log.sender === 'user', 'sys': log.sender === 'system', 'success': log.type === 'success', 'warning': log.type === 'warning'}">
+      {{ log.text }}
+    </div>
+  </div>
+
+  <div class="terminal-input-area font-mono">
+    <span class="prompt">sysagent@local:~$</span>
+    <input type="text" 
+           placeholder="Komutunuzu girin veya doğal dille istekte bulunun..." 
+           (keyup.enter)="onCommandEnter($event)"
+           autocomplete="off"
+           autofocus>
+  </div>
+</div>

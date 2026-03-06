@@ -1,1 +1,14 @@
-/* You can add global styles to this file, and also import other style files */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  background-color: #0d1117; /* GitHub Dark tarzı harika bir lacivert/siyah */
+  color: #c9d1d9; /* Göz yormayan açık gri yazı */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100vh;
+}
+.font-mono {
+  font-family: 'Courier New', Courier, monospace;
+}

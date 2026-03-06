@@ -1,0 +1,42 @@
+.history-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+h2 {
+  margin-bottom: 1.5rem;
+  color: #c9d1d9;
+}
+.table-wrapper {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+th, td {
+  padding: 1rem;
+  border-bottom: 1px solid #30363d;
+}
+th {
+  background-color: #0d1117;
+  color: #8b949e;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+tr:last-child td {
+  border-bottom: none;
+}
+tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+.font-mono {
+  font-family: 'Courier New', Courier, monospace;
+  color: #58a6ff;
+}

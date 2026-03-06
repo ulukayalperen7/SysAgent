@@ -1,0 +1,33 @@
+.metric-card {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-left: 4px solid; /* Rengi TS dosyasından dinamik gelecek */
+  border-radius: 8px;
+  padding: 1.5rem;
+  min-width: 150px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  
+  .metric-title {
+    font-size: 0.9rem;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .metric-data {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .metric-unit {
+      font-size: 1rem;
+      color: #8b949e;
+    }
+  }
+}
