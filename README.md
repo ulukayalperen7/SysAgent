@@ -7,9 +7,10 @@ Currently, this repository contains the **Draft Version** of the frontend applic
 Live Demo
 You can view the deployed prototype here: **[https://sys-agent.vercel.app/home]**
 
-### Why is there no backend yet?
-The assignment requirements stated "Backend (if any)" for this draft phase. So, to get a working, clickable prototype done on time, I built the UI using Angular and filled it with mock data directly in the code. 
-A Spring Boot backend is planned for future iterations to securely handle AI API integrations and local node WebSocket connections, but it is omitted here to keep the focus on frontend routing and design clarity.
+### Backend Status & Architecture
+I have already developed a Java Spring Boot backend for this project. However, per the assignment instructions emphasizing the draft website, this current frontend submission is temporarily disconnected from it.
+
+To deliver a clean, functional UI prototype that can be easily deployed and reviewed right now, the application currently uses mock data injected directly into the Angular components. The existing Spring Boot backend will be fully integrated in the upcoming phases to securely handle AI API keys and local node WebSocket connections.
 
 ### Technologies
 - **Frontend:** Angular 17
