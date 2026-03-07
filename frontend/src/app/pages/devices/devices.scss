@@ -28,21 +28,21 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #1f6feb, #58a6ff);
-    color: #fff;
-    border: none;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
     padding: 0.6rem 1.2rem;
     border-radius: 6px;
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(31, 111, 235, 0.2);
 
     &:hover {
+        background: #30363d;
+        color: #fff;
+        border-color: #8b949e;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(31, 111, 235, 0.4);
-        background: linear-gradient(135deg, #2f81f7, #79c0ff);
     }
 }
 
