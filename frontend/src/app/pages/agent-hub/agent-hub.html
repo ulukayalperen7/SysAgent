@@ -1,1 +1,50 @@
-<p>agent-hub works!</p>
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Agent Hub</h1>
+            <p class="page-subtitle">Discover and deploy specialized AI capabilities to your nodes</p>
+        </div>
+
+        <div class="search-bar">
+            <lucide-icon name="search" class="icon" size="18"></lucide-icon>
+            <input type="text" placeholder="Search agents by name or capability...">
+        </div>
+    </div>
+
+    <div class="agents-grid">
+        <div class="agent-card" *ngFor="let agent of agents">
+            <div class="card-header">
+                <div class="agent-icon-wrapper">
+                    <lucide-icon [name]="agent.icon" class="agent-icon" size="28"></lucide-icon>
+                </div>
+                <div class="agent-meta">
+                    <span class="version">{{ agent.version }}</span>
+                    <span class="downloads">
+                        <lucide-icon name="download" size="12" class="static-icon"></lucide-icon>
+                        {{ agent.downloads }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <h3 class="agent-title">{{ agent.name }}</h3>
+                <p class="agent-desc">{{ agent.description }}</p>
+            </div>
+
+            <div class="card-footer">
+                <div class="deploy-container">
+                    <select class="device-select" [disabled]="deployingAgent === agent.id">
+                        <option value="" disabled selected>Select Node...</option>
+                        <option value="main">Main Rig (Windows 11)</option>
+                        <option value="mac" disabled>Work MacBook (Offline)</option>
+                    </select>
+                    <button class="btn-primary deploy-btn" (click)="deployAgent(agent.id)"
+                        [disabled]="deployingAgent === agent.id">
+                        <span *ngIf="deployingAgent !== agent.id">Deploy</span>
+                        <span *ngIf="deployingAgent === agent.id" class="loader"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
