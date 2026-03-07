@@ -1,1 +1,80 @@
-<p>devices works!</p>
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Connected Devices</h1>
+            <p class="page-subtitle">Manage and monitor your local OS nodes</p>
+        </div>
+        <button class="btn-primary" (click)="openAddDevice()">+ Add New Device</button>
+    </div>
+
+    <div class="device-grid">
+        <div class="device-card" *ngFor="let device of devices" [ngClass]="device.status">
+            <div class="card-header">
+                <div class="device-info">
+                    <lucide-icon name="monitor" class="icon" *ngIf="device.type === 'windows'"></lucide-icon>
+                    <lucide-icon name="laptop" class="icon" *ngIf="device.type === 'macos'"></lucide-icon>
+                    <h3>{{ device.name }}</h3>
+                </div>
+                <div class="status-badge" [ngClass]="device.status">
+                    <span class="dot"></span> {{ device.status | titlecase }}
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="metric">
+                    <span class="label">CPU Usage</span>
+                    <span class="value" [class.offline-text]="device.status === 'offline'">
+                        {{ device.status === 'online' ? device.cpu + '%' : '--' }}
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="label">RAM Usage</span>
+                    <span class="value" [class.offline-text]="device.status === 'offline'">
+                        {{ device.status === 'online' ? device.ram + '%' : '--' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <button class="btn-secondary btn-sm" [disabled]="device.status === 'offline'">Terminal</button>
+                <button class="btn-secondary btn-sm" [disabled]="device.status === 'offline'">Logs</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal-backdrop" *ngIf="showAddModal" (click)="closeModal()">
+        <div class="modal-content cyberpunk-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Add New Node</h2>
+                <button class="close-btn" (click)="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Download the SysAgent Core for the target device.</p>
+
+                <div class="download-options">
+                    <button class="download-btn windows">
+                        <lucide-icon name="monitor" class="icon"></lucide-icon> Windows (.exe)
+                    </button>
+                    <button class="download-btn macos">
+                        <lucide-icon name="laptop" class="icon"></lucide-icon> macOS (.dmg)
+                    </button>
+                    <button class="download-btn linux">
+                        <lucide-icon name="server" class="icon"></lucide-icon> Linux (curl)
+                    </button>
+                </div>
+
+                <div class="token-container">
+                    <label>Pairing Token</label>
+                    <p class="helper-text">Enter this token on the new device to approve the connection.</p>
+                    <div class="token-box">
+                        <code>{{ generatedToken }}</code>
+                        <button class="copy-btn">
+                            <lucide-icon name="copy" size="18"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

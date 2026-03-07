@@ -1,1 +1,51 @@
-<p>automations works!</p>
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Automations</h1>
+            <p class="page-subtitle">Connect triggers to agents and create autonomous workflows</p>
+        </div>
+        <button class="btn-primary">+ Create Rule</button>
+    </div>
+
+    <div class="rules-list">
+        <div class="rule-card" *ngFor="let rule of activeRules" [class.paused]="rule.status === 'paused'">
+            <div class="rule-header">
+                <h3 class="rule-name">{{ rule.name }}</h3>
+                <label class="toggle-switch">
+                    <input type="checkbox" [checked]="rule.status === 'active'" (change)="toggleRule(rule)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="pipeline">
+                <!-- Trigger Node -->
+                <div class="node trigger-node">
+                    <div class="node-icon">
+                        <lucide-icon [name]="rule.trigger.icon" size="24"></lucide-icon>
+                    </div>
+                    <div class="node-content">
+                        <span class="node-label">TRIGGER ({{ rule.trigger.type | uppercase }})</span>
+                        <span class="node-text">{{ rule.trigger.text }}</span>
+                    </div>
+                </div>
+
+                <!-- Connection Arrow -->
+                <div class="connection">
+                    <div class="line"></div>
+                    <div class="arrow">▶</div>
+                </div>
+
+                <!-- Action Node -->
+                <div class="node action-node">
+                    <div class="node-icon">
+                        <lucide-icon [name]="rule.action.icon" size="24"></lucide-icon>
+                    </div>
+                    <div class="node-content">
+                        <span class="node-label">ACTION ({{ rule.action.type | uppercase }})</span>
+                        <span class="node-text">{{ rule.action.text }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
