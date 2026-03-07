@@ -1,36 +1,44 @@
 .app-shell {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  background-color: #010409;
+  color: #e6edf3;
+
+  &.sidebar-layout {
+    flex-direction: row;
+  }
 }
 
-.top-nav {
+.sidebar {
+  width: 260px;
+  background: rgba(13, 17, 23, 0.8);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid #21262d;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 2rem;
-  border-bottom: 1px solid #21262d;
-  background-color: #010409;
+  flex-direction: column;
+  height: 100vh;
   position: sticky;
   top: 0;
-  z-index: 100;
 
   .brand {
+    padding: 1.5rem 1.5rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
     .brand-icon {
-      width: 28px;
-      height: 28px;
-      background: linear-gradient(135deg, #58a6ff, #3fb950);
-      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       color: #0d1117;
+      box-shadow: 0 0 15px rgba(88, 166, 255, 0.3);
     }
 
     .brand-text {
@@ -39,41 +47,64 @@
 
       .brand-title {
         font-weight: 700;
-        font-size: 1rem;
-        color: #e6edf3;
+        font-size: 1.1rem;
         letter-spacing: -0.01em;
       }
 
       .brand-subtitle {
         font-size: 0.7rem;
-        color: #484f58;
-        letter-spacing: 0.02em;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
     }
   }
 
-  .nav-links {
+  .sidebar-nav {
+    flex: 1;
+    padding: 1rem 0.75rem;
     display: flex;
+    flex-direction: column;
     gap: 0.25rem;
 
-    a {
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
       color: #8b949e;
       text-decoration: none;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 500;
-      padding: 0.4rem 0.85rem;
-      border-radius: 6px;
-      transition: color 0.15s ease, background-color 0.15s ease;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+
+      .icon {
+        font-size: 1.1rem;
+        opacity: 0.7;
+      }
 
       &:hover {
         color: #e6edf3;
-        background-color: #21262d;
+        background: rgba(255, 255, 255, 0.05);
       }
 
       &.active {
-        color: #e6edf3;
-        background-color: #21262d;
+        color: #58a6ff;
+        background: rgba(88, 166, 255, 0.1);
+        border-left: 2px solid #58a6ff;
+        border-radius: 0 8px 8px 0;
+        
+        .icon {
+          opacity: 1;
+        }
       }
+    }
+
+    .nav-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.05);
+      margin: 1rem 0.5rem;
     }
   }
 }

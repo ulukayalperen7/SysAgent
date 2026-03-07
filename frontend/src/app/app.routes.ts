@@ -15,6 +15,18 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.Dashboard)
   },
   {
+    path: 'devices',
+    loadComponent: () => import('./pages/devices/devices').then(m => m.Devices)
+  },
+  {
+    path: 'agent-hub',
+    loadComponent: () => import('./pages/agent-hub/agent-hub').then(m => m.AgentHub)
+  },
+  {
+    path: 'automations',
+    loadComponent: () => import('./pages/automations/automations').then(m => m.Automations)
+  },
+  {
     path: 'history',
     loadComponent: () => import('./pages/history/history').then(m => m.History)
   }

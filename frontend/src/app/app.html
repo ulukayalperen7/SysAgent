@@ -1,18 +1,32 @@
-<div class="app-shell">
-  <nav class="top-nav">
+<div class="app-shell sidebar-layout">
+  <aside class="sidebar">
     <div class="brand">
       <div class="brand-icon">SA</div>
       <div class="brand-text">
         <span class="brand-title">SysAgent</span>
-        <span class="brand-subtitle">Local OS Command Center</span>
+        <span class="brand-subtitle">Automation Hub</span>
       </div>
     </div>
-    <div class="nav-links">
-      <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      <a routerLink="/history" routerLinkActive="active">History</a>
-    </div>
-  </nav>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+        <span class="icon">💻</span> Dashboard
+      </a>
+      <a routerLink="/devices" routerLinkActive="active" class="nav-item">
+        <span class="icon">🔌</span> Devices
+      </a>
+      <a routerLink="/agent-hub" routerLinkActive="active" class="nav-item">
+        <span class="icon">🛒</span> Agent Hub
+      </a>
+      <a routerLink="/automations" routerLinkActive="active" class="nav-item">
+        <span class="icon">⚡</span> Automations
+      </a>
+      <div class="nav-divider"></div>
+      <a routerLink="/history" routerLinkActive="active" class="nav-item">
+        <span class="icon">📜</span> History
+      </a>
+    </nav>
+  </aside>
 
   <main class="app-main">
     <router-outlet></router-outlet>
