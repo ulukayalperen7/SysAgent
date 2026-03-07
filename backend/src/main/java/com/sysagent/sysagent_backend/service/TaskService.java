@@ -1,0 +1,53 @@
+package com.sysagent.sysagent_backend.service;
+
+import com.sysagent.sysagent_backend.model.TaskEntity;
+import com.sysagent.sysagent_backend.model.TaskStatus;
+import com.sysagent.sysagent_backend.repository.TaskRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class TaskService {
+
+    private final TaskRepository taskRepository;
+
+    @Transactional
+    public TaskEntity createTask(String intent) {
+        TaskEntity task = TaskEntity.builder()
+                .id(UUID.randomUUID().toString())
+                .intent(intent)
+                .status(TaskStatus.PENDING)
+                .timestamp(LocalDateTime.now())
+                .build();
+                
+        log.info("Created new PENDING task with ID: {}", task.getId());
+        return taskRepository.save(task);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskEntity> getAllTasks() {
+        return taskRepository.findAll();
+    }
+    
+    @Transactional
+    public TaskEntity updateTaskStatus(String taskId, TaskStatus status, String rollbackScript) {
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with ID: " + taskId));
+                
+        task.setStatus(status);
+        if (rollbackScript != null) {
+            task.setRollbackScript(rollbackScript);
+        }
+        
+        log.info("Updated status for task {} to {}", taskId, status);
+        return taskRepository.save(task);
+    }
+}
