@@ -2,20 +2,47 @@
 
   <header class="dashboard-header">
     <div>
-      <h1>Dashboard</h1>
+      <h1>Dashboard <span *ngIf="metrics" style="font-size: 0.5em; font-weight: normal; color: #8b949e;">({{metrics.osName}} {{metrics.osVersion}})</span></h1>
       <p class="subtitle">Real-time system overview and AI command terminal</p>
     </div>
     <div class="status-indicator">
-      <span class="pulse"></span>
-      <span class="status-text">Agent Online</span>
+      <span class="pulse" [class.offline]="!metrics"></span>
+      <span class="status-text">{{ metrics ? 'Agent Online' : 'Connecting...' }}</span>
     </div>
   </header>
 
-  <div class="metrics-row">
-    <app-metric-card title="CPU Usage" value="45" unit="%" color="#00d2ff"></app-metric-card>
-    <app-metric-card title="RAM Usage" value="8.2" unit="GB" color="#3fb950"></app-metric-card>
-    <app-metric-card title="Active Ports" value="12" unit="" color="#f85149"></app-metric-card>
-    <app-metric-card title="Disk I/O" value="320" unit="MB/s" color="#d29922"></app-metric-card>
+  <div class="metrics-row" *ngIf="metrics">
+    <!-- CPU Usage -->
+    <app-metric-card 
+      title="CPU Usage ({{metrics.cpuCores}} Cores)" 
+      [value]="metrics.cpuLoadPercentage | number:'1.0-1'" 
+      unit="%" 
+      color="#00d2ff">
+    </app-metric-card>
+    
+    <!-- RAM Usage -->
+    <app-metric-card 
+      title="RAM Usage" 
+      [value]="(metrics.usedRamBytes | bytes:1).split(' ')[0]" 
+      [unit]="(metrics.usedRamBytes | bytes:1).split(' ')[1] + ' / ' + (metrics.totalRamBytes | bytes:1)" 
+      color="#3fb950">
+    </app-metric-card>
+    
+    <!-- Disk Usage -->
+    <app-metric-card 
+      title="C:\ Drive Free" 
+      [value]="(metrics.freeDiskBytes | bytes:1).split(' ')[0]" 
+      [unit]="(metrics.freeDiskBytes | bytes:1).split(' ')[1] + ' / ' + (metrics.totalDiskBytes | bytes:1)" 
+      color="#d29922">
+    </app-metric-card>
+
+    <!-- Uptime -->
+    <app-metric-card 
+      title="Backend Uptime" 
+      [value]="(metrics.systemUptimeSeconds / 60) | number:'1.0-0'" 
+      unit="mins" 
+      color="#a371f7">
+    </app-metric-card>
   </div>
 
   <div class="terminal-section">
