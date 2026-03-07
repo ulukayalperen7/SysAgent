@@ -1,12 +1,15 @@
 # SysAgent
 
-Hey, this is SysAgent which is a prototype for a web-based dashboard for now. The main idea is to have a control center where I can manage my different computers (nodes) and eventually use AI to automate tasks on them.
+SysAgent is a web-based dashboard prototype designed to act as a centralized control center. The main goal of this project is to allow users to manage multiple computers (nodes) remotely and utilize AI agents to automate cross-device tasks.
 
-Right now, this is just the **Draft Version** of the frontend website. 
+Currently, this repository contains the **Draft Version** of the frontend application.
+
+Live Demo
+You can view the deployed prototype here: **[https://sys-agent.vercel.app/home]**
 
 ### Why is there no backend yet?
 The assignment requirements stated "Backend (if any)" for this draft phase. So, to get a working, clickable prototype done on time, I built the UI using Angular and filled it with mock data directly in the code. 
-I do have a Spring Boot backend planned, but I haven't connected it yet since the goal of this homework was just to show the functional web design and routing.
+A Spring Boot backend is planned for future iterations to securely handle AI API integrations and local node WebSocket connections, but it is omitted here to keep the focus on frontend routing and design clarity.
 
 ### Technologies
 - **Frontend:** Angular 17
@@ -30,5 +33,5 @@ I do have a Spring Boot backend planned, but I haven't connected it yet since th
    ```
 4. Open your web browser and go to `http://localhost:4200`.
 
-### AI Planning
+### AI Agent Integration Plan
 I also wrote a plan for how an AI agent will eventually be added to this website. You can find that PDF/Markdown file here: [AI_Agent_Planning.md](./AI_Agent_Planning.md).
