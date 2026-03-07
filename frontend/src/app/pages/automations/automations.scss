@@ -28,21 +28,21 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #1f6feb, #58a6ff);
-    color: #fff;
-    border: none;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
     padding: 0.6rem 1.2rem;
     border-radius: 6px;
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(31, 111, 235, 0.2);
 
     &:hover {
+        background: #30363d;
+        color: #fff;
+        border-color: #8b949e;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(31, 111, 235, 0.4);
-        background: linear-gradient(135deg, #2f81f7, #79c0ff);
     }
 }
 
@@ -113,13 +113,7 @@
             border-radius: 8px;
             padding: 1rem;
 
-            &.trigger-node {
-                border-left: 3px solid #bc8cff;
-            }
 
-            &.action-node {
-                border-left: 3px solid #58a6ff;
-            }
 
             .node-icon {
                 font-size: 1.5rem;
@@ -155,45 +149,22 @@
             position: relative;
 
             .line {
-                height: 3px;
+                height: 2px;
                 width: 50px;
-                background: linear-gradient(90deg, #bc8cff, #58a6ff);
-                box-shadow: 0 0 10px rgba(88, 166, 255, 0.4);
+                background: #484f58;
                 border-radius: 2px;
                 position: relative;
-                overflow: hidden;
-
-                &::after {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: -100%;
-                    width: 50%;
-                    height: 100%;
-                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
-                    animation: dataFlow 2s linear infinite;
-                }
             }
 
             .arrow {
-                color: #58a6ff;
+                color: #484f58;
                 font-size: 1rem;
                 margin-left: -6px;
-                text-shadow: 0 0 8px rgba(88, 166, 255, 0.6);
             }
         }
     }
 }
 
-@keyframes dataFlow {
-    0% {
-        left: -100%;
-    }
-
-    100% {
-        left: 200%;
-    }
-}
 
 /* Toggle Switch Styles */
 .toggle-switch {
