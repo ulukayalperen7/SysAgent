@@ -8,7 +8,7 @@ import { Component, Input } from '@angular/core';
 })
 export class MetricCardComponent {
   @Input() title: string = 'Metric';
-  @Input() value: string = '0';
+  @Input() value: string | number | null = '0';
   @Input() unit: string = '%';
-  @Input() color: string = '#00d2ff'; 
+  @Input() color: string = '#00d2ff';
 }
