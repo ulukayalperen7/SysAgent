@@ -2,42 +2,41 @@
 
 ## 1. Project Overview
 
-**Topic & Purpose:** 
-For this project, I chose the topic of personal device management. The idea is to make a "SysAgent" control panel. I have a Windows PC and a MacBook, and I wanted a single website where I can see if they are online and manage them remotely. 
+**Topic & Purpose:** For this project, I chose the domain of remote system and personal device management. The core objective is to develop "SysAgent," a centralized control panel. The platform aims to unify the management, monitoring, and automation of distributed computing environments (e.g., Windows PCs, MacBooks, and Linux servers) under a single web interface.
 
-**Target Users:**
-The target users are developers, IT students, or anyone who uses multiple computers daily and wants to automate things between them.
+**Target Users:** The primary target audience includes software developers, IT students, and tech enthusiasts who operate multiple machines daily and want to streamline repetitive cross-device tasks.
 
-**Core Features (Current Draft):**
-Right now, the website is a working frontend prototype. You can navigate between:
-- A Dashboard
-- A Devices page (to see connected computers)
-- An Agent Hub (like an app store for scripts)
-- An Automations page (to link triggers and actions)
-Currently, all the data you see on screen is mock data I typed into the Angular components just to show how it will look and feel. 
+**Core Features (Current Draft):** The current deployment serves as a functional frontend prototype built as a Single Page Application (SPA). The interface includes:
+* **Dashboard & Devices:** To monitor connected nodes and their resource usage.
+* **Agent Hub:** A directory of ready-to-use execution scripts.
+* **Automations:** A visual interface to define automated workflows.
+
+*(Note: Within the scope of this assignment, the data rendered on the screen is mock data integrated directly into the Angular components to demonstrate UI layout and structural behavior).*
 
 ## 2. AI Agent Concept
 
-**The Problem:**
-When something breaks on one of my computers (like a database crashing or a script failing), I have to dig through messy log files to figure out why. It's annoying and takes time.
+**The Problem:** Currently, managing multiple devices requires writing complex bash or PowerShell scripts for simple automations, memorizing different OS commands, and manually navigating through distinct interfaces. This process is highly inefficient and creates a barrier for quick, cross-platform task execution.
 
-**What kind of agent is it?**
-I plan to integrate an "Evaluator/Advisor" AI agent. 
+**Agent Type:** To solve this, SysAgent will integrate a **"Natural Language Automation Executor & Advisor"** AI agent. 
 
-**How it will work:**
-The user won't really chat with the AI like ChatGPT all the time. Mostly, it will work in the background. 
-For example, if my Windows PC crashes, an automation rule will trigger the AI. The AI will read the error logs from the PC, figure out what went wrong, and then send an alert to my SysAgent dashboard saying exactly what broke and suggesting a terminal command to fix it. 
-If needed, I'll also add a small chat box where I can ask the agent follow-up questions about the error.
+**User Interaction & Workflow:** The primary goal of the AI is to translate natural human language into actionable system commands and automation rules.
+* **Natural Language Input:** Instead of writing code, the user simply types a prompt into the SysAgent dashboard (e.g., *"Find and compress all log files larger than 1GB in my Windows server's Downloads folder"*).
+* **Intent Parsing & Code Generation:** The AI agent analyzes this intent and automatically constructs the correct, OS-specific execution script or JSON-formatted "Trigger → Action" rule.
+* **User Approval (Dry-Run):** For security, the AI does not execute commands autonomously. It presents the generated script to the user as a pending action. The command is only dispatched to the target node after the user clicks "Confirm."
+* **Secondary Capability (Log Diagnostics):** As an additional background feature, if a system crashes, the AI can optionally review the error logs and suggest a terminal command to fix the issue.
 
 ## 3. System Architecture (High-Level)
 
-Because adding AI requires some heavy lifting, I can't do it all in the browser. Here is how I plan to set up the system later:
+To ensure security and protect API keys, the heavy AI processing is completely decoupled from the frontend browser. The future architecture is structured as follows:
 
-*   **Frontend (Angular):** This is what I submitted for this homework. It just shows the UI and sends requests. It doesn't run the AI.
-*   **Backend (Java Spring Boot):** I will build a server to act as the middleman. The frontend will talk to the backend. The backend will hold the secret API keys for the AI (like OpenAI or Gemini) so they don't get stolen.
-*   **The Devices:** My actual computers will run a small background script to listen for commands from the backend.
-*   **The Flow:** 
-    1. The device sends an error log to the Spring Boot backend.
-    2. The backend sends that log to the Gemini API and asks, "What is wrong here?"
-    3. Gemini sends the answer back to Spring Boot.
-    4. Spring Boot saves it and updates the Angular frontend so I can see it on my dashboard.
+* **Frontend (Angular):** The user interface submitted for this assignment. It captures the user's natural language prompts and displays the AI's generated scripts for approval.
+* **Backend (Java Spring Boot):** Acts as the secure central mediator. It receives the natural language text from the frontend and forwards it to the AI Engine. It also securely stores API keys (like the Gemini API) or manages connections to local models, ensuring no sensitive credentials are exposed to the client.
+* **AI Engine (External API or Local LLM):** The core intelligence that processes the text. It returns the exact terminal commands or diagnostic summaries back to the Spring Boot server.
+* **SysAgent Nodes (Target Devices):** Lightweight background services running on the host machines. Once the user approves an AI-generated script on the frontend, the backend sends the command via WebSocket to the specific node for local execution.
+
+**Example Data Flow:**
+1. User types *"Clear temporary files"* on the Angular frontend.
+2. Angular sends this text to the Spring Boot backend via REST API.
+3. Spring Boot securely queries the AI model (e.g., Gemini) to generate the appropriate shell script for the target device.
+4. The AI returns the script to Spring Boot, which passes it to Angular for user review.
+5. User clicks "Execute", and Spring Boot sends the final command to the target node.
