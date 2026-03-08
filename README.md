@@ -2,37 +2,57 @@
 
 SysAgent is a web-based dashboard prototype designed to act as a centralized control center. The main goal of this project is to allow users to manage multiple computers (nodes) remotely and utilize AI agents to automate cross-device tasks.
 
-Currently, this repository contains the **Draft Version** of the frontend application.
+Currently, this repository contains the **Draft Version** of the frontend application, operating as a Single Page Application (SPA).
 
-Live Demo
-You can view the deployed prototype here: **[https://sys-agent.vercel.app/home]**
+### Live Demo
+You can view the deployed prototype here: **[https://sys-agent.vercel.app/home](https://sys-agent.vercel.app/home)**
 
-### Backend Status & Architecture
-I have already developed a Java Spring Boot backend for this project. However, per the assignment instructions emphasizing the draft website, this current frontend submission is temporarily disconnected from it.
+### Core Features (Draft Version)
+The current frontend prototype includes the following functional sections:
+- **Home Page:** Outlines the vision and capabilities of SysAgent.
+- **Dashboard:** Provides a comprehensive system summary and rapid statistics.
+- **Devices:** Tracks connected nodes in real-time with hardware metrics.
+- **Agent Hub:** A marketplace directory of ready-to-use execution scripts.
+- **Automations:** A visual rule engine interface to define Trigger-Action workflows.
 
-To deliver a clean, functional UI prototype that can be easily deployed and reviewed right now, the application currently uses mock data injected directly into the Angular components. The existing Spring Boot backend will be fully integrated in the upcoming phases to securely handle AI API keys and local node WebSocket connections.
-
-### Technologies
-- **Frontend:** Angular 17
-- **Styling:** SCSS
+### Technologies Used
+- **Frontend Framework:** Angular 17+
+- **Styling:** SCSS 
 - **Icons:** Lucide Angular
+- **Deployment:** Vercel
+
+### Backend Status & Future Architecture
+I have already developed a Java Spring Boot backend for this project. However, per the assignment instructions emphasizing the draft website, this current frontend submission is temporarily disconnected from it. 
+
+To deliver a clean, functional UI prototype, the application currently uses mock data injected directly into the Angular components. The existing Spring Boot backend and the local AI Engine (Ollama) will be fully integrated in the upcoming phases to securely handle natural language automation and local node WebSocket connections.
 
 ### How to Run Locally
-"Running locally" just means running the website on your own computer instead of a public server, which is how we develop web apps before putting them on the internet.
 
-1. Clone the repo and go into the `frontend` folder:
+Follow these instructions to run the Angular development server on your local machine:
+
+1. **Clone the repository:**
    ```bash
-   cd frontend
+   git clone https://github.com/ulukayalperen7/SysAgent.git
    ```
-2. Install the packages:
+
+2. **Navigate to the project folder:**
+   ```bash
+   cd SysAgent/frontend
+   ```
+
+3. **Install dependencies:**
    ```bash
    npm install
    ```
-3. Start the Angular dev server:
+
+4. **Start the development server:**
    ```bash
    npm run start
    ```
-4. Open your web browser and go to `http://localhost:4200`.
+   *(Alternatively, you can use `ng serve`)*
+
+5. **View the application:**
+   Open your web browser and navigate to `http://localhost:4200`.
 
 ### AI Agent Integration Plan
-I also wrote a plan for how an AI agent will eventually be added to this website. You can find that PDF/Markdown file here: [AI_Agent_Planning.md](./AI_Agent_Planning.md).
+The comprehensive planning document describing the future AI integration, problem statement, and system architecture can be found in the repository: **[AI_Agent_Planning.md](./AI_Agent_Planning.md)**.
