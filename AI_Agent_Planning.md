@@ -37,6 +37,6 @@ To ensure security and protect API keys, the heavy AI processing is completely d
 **Example Data Flow:**
 1. User types *"Clear temporary files"* on the Angular frontend.
 2. Angular sends this text to the Spring Boot backend via REST API.
-3. Spring Boot securely queries the AI model (e.g., Gemini) to generate the appropriate shell script for the target device.
+3. Spring Boot securely queries the local AI model (e.g., Llama-3 via Ollama) to generate the appropriate shell script for the target device.
 4. The AI returns the script to Spring Boot, which passes it to Angular for user review.
 5. User clicks "Execute", and Spring Boot sends the final command to the target node.
