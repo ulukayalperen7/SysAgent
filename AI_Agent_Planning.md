@@ -30,7 +30,7 @@
 To ensure security and protect API keys, the heavy AI processing is completely decoupled from the frontend browser. The future architecture is structured as follows:
 
 * **Frontend (Angular):** The user interface submitted for this assignment. It captures the user's natural language prompts and displays the AI's generated scripts for approval.
-* **Backend (Java Spring Boot):** Acts as the secure central mediator. It receives the natural language text from the frontend and forwards it to the AI Engine. It also securely stores API keys (like the Gemini API) or manages connections to local models, ensuring no sensitive credentials are exposed to the client.
+* **Backend (Java Spring Boot): Acts as the secure central mediator. It receives the natural language text from the frontend and forwards it to the AI Engine. It manages secure, isolated connections to local LLMs (such as Llama-3 or Mistral via Ollama) running directly on the user's local network. This ensures strict privacy and guarantees that no system logs, commands, or user prompts are ever exposed to external APIs.
 * **AI Engine (External API or Local LLM):** The core intelligence that processes the text. It returns the exact terminal commands or diagnostic summaries back to the Spring Boot server.
 * **SysAgent Nodes (Target Devices):** Lightweight background services running on the host machines. Once the user approves an AI-generated script on the frontend, the backend sends the command via WebSocket to the specific node for local execution.
 
