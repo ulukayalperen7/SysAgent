@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, Monitor, Laptop, Server, Copy } from 'lucide-angular';
+import { DeviceService, Device } from '../../services/device.service';
 
 @Component({
   selector: 'app-devices',
@@ -10,29 +10,31 @@ import { LucideAngularModule, Monitor, Laptop, Server, Copy } from 'lucide-angul
   templateUrl: './devices.html',
   styleUrl: './devices.scss',
 })
-export class Devices {
+export class Devices implements OnInit {
   showAddModal = false;
-
-  devices = [
-    {
-      id: 1,
-      name: 'Main Rig (Windows 11)',
-      status: 'online',
-      cpu: 34,
-      ram: 45,
-      type: 'windows',
-    },
-    {
-      id: 2,
-      name: 'Work MacBook (macOS Sonoma)',
-      status: 'offline',
-      cpu: 0,
-      ram: 0,
-      type: 'macos',
-    },
-  ];
-
+  devices: Device[] = [];
   generatedToken = '';
+
+  constructor(
+    private deviceService: DeviceService,
+    private cdr: ChangeDetectorRef
+  ) { }
+
+  ngOnInit() {
+    this.fetchDevices();
+  }
+
+  private fetchDevices() {
+    this.deviceService.getDevices().subscribe({
+      next: (data) => {
+        this.devices = data;
+        this.cdr.detectChanges(); // Force UI update
+      },
+      error: (err) => {
+        console.error('Failed to fetch devices:', err);
+      }
+    });
+  }
 
   openAddDevice() {
     this.generatedToken = 'SYSA-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-44';
