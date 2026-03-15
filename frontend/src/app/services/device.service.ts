@@ -1,15 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
+import { ApiResponse } from '../models/api-response.model';
 
 export interface Device {
     id: number;
     name: string;
+    ipAddress: string; // added to match backend
     status: string;
-    cpu: number;
-    ram: number;
+    cpuUsage: number; // changed from cpu
+    ramUsage: number; // changed from ram
     type: string;
+    lastSeen?: string; // Added to match backend
 }
 
 @Injectable({
@@ -21,7 +24,8 @@ export class DeviceService {
     constructor(private http: HttpClient) { }
 
     getDevices(): Observable<Device[]> {
-        return this.http.get<Device[]>(this.apiUrl).pipe(
+        return this.http.get<ApiResponse<Device[]>>(this.apiUrl).pipe(
+            map(response => response.data),
             catchError(error => {
                 console.error('DeviceService: Error fetching devices', error);
                 throw error;

@@ -1,16 +1,18 @@
 package com.sysagent.sysagent_backend.controller;
 
-import com.sysagent.sysagent_backend.model.dto.DeviceDto;
-import com.sysagent.sysagent_backend.model.response.ApiResponse;
-import com.sysagent.sysagent_backend.service.DeviceService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.sysagent.sysagent_backend.model.dto.DeviceDto;
+import com.sysagent.sysagent_backend.model.response.ApiResponse;
+import com.sysagent.sysagent_backend.service.DeviceService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller for managing connected devices.
