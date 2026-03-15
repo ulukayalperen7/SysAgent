@@ -1,3 +1,10 @@
+$text-primary: #e6edf3;
+$text-secondary: #c9d1d9;
+$text-muted: #8b949e;
+$accent-cyan: #39d353;
+$bg-card: #0d1117;
+$border-color: #30363d;
+
 .page-container {
     padding: 2rem;
     max-width: 1200px;
@@ -53,8 +60,8 @@
 }
 
 .device-card {
-    background: #0d1117;
-    border: 1px solid #30363d;
+    background: $bg-card;
+    border: 1px solid $border-color;
     border-radius: 12px;
     padding: 1.5rem;
     display: flex;
@@ -95,8 +102,14 @@
             h3 {
                 margin: 0;
                 font-size: 1.1rem;
-                font-weight: 600;
-                color: #e6edf3;
+                color: $text-primary;
+
+                .ip-address {
+                    color: $text-muted;
+                    font-size: 0.8rem;
+                    display: block;
+                    font-family: monospace;
+                }
             }
         }
 
@@ -149,23 +162,22 @@
 
         .metric {
             display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+            justify-content: space-between;
+            margin-bottom: 8px;
 
             .label {
-                font-size: 0.75rem;
-                color: #8b949e;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
+                color: $text-muted;
+                font-size: 0.9rem;
             }
 
             .value {
-                font-size: 1.4rem;
-                font-weight: 700;
-                color: #e6edf3;
+                color: $accent-cyan;
+                font-weight: bold;
+                font-family: 'Fira Code', monospace;
 
-                &.offline-text {
-                    color: #484f58;
+                &.sm-text {
+                    font-size: 0.85rem;
+                    color: $text-primary;
                 }
             }
         }

@@ -11,9 +11,13 @@
         <div class="device-card" *ngFor="let device of devices" [ngClass]="device.status">
             <div class="card-header">
                 <div class="device-info">
-                    <lucide-icon name="monitor" class="icon" *ngIf="device.type === 'windows'"></lucide-icon>
-                    <lucide-icon name="laptop" class="icon" *ngIf="device.type === 'macos'"></lucide-icon>
-                    <h3>{{ device.name }}</h3>
+                    <lucide-icon name="monitor" class="icon" *ngIf="device.type === 'WINDOWS'"></lucide-icon>
+                    <lucide-icon name="laptop" class="icon" *ngIf="device.type === 'MACOS'"></lucide-icon>
+                    <lucide-icon name="server" class="icon" *ngIf="device.type === 'LINUX'"></lucide-icon>
+                    <div>
+                      <h3>{{ device.name }}</h3>
+                      <small class="ip-address">{{ device.ipAddress }}</small>
+                    </div>
                 </div>
                 <div class="status-badge" [ngClass]="device.status">
                     <span class="dot"></span> {{ device.status | titlecase }}
@@ -24,14 +28,18 @@
                 <div class="metric">
                     <span class="label">CPU Usage</span>
                     <span class="value" [class.offline-text]="device.status === 'offline'">
-                        {{ device.status === 'online' ? device.cpu + '%' : '--' }}
+                        {{ device.status === 'online' ? device.cpuUsage + '%' : '--' }}
                     </span>
                 </div>
                 <div class="metric">
                     <span class="label">RAM Usage</span>
                     <span class="value" [class.offline-text]="device.status === 'offline'">
-                        {{ device.status === 'online' ? device.ram + '%' : '--' }}
+                        {{ device.status === 'online' ? device.ramUsage + '%' : '--' }}
                     </span>
+                </div>
+                 <div class="metric" *ngIf="device.lastSeen">
+                    <span class="label">Last Seen</span>
+                    <span class="value sm-text">{{ device.lastSeen | date:'shortTime' }}</span>
                 </div>
             </div>
 

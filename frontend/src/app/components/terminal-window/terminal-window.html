@@ -9,10 +9,12 @@
   </div>
 
   <div class="terminal-body font-mono">
-    <div *ngFor="let log of logs" 
-         class="log-line" 
-         [ngClass]="{'user': log.sender === 'user', 'sys': log.sender === 'system', 'success': log.type === 'success', 'warning': log.type === 'warning'}">
-      {{ log.text }}
+    <div *ngFor="let log of logs" class="log-entry">
+        <div class="log-line" 
+             [ngClass]="{'user': log.sender === 'user', 'sys': log.sender === 'system', 'ai': log.sender === 'ai', 'error': log.type === 'error'}">
+            <span class="sender" *ngIf="log.sender !== 'system'">[{{ log.sender }}]</span> {{ log.text }}
+        </div>
+        <pre *ngIf="log.script" class="script-block">{{ log.script }}</pre>
     </div>
   </div>
 
