@@ -1,7 +1,7 @@
 package com.sysagent.sysagent_backend.service;
 
-import com.sysagent.sysagent_backend.model.TaskEntity;
-import com.sysagent.sysagent_backend.model.TaskStatus;
+import com.sysagent.sysagent_backend.model.entity.TaskEntity;
+import com.sysagent.sysagent_backend.model.enums.TaskStatus;
 import com.sysagent.sysagent_backend.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

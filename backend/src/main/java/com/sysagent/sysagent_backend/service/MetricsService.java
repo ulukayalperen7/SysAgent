@@ -1,6 +1,6 @@
 package com.sysagent.sysagent_backend.service;
 
-import com.sysagent.sysagent_backend.model.MetricsDto;
+import com.sysagent.sysagent_backend.model.dto.MetricsDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

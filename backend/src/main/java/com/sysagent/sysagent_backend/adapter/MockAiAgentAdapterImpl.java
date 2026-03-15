@@ -1,6 +1,6 @@
 package com.sysagent.sysagent_backend.adapter;
 
-import com.sysagent.sysagent_backend.model.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

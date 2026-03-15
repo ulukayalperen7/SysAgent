@@ -1,6 +1,9 @@
 package com.sysagent.sysagent_backend.controller;
 
-import com.sysagent.sysagent_backend.model.DeviceDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceDto;
+import com.sysagent.sysagent_backend.model.response.ApiResponse;
+import com.sysagent.sysagent_backend.service.DeviceService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,17 +12,26 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Controller for managing connected devices.
+ * Provides endpoints to list devices and get their status.
+ */
 @RestController
 @RequestMapping("/api/devices")
 @CrossOrigin(origins = "*") // Allow Angular frontend to call this
+@RequiredArgsConstructor
 public class DeviceController {
 
+    private final DeviceService deviceService; // added
+
     @GetMapping
-    public ResponseEntity<List<DeviceDto>> getConnectedDevices() {
-        // Mock data moved from Frontend to Backend to test API connection
-        return ResponseEntity.ok(List.of(
-            DeviceDto.builder().id(1L).name("Main Rig (Windows 11)").status("online").cpu(34).ram(45).type("windows").build(),
-            DeviceDto.builder().id(2L).name("Work MacBook (macOS Sonoma)").status("offline").cpu(0).ram(0).type("macos").build()
-        ));
+    public ResponseEntity<ApiResponse<List<DeviceDto>>> getConnectedDevices() {
+        List<DeviceDto> devices = deviceService.getAllDevices();
+
+        return ResponseEntity.ok(ApiResponse.<List<DeviceDto>>builder()
+                .status("SUCCESS")
+                .message("Devices fetched successfully")
+                .data(devices)
+                .build());
     }
 }
