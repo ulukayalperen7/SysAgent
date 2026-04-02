@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Custom Secrets & Envs ###
+# Ignore custom properties that might contain db passwords
+application-prod.properties
+application-secret.properties
+*.env
+.env*
