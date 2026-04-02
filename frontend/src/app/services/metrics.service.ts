@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 import { SystemMetrics } from '../models/metrics.model';
 import { ApiResponse } from '../models/api-response.model';
 
@@ -9,7 +10,7 @@ import { ApiResponse } from '../models/api-response.model';
     providedIn: 'root'
 })
 export class MetricsService {
-    private apiUrl = 'http://localhost:8080/api/metrics';
+    private apiUrl = `${environment.apiUrl}/metrics`;
 
     constructor(private http: HttpClient) { }
 
