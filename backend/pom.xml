@@ -38,6 +38,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<!-- Added WebSocket support for real-time metrics -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+		<!-- Added OSHI library to read OS hardware info (CPU, RAM) -->
+		<dependency>
+			<groupId>com.github.oshi</groupId>
+			<artifactId>oshi-core</artifactId>
+			<version>6.4.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.h2database</groupId>
