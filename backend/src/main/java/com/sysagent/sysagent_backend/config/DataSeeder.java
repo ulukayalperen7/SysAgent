@@ -20,12 +20,15 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (deviceRepository.count() == 0) {
+            String defaultUserId = "test-user-1";
+
             DeviceEntity windowsPc = DeviceEntity.builder()
                     .name("Main Game Rig")
                     .ipAddress("192.168.1.105")
                     .status("online")
                     .type(DeviceType.WINDOWS)
                     .lastSeen(LocalDateTime.now())
+                    .ownerId(defaultUserId) // Assigning to test-user-1
                     .build();
 
             DeviceEntity macbook = DeviceEntity.builder()
@@ -34,6 +37,7 @@ public class DataSeeder implements CommandLineRunner {
                     .status("offline")
                     .type(DeviceType.MACOS)
                     .lastSeen(LocalDateTime.now().minusHours(2))
+                    .ownerId(defaultUserId) // Assigning to test-user-1
                     .build();
 
             DeviceEntity linuxServer = DeviceEntity.builder()
@@ -42,6 +46,7 @@ public class DataSeeder implements CommandLineRunner {
                     .status("online")
                     .type(DeviceType.LINUX)
                     .lastSeen(LocalDateTime.now().minusMinutes(5))
+                    .ownerId("another-user-99") // Intentionally assigning to someone else to test access control
                     .build();
 
             deviceRepository.save(windowsPc);
