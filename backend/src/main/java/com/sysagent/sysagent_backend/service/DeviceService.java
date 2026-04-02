@@ -19,8 +19,14 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final Random random = new Random();
 
-    public List<DeviceDto> getAllDevices() {
-        return deviceRepository.findAll().stream()
+    /**
+     * Replaced getAllDevices with a tenant-aware method.
+     * 
+     * @param ownerId The ID of the currently authenticated user.
+     * @return List of DeviceDto belonging only to this user.
+     */
+    public List<DeviceDto> getDevicesByOwner(String ownerId) {
+        return deviceRepository.findByOwnerId(ownerId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -36,6 +42,7 @@ public class DeviceService {
                 .status(entity.getStatus())
                 .ipAddress(entity.getIpAddress())
                 .lastSeen(entity.getLastSeen())
+                .ownerId(entity.getOwnerId()) // Include ownerId in the DTO
                 .cpuUsage(simulatedCpu) 
                 .ramUsage(simulatedRam) 
                 .type(entity.getType()) 

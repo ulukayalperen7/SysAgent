@@ -33,6 +33,13 @@ public class TaskEntity {
     @Id
     @Column(nullable = false, unique = true)
     private String id;
+
+    /**
+     * The ID of the user who owns this task (e.g., test-user-1).
+     * Prevents users from viewing or managing other users' agent tasks.
+     */
+    @Column(nullable = false)
+    private String ownerId;
     
     /**
      * The original natural language request from the user (e.g., "Clean logs older than 7 days").
