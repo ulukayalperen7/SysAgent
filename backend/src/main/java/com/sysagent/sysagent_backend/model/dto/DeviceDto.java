@@ -46,6 +46,12 @@ public class DeviceDto {
      */
     private LocalDateTime lastSeen;
 
+    /**
+     * The ID of the user who owns this device.
+     * Required for access control so users only see their own devices.
+     */
+    private String ownerId;
+
     // These fields might be moved to a separate MetricsDto linked to the device 
     // to keep this DTO lightweight for list views.
     private Integer cpuUsage;

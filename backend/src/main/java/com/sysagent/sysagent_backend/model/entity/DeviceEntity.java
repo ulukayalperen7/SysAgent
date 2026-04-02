@@ -64,6 +64,13 @@ public class DeviceEntity {
      */
     private LocalDateTime lastSeen;
 
+    /**
+     * The ID of the user who owns this device.
+     * This is crucial for multi-tenant support (e.g., Ahmet only sees his own devices).
+     */
+    @Column(nullable = false)
+    private String ownerId;
+
     // Additional fields for hardware specs can be added here or in a separate Specs entity
     // private Integer cpuCores;
     // private Long totalRam;
