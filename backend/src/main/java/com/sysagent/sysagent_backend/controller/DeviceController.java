@@ -26,9 +26,14 @@ public class DeviceController {
 
     private final DeviceService deviceService; // added
 
+    // TODO: When authentication is implemented, extract ownerId from the security context (e.g., JWT token).
+    // For now, we simulate a logged-in user with a hardcoded ID for testing.
+    private static final String CURRENT_LOGGED_IN_USER_ID = "test-user-1";
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<DeviceDto>>> getConnectedDevices() {
-        List<DeviceDto> devices = deviceService.getAllDevices();
+        // Pass the simulated logged-in user's ID to the service
+        List<DeviceDto> devices = deviceService.getDevicesByOwner(CURRENT_LOGGED_IN_USER_ID);
 
         return ResponseEntity.ok(ApiResponse.<List<DeviceDto>>builder()
                 .status("SUCCESS")
