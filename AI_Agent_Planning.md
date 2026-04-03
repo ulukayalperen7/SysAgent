@@ -1,42 +1,50 @@
-# SysAgent: AI Integration Plan
+# SysAgent: Ultimate AI Operating System Orchestrator
 
-## 1. Project Overview
+## 1. Project Overview & Vision
 
-**Topic & Purpose:** For this project, I chose the domain of remote system and personal device management. The core objective is to develop "SysAgent," a centralized control panel. The platform aims to unify the management, monitoring, and automation of distributed computing environments (e.g., Windows PCs, MacBooks, and Linux servers) under a single web interface.
+**Topic & Purpose:** SysAgent is a centralized control panel and remote operating system orchestrator. It unifies the monitoring, management, and automation of distributed computing environments (Windows, macOS, Linux) under a single UI.
 
-**Target Users:** The primary target audience includes software developers, IT students, and tech enthusiasts who operate multiple machines daily and want to streamline repetitive cross-device tasks.
+**The Evolution:** Going beyond simple dashboard metrics, SysAgent acts as an "AI-Native Operating System Manager." It utilizes cutting-edge multi-agent frameworks to diagnose issues, generate system scripts, and execute workflows asynchronously. 
 
-**Core Features (Current Draft):** The current deployment serves as a functional frontend prototype built as a Single Page Application (SPA). The interface includes:
-* **Dashboard & Devices:** To monitor connected nodes and their resource usage.
-* **Agent Hub:** A directory of ready-to-use execution scripts.
-* **Automations:** A visual interface to define automated workflows.
+## 2. Multi-Agent AI Architecture (Framework Distribution)
 
-*(Note: Within the scope of this assignment, the data rendered on the screen is mock data integrated directly into the Angular components to demonstrate UI layout and structural behavior).*
+To avoid a monolithic AI block, SysAgent strategically assigns different tasks to specialized AI frameworks based on their inherent strengths. This approach ensures scalability, security, and academic rigor as each framework is introduced progressively.
 
-## 2. AI Agent Concept
+### Phase 1: CrewAI (Diagnostic & Reporting Unit) - *Current Focus*
+* **Role:** The Incident Response and Diagnostic Team.
+* **Why CrewAI?** CrewAI excels at role-playing and inter-agent debate. It is perfect for complex system analysis where different "experts" need to collaborate.
+* **Use Case (The System Health Check):** 
+  * A user reports: *"My PC is overheating and running slow."*
+  * **Metric Analyst Agent:** Reviews the real-time CPU/RAM/Disk metrics provided by the Java backend.
+  * **Log Investigator Agent:** Analyzes active processes and recent OS error logs.
+  * **Chief Summarizer Agent:** Synthesizes the findings and provides a human-readable diagnosis along with a recommended action (e.g., *"We found 3 phantom Docker containers consuming 80% CPU. Do you want to kill them?"*).
 
-**The Problem:** Currently, managing multiple devices requires writing complex bash or PowerShell scripts for simple automations, memorizing different OS commands, and manually navigating through distinct interfaces. This process is highly inefficient and creates a barrier for quick, cross-platform task execution.
+### Phase 2: LangGraph (Stateful Workflow Executor) - *Upcoming*
+* **Role:** The API Integrator and Graph-based Workflow Engine.
+* **Why LangGraph?** It handles loops, state persistence, and external API integrations beautifully.
+* **Use Case (Multi-Step Automation):**
+  * A user requests: *"Backup my desktop documents, zip them, and alert me on MS Teams."*
+  * LangGraph will construct a state machine: Step 1 (Zip Files) -> Step 2 (Check Size) -> Step 3 (Send Teams Webhook). If Step 1 fails, it loops back and retries or asks for user intervention.
 
-**Agent Type:** To solve this, SysAgent will integrate a **"Natural Language Automation Executor & Advisor"** AI agent. 
+### Phase 3: AutoGen (Autonomous Terminal Execution) - *Upcoming*
+* **Role:** The Auto-Coder and Self-Correcting Execution Engine.
+* **Why AutoGen?** It features built-in code execution and self-debugging capabilities.
+* **Use Case (Complex Scripting):**
+  * Generating complex, OS-specific PowerShell or Bash scripts on the fly, testing them in a sandboxed environment, and iteratively fixing syntax errors before presenting the final script to the user.
 
-**User Interaction & Workflow:** The primary goal of the AI is to translate natural human language into actionable system commands and automation rules.
-* **Natural Language Input:** Instead of writing code, the user simply types a prompt into the SysAgent dashboard (e.g., *"Find and compress all log files larger than 1GB in my Windows server's Downloads folder"*).
-* **Intent Parsing & Code Generation:** The AI agent analyzes this intent and automatically constructs the correct, OS-specific execution script or JSON-formatted "Trigger → Action" rule.
-* **User Approval (Dry-Run):** For security, the AI does not execute commands autonomously. It presents the generated script to the user as a pending action. The command is only dispatched to the target node after the user clicks "Confirm."
-* **Secondary Capability (Log Diagnostics):** As an additional background feature, if a system crashes, the AI can optionally review the error logs and suggest a terminal command to fix the issue.
+## 4. System Architecture & Data Flow
 
-## 3. System Architecture (High-Level)
+The project is strictly divided to ensure security and scalability:
 
-To ensure security and protect API keys, the heavy AI processing is completely decoupled from the frontend browser. The future architecture is structured as follows:
+1. **Frontend (Angular):** The UI. It displays real-time metrics (via WebSocket) and captures user prompts.
+2. **Backend (Java Spring Boot):** The Orchestrator and Security Gateway. It handles WebSocket connections, connects to local nodes via OSHI to gather hardware metrics, stores tasks in PostgreSQL/Supabase, and manages JWT-based Tenant Isolation (Multi-tenancy). 
+3. **AI Engine (Python / FastAPI):** An external microservice containing the AI frameworks (CrewAI, etc.). The Java backend sends structured JSON requests to this Python API, which runs the multi-agent logic and returns the results.
+4. **SysAgent Nodes:** The actual host devices (Windows, Linux, macOS).
 
-* **Frontend (Angular):** The user interface submitted for this assignment. It captures the user's natural language prompts and displays the AI's generated scripts for approval.
-* **Backend (Java Spring Boot):** Acts as the secure central mediator. It receives the natural language text from the frontend and forwards it to the AI Engine. It manages secure, isolated connections to local LLMs (such as Llama-3 or Mistral via Ollama) running directly on the user's local network. This ensures strict privacy and guarantees that no system logs, commands, or user prompts are ever exposed to external APIs.
-* **AI Engine (External API or Local LLM):** The core intelligence that processes the text. It returns the exact terminal commands or diagnostic summaries back to the Spring Boot server.
-* **SysAgent Nodes (Target Devices):** Lightweight background services running on the host machines. Once the user approves an AI-generated script on the frontend, the backend sends the command via WebSocket to the specific node for local execution.
+## 5. Extreme Security Measures & Permissions
 
-**Example Data Flow:**
-1. User types *"Clear temporary files"* on the Angular frontend.
-2. Angular sends this text to the Spring Boot backend via REST API.
-3. Spring Boot securely queries the local AI model (e.g., Llama-3 via Ollama) to generate the appropriate shell script for the target device.
-4. The AI returns the script to Spring Boot, which passes it to Angular for user review.
-5. User clicks "Execute", and Spring Boot sends the final command to the target node.
+Because AI will be generating OS-level commands (PowerShell/Bash script), security is the highest priority.
+* **Human-In-The-Loop (HITL) Enforcement:** **NO AI COMMAND IS EVER EXECUTED AUTOMATICALLY.** The AI Engine only *proposes* a script. It is sent to the Angular frontend with a "Dry-Run Explanation." The backend will only execute the script if the authenticated user explicitly clicks "Confirm & Run."
+* **OS-Agnostic Generation:** The Java backend sends the target device's OS flag (e.g., `os: WINDOWS`) to the Python Engine. The AI is strictly instructed to generate OS-specific commands.
+* **Prompt Injection Prevention:** User prompts are sanitized by the Java backend before being forwarded to the Python AI Engine to prevent arbitrary code execution attacks.
+* **Database Logging:** Every generated command, along with its execution output (success/fail logs), is permanently recorded in the `task_logs` database table for auditing purposes.

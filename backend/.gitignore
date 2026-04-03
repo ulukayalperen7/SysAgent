@@ -38,3 +38,7 @@ application-prod.properties
 application-secret.properties
 *.env
 .env*
+
+# AI Engine secrets (do not commit)
+ai_engine/.env
+ai_engine/.env.*
