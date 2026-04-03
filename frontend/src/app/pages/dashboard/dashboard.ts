@@ -5,6 +5,7 @@ import { TerminalWindow } from '../../components/terminal-window/terminal-window
 import { MetricsService } from '../../services/metrics.service';
 import { SystemMetrics } from '../../models/metrics.model';
 import { BytesPipe } from '../../pipes/bytes.pipe';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,7 +16,7 @@ import { BytesPipe } from '../../pipes/bytes.pipe';
 })
 export class Dashboard implements OnInit, OnDestroy {
   metrics: SystemMetrics | null = null;
-  private intervalId: any;
+  private metricsSub?: Subscription;
 
   constructor(
     private metricsService: MetricsService,
@@ -23,28 +24,20 @@ export class Dashboard implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.fetchMetrics();
-    // Poll the API every 3 seconds
-    this.intervalId = setInterval(() => {
-      this.fetchMetrics();
-    }, 3000);
-  }
-
-  ngOnDestroy() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
-  }
-
-  private fetchMetrics() {
-    this.metricsService.getSystemMetrics().subscribe({
+    this.metricsSub = this.metricsService.systemMetrics$.subscribe({
       next: (data) => {
         this.metrics = data;
         this.cdr.detectChanges(); // Force UI update for zoneless Angular
       },
       error: (err) => {
-        console.error('Failed to fetch metrics:', err);
+        console.error('Failed to get real-time metrics:', err);
       }
     });
+  }
+
+  ngOnDestroy() {
+    if (this.metricsSub) {
+      this.metricsSub.unsubscribe();
+    }
   }
 }

@@ -1,7 +1,6 @@
 package com.sysagent.sysagent_backend.service;
 
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 public class DeviceService {
 
     private final DeviceRepository deviceRepository;
-    private final Random random = new Random();
 
     /**
      * Replaced getAllDevices with a tenant-aware method.
@@ -32,19 +30,18 @@ public class DeviceService {
     }
 
     private DeviceDto mapToDto(DeviceEntity entity) {
-        // Mock live metrics for demo purposes
-        int simulatedCpu = random.nextInt(30) + 10; 
-        int simulatedRam = random.nextInt(40) + 20;
-
+        // Remove mock CPU/RAM logic as we will eventually wire up real per-device stats.
+        // For now, if it's the current device and online, we can just leave it as 0 or null 
+        // to avoid fake "16%" values showing up on the Devices page.
         return DeviceDto.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .status(entity.getStatus())
                 .ipAddress(entity.getIpAddress())
                 .lastSeen(entity.getLastSeen())
-                .ownerId(entity.getOwnerId()) // Include ownerId in the DTO
-                .cpuUsage(simulatedCpu) 
-                .ramUsage(simulatedRam) 
+                .ownerId(entity.getOwnerId())
+                .cpuUsage(null) // Set to null instead of random mock
+                .ramUsage(null) // Set to null instead of random mock
                 .type(entity.getType()) 
                 .build();
     }

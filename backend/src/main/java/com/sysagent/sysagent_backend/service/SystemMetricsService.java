@@ -11,6 +11,11 @@ import lombok.RequiredArgsConstructor;
 import oshi.SystemInfo;
 import oshi.hardware.GlobalMemory;
 import oshi.hardware.HardwareAbstractionLayer;
+import oshi.hardware.NetworkIF;
+import oshi.software.os.OperatingSystem;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Service: Reads OS metrics every 2 seconds in the background and broadcasts them via WebSocket.
@@ -24,6 +29,7 @@ public class SystemMetricsService {
 
     private final SystemInfo systemInfo = new SystemInfo();
     private final HardwareAbstractionLayer hardware = systemInfo.getHardware();
+    private final OperatingSystem os = systemInfo.getOperatingSystem();
 
     // Requires previous ticks to accurately calculate CPU usage percentage (OSHI method)
     private long[] prevTicks = hardware.getProcessor().getSystemCpuLoadTicks();
@@ -59,11 +65,44 @@ public class SystemMetricsService {
 
         int cpuPercent = (int) Math.round(cpuLoad * 100);
 
+        // Uptime & OS
+        long uptime = os.getSystemUptime();
+        String osName = os.getFamily();
+        String osVersion = os.getVersionInfo().getVersion();
+        int logicalCores = hardware.getProcessor().getLogicalProcessorCount();
+        
+        // Basic Networking (Hostname, IP, MAC) - Fast retrieval for local machine
+        String hostname = "Unknown";
+        String ipAddress = "Unknown";
+        String macAddress = "Unknown";
+        try {
+            InetAddress localHost = InetAddress.getLocalHost();
+            hostname = localHost.getHostName();
+            ipAddress = localHost.getHostAddress();
+            
+            // Getting MAC via OSHI (First active interface with a MAC)
+            for (NetworkIF net : hardware.getNetworkIFs()) {
+                if (net.getMacaddr() != null && !net.getMacaddr().isEmpty() && !net.getMacaddr().startsWith("00:00:00")) {
+                    macAddress = net.getMacaddr();
+                    break;
+                }
+            }
+        } catch (UnknownHostException e) {
+            // Ignore if networking info is unavailable
+        }
+
         return SystemMetricsDto.builder()
                 .cpuUsage(cpuPercent)
                 .ramUsage(ramPercent)
                 .totalRam(totalRam)
                 .usedRam(usedRam)
+                .cpuCores(logicalCores)
+                .osName(osName)
+                .osVersion(osVersion)
+                .systemUptimeSeconds(uptime)
+                .hostname(hostname)
+                .ipAddress(ipAddress)
+                .macAddress(macAddress)
                 .build();
     }
 }
