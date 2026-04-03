@@ -1,0 +1,24 @@
+analysis_task:
+  description: >
+    Analyze the following metrics provided by the Java backend: {metrics}. 
+    Also consider the user's prompt: '{user_prompt}'. Is there a performance problem?
+  expected_output: >
+    A brief technical summary of the hardware state and any immediate red flags.
+  agent: metric_analyst
+
+investigation_task:
+  description: >
+    Based on the analyst's findings and the user's prompt ('{user_prompt}'), 
+    use your System Audit Tool to find what is causing the issue. The OS is {os_type}.
+  expected_output: >
+    A root cause analysis detailing the problematic processes or files.
+  agent: log_investigator
+
+reporting_task:
+  description: >
+    Review the root cause analysis. 
+    1. Write a friendly, concise message to the human explaining the problem and your team's suggested fix. 
+    2. Use the Script Recommendation Tool to generate a safe script for {os_type} addressing the issue. Format the final output clearly.
+  expected_output: >
+    Final user-facing report and the proposed script (Bash or PowerShell).
+  agent: chief_reporter

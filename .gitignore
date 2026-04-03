@@ -1,0 +1,17 @@
+# User-specific files
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build/Dependency folders
+backend/target/
+frontend/node_modules/
+frontend/dist/
+ai_engine/.venv/
+ai_engine/__pycache__/
+
+# OS files
+.DS_Store
+Thumbs.db
