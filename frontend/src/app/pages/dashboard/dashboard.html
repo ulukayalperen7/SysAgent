@@ -14,8 +14,8 @@
   <div class="metrics-row" *ngIf="metrics">
     <!-- CPU Usage -->
     <app-metric-card 
-      title="CPU Usage ({{metrics.cpuCores}} Cores)" 
-      [value]="metrics.cpuLoadPercentage | number:'1.0-1'" 
+      title="CPU Usage ({{metrics.cpuCores || '?'}} Cores)" 
+      [value]="metrics.cpuUsage || 0 | number:'1.0-1'" 
       unit="%" 
       color="#00d2ff">
     </app-metric-card>
@@ -23,23 +23,23 @@
     <!-- RAM Usage -->
     <app-metric-card 
       title="RAM Usage" 
-      [value]="(metrics.usedRamBytes | bytes:1).split(' ')[0]" 
-      [unit]="(metrics.usedRamBytes | bytes:1).split(' ')[1] + ' / ' + (metrics.totalRamBytes | bytes:1)" 
+      [value]="((metrics.usedRam || 0) | bytes:1).split(' ')[0]" 
+      [unit]="((metrics.usedRam || 0) | bytes:1).split(' ')[1] + ' / ' + ((metrics.totalRam || 0) | bytes:1)" 
       color="#3fb950">
     </app-metric-card>
     
     <!-- Disk Usage -->
     <app-metric-card 
       title="C:\ Drive Free" 
-      [value]="(metrics.freeDiskBytes | bytes:1).split(' ')[0]" 
-      [unit]="(metrics.freeDiskBytes | bytes:1).split(' ')[1] + ' / ' + (metrics.totalDiskBytes | bytes:1)" 
+      [value]="((metrics.freeDiskBytes || 0) | bytes:1).split(' ')[0]" 
+      [unit]="((metrics.freeDiskBytes || 0) | bytes:1).split(' ')[1] + ' / ' + ((metrics.totalDiskBytes || 0) | bytes:1)" 
       color="#d29922">
     </app-metric-card>
 
     <!-- Uptime -->
     <app-metric-card 
       title="Backend Uptime" 
-      [value]="(metrics.systemUptimeSeconds / 60) | number:'1.0-0'" 
+      [value]="(metrics.systemUptimeSeconds || 0) / 60 | number:'1.0-0'" 
       unit="mins" 
       color="#a371f7">
     </app-metric-card>

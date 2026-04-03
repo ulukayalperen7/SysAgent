@@ -28,13 +28,13 @@
                 <div class="metric">
                     <span class="label">CPU Usage</span>
                     <span class="value" [class.offline-text]="device.status === 'offline'">
-                        {{ device.status === 'online' ? device.cpuUsage + '%' : '--' }}
+                        {{ device.status === 'online' ? (device.cpuUsage !== null ? device.cpuUsage + '%' : 'N/A') : '--' }}
                     </span>
                 </div>
                 <div class="metric">
                     <span class="label">RAM Usage</span>
                     <span class="value" [class.offline-text]="device.status === 'offline'">
-                        {{ device.status === 'online' ? device.ramUsage + '%' : '--' }}
+                        {{ device.status === 'online' ? (device.ramUsage !== null ? device.ramUsage + '%' : 'N/A') : '--' }}
                     </span>
                 </div>
                  <div class="metric" *ngIf="device.lastSeen">
