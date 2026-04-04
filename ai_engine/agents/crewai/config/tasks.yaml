@@ -1,28 +1,29 @@
 analysis_task:
   description: >
-    Analyze the following metrics provided by the Java backend: {metrics}. 
-    Also consider the user's prompt: '{user_prompt}'. Is there a performance problem?
+    Review the user's prompt: '{user_prompt}'. Is it just a casual greeting/conversation (like 'hi', 'hello', 'thanks')? 
+    If yes, state: "Casual conversation detected. No system issue."
+    If it is an actionable request or empty, analyze these backend metrics: {metrics}. Determine if the system is under stress.
   expected_output: >
-    A brief technical summary of the hardware state and any immediate red flags.
+    A classification of the intent, and a brief summary of the hardware state if an action or system check is needed.
   agent: metric_analyst
 
 investigation_task:
   description: >
-    Based on the analyst's findings and the user's prompt ('{user_prompt}'), 
-    use your System Audit Tool to find what is causing the issue. The OS is {os_type}.
+    Review the analyst's findings. If the analyst found it's a "Casual conversation", DO NOT run any tools. Just output "No investigation needed."
+    Otherwise, if there is a system issue or a user request, use your System Audit Tool to find the problematic processes or gather data. OS: {os_type}.
   expected_output: >
-    A root cause analysis detailing the problematic processes or files.
+    The root cause of the issue, or "No investigation needed" for casual prompts.
   agent: log_investigator
 
 reporting_task:
   description: >
-    Review the root cause analysis. 
-    1. Write a friendly, concise message to the human explaining the problem and your team's suggested fix. 
-    2. Use the Script Recommendation Tool to generate a safe script for {os_type} addressing the issue. 
+    Review the investigation.
+    If it's a casual conversation, write a warm, friendly response (e.g., "Hi! I am monitoring your system. How can I help?") and DO NOT provide a script.
+    If it's a real system issue, write a very concise explanation for the user and generate a SAFE, actionable terminal script natively to resolve it for {os_type}.
     
-    Format the final output exactly as follows:
-    Explanation: <Your concise explanation here>
-    Script: <The generated script here, enclosed in backticks if multi-line>
+    You MUST format the final output exactly as follows:
+    Explanation: <Your response to the user>
+    Script: <The exact terminal script, or explicitly write NONE if no script is needed>
   expected_output: >
-    A structured report containing both the explanation and the recommended script.
+    A structured report containing both the human explanation and the recommended script (or NONE).
   agent: chief_reporter

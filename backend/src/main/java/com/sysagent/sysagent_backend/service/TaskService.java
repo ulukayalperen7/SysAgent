@@ -38,6 +38,12 @@ public class TaskService {
         return taskRepository.findAll();
     }
     
+    @Transactional(readOnly = true)
+    public TaskEntity getTaskById(String taskId) {
+        return taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with ID: " + taskId));
+    }
+
     @Transactional
     public TaskEntity updateTaskStatus(String taskId, TaskStatus status, String rollbackScript) {
         TaskEntity task = taskRepository.findById(taskId)
@@ -49,6 +55,15 @@ public class TaskService {
         }
         
         log.info("Updated status for task {} to {}", taskId, status);
+        return taskRepository.save(task);
+    }
+
+    @Transactional
+    public TaskEntity updateTaskScript(String taskId, String script) {
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with ID: " + taskId));
+        task.setScript(script);
+        log.info("Saved generated script to task {}", taskId);
         return taskRepository.save(task);
     }
 }

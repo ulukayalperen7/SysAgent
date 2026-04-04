@@ -46,6 +46,11 @@ public class AgentController {
         // 3. Pass the intent and metrics to our AI Adapter
         AgentIntentResponseDto response = aiAgentAdapter.analyzeIntent(task.getId(), request.getIntent(), currentMetrics);
         
+        // 4. Save the generated script back to the DB so it can be executed later via /execute
+        if (response.getScript() != null && !response.getScript().isEmpty()) {
+            taskService.updateTaskScript(task.getId(), response.getScript());
+        }
+        
         return ResponseEntity.ok(ApiResponse.<AgentIntentResponseDto>builder()
                 .status("SUCCESS")
                 .message("Agent processed intent successfully")

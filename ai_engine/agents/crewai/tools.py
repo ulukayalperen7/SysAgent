@@ -34,21 +34,3 @@ def system_audit_tool(query: str) -> str:
         
     return result
 
-@tool("Script Recommendation Tool")
-def script_recommendation_tool(os_type: str, action: str) -> str:
-    """
-    Suggests the appropriate command line script for a desired action based on the OS.
-    Never executes the command, just returns the formatted string for user review.
-    """
-    if "windows" in os_type.lower():
-        if "close" in action.lower() or "kill" in action.lower():
-            return "Stop-Process -Name 'ProcessName' -Force"
-        if "clean temp" in action.lower():
-            return "Remove-Item -Path $env:TEMP\\* -Recurse -Force -ErrorAction SilentlyContinue"
-        return f"# Windows script for: {action}"
-    else:
-        if "close" in action.lower() or "kill" in action.lower():
-            return "pkill -f 'ProcessName'"
-        if "clean temp" in action.lower():
-            return "rm -rf /tmp/*"
-        return f"# Unix/Linux script for: {action}"
