@@ -1,0 +1,244 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.sysagent:sysagent-backend >--------------------
+[INFO] Building sysagent-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.3:run (default-cli) > test-compile @ sysagent-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sysagent-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ sysagent-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sysagent-backend ---
+[INFO] skip non existing resourceDirectory C:\Users\HUAWEI\Desktop\SysAgent\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ sysagent-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.0.3:run (default-cli) < test-compile @ sysagent-backend <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.0.3:run (default-cli) @ sysagent-backend ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.3)
+
+2026-04-04T13:57:21.522+03:00  INFO 4276 --- [sysagent-backend] [           main] c.s.s.SysagentBackendApplication         : Starting SysagentBackendApplication using Java 17.0.12 with PID 4276 (C:\Users\HUAWEI\Desktop\SysAgent\backend\target\classes started by HUAWEI in C:\Users\HUAWEI\Desktop\SysAgent\backend)
+2026-04-04T13:57:21.528+03:00  INFO 4276 --- [sysagent-backend] [           main] c.s.s.SysagentBackendApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-04-04T13:57:22.299+03:00  INFO 4276 --- [sysagent-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-04T13:57:22.364+03:00  INFO 4276 --- [sysagent-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 56 ms. Found 2 JPA repository interfaces.
+2026-04-04T13:57:23.013+03:00  INFO 4276 --- [sysagent-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-04-04T13:57:23.041+03:00  INFO 4276 --- [sysagent-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-04T13:57:23.041+03:00  INFO 4276 --- [sysagent-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-04-04T13:57:23.135+03:00  INFO 4276 --- [sysagent-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1553 ms
+2026-04-04T13:57:23.329+03:00  INFO 4276 --- [sysagent-backend] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-04-04T13:57:23.406+03:00  INFO 4276 --- [sysagent-backend] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.4.Final
+2026-04-04T13:57:23.915+03:00  INFO 4276 --- [sysagent-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-04T13:57:23.956+03:00  INFO 4276 --- [sysagent-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-04-04T13:57:25.473+03:00  INFO 4276 --- [sysagent-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6fbc7853
+2026-04-04T13:57:25.475+03:00  INFO 4276 --- [sysagent-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-04-04T13:57:25.599+03:00  WARN 4276 --- [sysagent-backend] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-04T13:57:25.932+03:00  INFO 4276 --- [sysagent-backend] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:6543/postgres?user=postgres.jsuediizwasxengqnljh&password=Sysalperen77.]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 17.6
+	Default catalog/schema: postgres/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-04-04T13:57:26.803+03:00  INFO 4276 --- [sysagent-backend] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    create table devices (
+        id bigint generated by default as identity,
+        ip_address varchar(255) not null,
+        last_seen timestamp(6),
+        name varchar(255) not null,
+        owner_id varchar(255) not null,
+        status varchar(255),
+        type varchar(255) not null check ((type in ('WINDOWS','LINUX','MACOS','UNKNOWN'))),
+        primary key (id)
+    )
+Hibernate: 
+    create table tasks (
+        id varchar(255) not null,
+        intent varchar(1000) not null,
+        owner_id varchar(255) not null,
+        rollback_script TEXT,
+        script TEXT,
+        status varchar(255) not null check ((status in ('PENDING','IN_PROGRESS','COMPLETED','ROLLED_BACK','FAILED'))),
+        timestamp timestamp(6) not null,
+        primary key (id)
+    )
+2026-04-04T13:57:27.388+03:00  INFO 4276 --- [sysagent-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-04T13:57:27.494+03:00  INFO 4276 --- [sysagent-backend] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-04T13:57:28.508+03:00  WARN 4276 --- [sysagent-backend] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-04T13:57:28.791+03:00  INFO 4276 --- [sysagent-backend] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2026-04-04T13:57:28.791+03:00  INFO 4276 --- [sysagent-backend] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@577b2c5f]]
+2026-04-04T13:57:28.791+03:00  INFO 4276 --- [sysagent-backend] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2026-04-04T13:57:28.821+03:00  INFO 4276 --- [sysagent-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-04-04T13:57:28.829+03:00  INFO 4276 --- [sysagent-backend] [           main] c.s.s.SysagentBackendApplication         : Started SysagentBackendApplication in 7.788 seconds (process running for 8.168)
+2026-04-04T13:57:29.027+03:00  INFO 4276 --- [sysagent-backend] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-04T13:57:29.027+03:00  INFO 4276 --- [sysagent-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-04-04T13:57:29.029+03:00  INFO 4276 --- [sysagent-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+Hibernate: 
+    select
+        count(*) 
+    from
+        devices de1_0
+--- MOCK DATA SEEDED: 3 Devices created ---
+2026-04-04T13:58:28.806+03:00  INFO 4276 --- [sysagent-backend] [essageBroker-12] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[1 current WS(1)-HttpStream(0)-HttpPoll(0), 1 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(1)-CONNECTED(1)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 6, active threads = 0, queued tasks = 0, completed tasks = 6], outboundChannel[pool size = 30, active threads = 0, queued tasks = 0, completed tasks = 30], sockJsScheduler[pool size = 20, active threads = 1, queued tasks = 3, completed tasks = 42]
+2026-04-04T14:02:16.331+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@5ca2a1f5 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:02:29.378+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@23b13813 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:02:34.477+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@6fbc7853 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:02:39.879+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@3f428a99 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:02:50.344+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@534e0fb8 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:02:53.128+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@1914b308 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:03:03.011+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@463403a4 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:03:11.559+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@187c8f76 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:03:12.325+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@4203ed8c (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:03:16.559+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@ddb696 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:18:02.793+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@3fb52221 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:22:11.887+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@f83a416 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:22:15.737+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@51a9dd74 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:22:58.050+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@d4c89f0 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:00.916+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@2275093 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:03.718+03:00  WARN 4276 --- [sysagent-backend] [l-1:housekeeper] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@1d7a7fde (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:11.088+03:00  INFO 4276 --- [sysagent-backend] [nio-8080-exec-2] c.s.s.controller.AgentController         : Received new natural language intent from frontend: hi
+2026-04-04T14:23:11.090+03:00  WARN 4276 --- [sysagent-backend] [nio-8080-exec-2] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@6be99ab0 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:11.091+03:00  WARN 4276 --- [sysagent-backend] [nio-8080-exec-2] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@7caf70e4 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:11.092+03:00  WARN 4276 --- [sysagent-backend] [nio-8080-exec-2] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@29c19cae (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:11.092+03:00  WARN 4276 --- [sysagent-backend] [nio-8080-exec-2] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@edabf3c (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:11.092+03:00  WARN 4276 --- [sysagent-backend] [nio-8080-exec-2] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@16df0243 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+2026-04-04T14:23:11.167+03:00  INFO 4276 --- [sysagent-backend] [nio-8080-exec-2] c.s.s.service.TaskService                : Created new PENDING task with ID: 7d7973af-6919-4ef1-b039-d04529b501ff for user: test-user-1
+Hibernate: 
+    select
+        te1_0.id,
+        te1_0.intent,
+        te1_0.owner_id,
+        te1_0.rollback_script,
+        te1_0.script,
+        te1_0.status,
+        te1_0.timestamp 
+    from
+        tasks te1_0 
+    where
+        te1_0.id=?
+Hibernate: 
+    insert 
+    into
+        tasks
+        (intent, owner_id, rollback_script, script, status, timestamp, id) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+2026-04-04T14:23:11.473+03:00 ERROR 4276 --- [sysagent-backend] [nio-8080-exec-2] c.s.s.exception.GlobalExceptionHandler   : Unhandled exception occurred: 
+
+org.springframework.jdbc.BadSqlGrammarException: Hibernate transaction: Unable to commit against JDBC Connection; bad SQL grammar []
+	at org.springframework.jdbc.support.SQLStateSQLExceptionTranslator.doTranslate(SQLStateSQLExceptionTranslator.java:134) ~[spring-jdbc-7.0.5.jar:7.0.5]
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:102) ~[spring-jdbc-7.0.5.jar:7.0.5]
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:111) ~[spring-jdbc-7.0.5.jar:7.0.5]
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.convertHibernateAccessException(HibernateExceptionTranslator.java:144) ~[spring-orm-7.0.5.jar:7.0.5]
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.convertHibernateAccessException(HibernateExceptionTranslator.java:131) ~[spring-orm-7.0.5.jar:7.0.5]
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.translateExceptionIfPossible(HibernateExceptionTranslator.java:105) ~[spring-orm-7.0.5.jar:7.0.5]
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.translateExceptionIfPossible(HibernateJpaDialect.java:223) ~[spring-orm-7.0.5.jar:7.0.5]
+	at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:557) ~[spring-orm-7.0.5.jar:7.0.5]
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.processCommit(AbstractPlatformTransactionManager.java:794) ~[spring-tx-7.0.5.jar:7.0.5]
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.commit(AbstractPlatformTransactionManager.java:757) ~[spring-tx-7.0.5.jar:7.0.5]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.commitTransactionAfterReturning(TransactionAspectSupport.java:687) ~[spring-tx-7.0.5.jar:7.0.5]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:408) ~[spring-tx-7.0.5.jar:7.0.5]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:130) ~[spring-tx-7.0.5.jar:7.0.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179) ~[spring-aop-7.0.5.jar:7.0.5]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:719) ~[spring-aop-7.0.5.jar:7.0.5]
+	at com.sysagent.sysagent_backend.service.TaskService$$SpringCGLIB$$0.createTask(<generated>) ~[classes/:na]
+	at com.sysagent.sysagent_backend.controller.AgentController.processUserIntent(AgentController.java:41) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.18.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.5.jar:7.0.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.18.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.5.jar:7.0.5]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-embed-core-11.0.18.jar:11.0.18]
+	at java.base/java.lang.Thread.run(Thread.java:842) ~[na:na]
+Caused by: org.postgresql.util.PSQLException: ERROR: prepared statement "S_1" already exists
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2875) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2560) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:429) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:387) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgConnection.executeTransactionCommand(PgConnection.java:998) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgConnection.commit(PgConnection.java:1020) ~[postgresql-42.7.10.jar:42.7.10]
+	at com.zaxxer.hikari.pool.ProxyConnection.commit(ProxyConnection.java:378) ~[HikariCP-7.0.2.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyConnection.commit(HikariProxyConnection.java) ~[HikariCP-7.0.2.jar:na]
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.commit(AbstractLogicalConnectionImplementor.java:84) ~[hibernate-core-7.2.4.Final.jar:7.2.4.Final]
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commitNoRollbackOnly(JdbcResourceLocalTransactionCoordinatorImpl.java:249) ~[hibernate-core-7.2.4.Final.jar:7.2.4.Final]
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commit(JdbcResourceLocalTransactionCoordinatorImpl.java:242) ~[hibernate-core-7.2.4.Final.jar:7.2.4.Final]
+	at org.hibernate.engine.transaction.internal.TransactionImpl.commit(TransactionImpl.java:89) ~[hibernate-core-7.2.4.Final.jar:7.2.4.Final]
+	at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:553) ~[spring-orm-7.0.5.jar:7.0.5]
+	... 54 common frames omitted
+
+2026-04-04T14:24:20.075+03:00  INFO 4276 --- [sysagent-backend] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-04T14:24:20.332+03:00  INFO 4276 --- [sysagent-backend] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-04-04T14:24:20.334+03:00  INFO 4276 --- [sysagent-backend] [ionShutdownHook] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2026-04-04T14:24:20.336+03:00  INFO 4276 --- [sysagent-backend] [ionShutdownHook] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@577b2c5f]]
+2026-04-04T14:24:20.336+03:00  INFO 4276 --- [sysagent-backend] [ionShutdownHook] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2026-04-04T14:24:20.338+03:00  INFO 4276 --- [sysagent-backend] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-04T14:24:20.340+03:00  INFO 4276 --- [sysagent-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-04-04T14:24:20.507+03:00  INFO 4276 --- [sysagent-backend] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  27:02 min
+[INFO] Finished at: 2026-04-04T14:24:20+03:00
+[INFO] ------------------------------------------------------------------------
+Terminate batch job (Y/N)? 

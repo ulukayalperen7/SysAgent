@@ -61,7 +61,16 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
                     try {
                         String[] parts = reply.split("Script:", 2);
                         explanation = parts[0].replace("Explanation:", "").trim();
-                        script = parts[1].replace("```bash", "").replace("```powershell", "").replace("```", "").trim();
+                        String rawScript = parts[1].trim();
+                        
+                        if (rawScript.equalsIgnoreCase("NONE") || rawScript.isEmpty()) {
+                            script = null;
+                        } else {
+                            script = rawScript.replace("```bash", "")
+                                              .replace("```powershell", "")
+                                              .replace("```", "")
+                                              .trim();
+                        }
                     } catch (Exception e) {
                         log.warn("Failed to nicely parse AI output format. Proceeding with raw output.");
                     }

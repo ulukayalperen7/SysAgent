@@ -1,0 +1,42 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.sysagent:sysagent-backend >--------------------
+[INFO] Building sysagent-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sysagent-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ sysagent-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 29 source files with javac [debug parameters release 17] to target\classes
+[INFO] /C:/Users/HUAWEI/Desktop/SysAgent/backend/src/main/java/com/sysagent/sysagent_backend/adapter/RealAiAgentAdapterImpl.java: C:\Users\HUAWEI\Desktop\SysAgent\backend\src\main\java\com\sysagent\sysagent_backend\adapter\RealAiAgentAdapterImpl.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/HUAWEI/Desktop/SysAgent/backend/src/main/java/com/sysagent/sysagent_backend/adapter/RealAiAgentAdapterImpl.java: Recompile with -Xlint:unchecked for details.
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/HUAWEI/Desktop/SysAgent/backend/src/main/java/com/sysagent/sysagent_backend/controller/TaskController.java:[52,56] cannot find symbol
+  symbol:   variable EXECUTING
+  location: class com.sysagent.sysagent_backend.model.enums.TaskStatus
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.578 s
+[INFO] Finished at: 2026-04-04T11:43:50+03:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project sysagent-backend: Compilation failure
+[ERROR] /C:/Users/HUAWEI/Desktop/SysAgent/backend/src/main/java/com/sysagent/sysagent_backend/controller/TaskController.java:[52,56] cannot find symbol
+[ERROR]   symbol:   variable EXECUTING
+[ERROR]   location: class com.sysagent.sysagent_backend.model.enums.TaskStatus
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

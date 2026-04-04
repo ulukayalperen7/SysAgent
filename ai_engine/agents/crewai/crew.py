@@ -1,7 +1,7 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from core.config import get_llm
-from agents.crewai.tools import system_audit_tool, script_recommendation_tool
+from agents.crewai.tools import system_audit_tool
 import os
 
 @CrewBase
@@ -41,8 +41,7 @@ class SystemDiagnosticsCrew():
             config=self.agents_config['chief_reporter'],
             llm=self.llm,
             verbose=True,
-            allow_delegation=False,
-            tools=[script_recommendation_tool]
+            allow_delegation=False
         )
 
     @task
@@ -65,10 +64,10 @@ class SystemDiagnosticsCrew():
 
     @crew
     def crew(self) -> Crew:
-        """Kadro (Crew) tanımlaması ve çalışma süreci"""
+        """Crew configuration and execution process"""
         return Crew(
-            agents=self.agents, # Otomatik olarak '@agent' dekoratörü olanları alır
-            tasks=self.tasks,   # Otomatik olarak '@task' dekoratörü olanları alır
+            agents=self.agents, # Automatically identifies '@agent' decorators
+            tasks=self.tasks,   # Automatically identifies '@task' decorators
             process=Process.sequential,
             verbose=True
         )

@@ -48,6 +48,12 @@ public class TaskEntity {
     private String intent;
     
     /**
+     * The generated script proposed by the AI Agent.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String script;
+    
+    /**
      * Current lifecycle status of the task.
      */
     @Enumerated(EnumType.STRING)

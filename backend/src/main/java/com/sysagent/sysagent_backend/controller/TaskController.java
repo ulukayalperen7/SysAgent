@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.service.TaskService;
+import com.sysagent.sysagent_backend.service.ScriptExecutionService;
+import com.sysagent.sysagent_backend.model.enums.TaskStatus;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class TaskController {
 
     private final TaskService taskService;
+    private final ScriptExecutionService scriptExecutionService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskEntity>>> getAllTasks() {
@@ -30,5 +35,41 @@ public class TaskController {
                 .message("Tasks fetched successfully")
                 .data(tasks)
                 .build());
+    }
+
+    @PostMapping("/{id}/execute")
+    public ResponseEntity<ApiResponse<String>> executeTask(@PathVariable("id") String taskId) {
+        TaskEntity task = taskService.getTaskById(taskId);
+        
+        if (task.getScript() == null || task.getScript().isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.<String>builder()
+                    .status("ERROR")
+                    .message("No script is associated with this task.")
+                    .build());
+        }
+
+        // Mark task as executing
+        taskService.updateTaskStatus(taskId, TaskStatus.IN_PROGRESS, null);
+
+        try {
+            // Execute the script securely
+            String output = scriptExecutionService.executePowerShell(task.getScript());
+            
+            // Mark task as completed
+            taskService.updateTaskStatus(taskId, TaskStatus.COMPLETED, null);
+            
+            return ResponseEntity.ok(ApiResponse.<String>builder()
+                    .status("SUCCESS")
+                    .message("Script executed successfully")
+                    .data(output)
+                    .build());
+        } catch (Exception e) {
+            // Mark task as failed
+            taskService.updateTaskStatus(taskId, TaskStatus.FAILED, null);
+            return ResponseEntity.internalServerError().body(ApiResponse.<String>builder()
+                    .status("ERROR")
+                    .message("Failed to execute script: " + e.getMessage())
+                    .build());
+        }
     }
 }

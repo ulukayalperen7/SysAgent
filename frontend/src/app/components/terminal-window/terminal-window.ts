@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Added Forms Module
 import { AgentService } from '../../services/agent.service'; // Added Agent Service
+import { TerminalService, TerminalLog } from '../../services/terminal.service';
 import { AgentIntentResponse } from '../../models/agent.model';
 
 @Component({
@@ -12,53 +13,72 @@ import { AgentIntentResponse } from '../../models/agent.model';
   styleUrl: './terminal-window.scss'
 })
 export class TerminalWindow {
-  
-  logs: { sender: string, text: string, type?: string, script?: string }[] = [ // Added script optional property
-    { sender: 'system', text: 'SysAgent v0.1 bootstrapped on localhost.', type: 'info' },
-    { sender: 'system', text: 'Monitoring local system metrics...', type: 'info' },
-    { sender: 'system', text: 'Agent ready. Type a command or natural language intent.', type: 'success' }
-  ];
 
-  constructor(private agentService: AgentService) {} // Inject AgentService
+  get logs(): TerminalLog[] {
+    return this.terminalService.logs;
+  }
+
+  constructor(
+    private agentService: AgentService,
+    private terminalService: TerminalService
+  ) { }
+
+  executeScript(logEntry: any) {
+    if (!logEntry.taskId) return;
+
+    logEntry.executing = true;
+    this.terminalService.addLog({ sender: 'system', text: `Executing Task [${logEntry.taskId}]...`, type: 'info' });
+
+    this.agentService.executeTask(logEntry.taskId).subscribe({
+      next: (output: string) => {
+        logEntry.executing = false;
+        this.terminalService.addLog({ sender: 'system', text: 'Execution Output:\n' + output, type: 'success' });
+      },
+      error: (err) => {
+        logEntry.executing = false;
+        this.terminalService.addLog({ sender: 'system', text: 'Execution Failed: ' + err.message, type: 'error' });
+      }
+    });
+  }
 
   onCommandEnter(event: any) {
     const command = event.target.value.trim();
     if (command) {
       // 1. Log user command instantly
-      this.logs.push({ sender: 'user', text: `> ${command}` });
+      this.terminalService.addLog({ sender: 'user', text: `> ${command}` });
       const inputElement = event.target;
       inputElement.value = ''; // Clear input
       inputElement.disabled = true; // Disable input while processing
 
-      this.logs.push({ sender: 'system', text: 'Processing intent with AI Agent...', type: 'info' });
+      this.terminalService.addLog({ sender: 'system', text: 'Processing intent with AI Agent...', type: 'info' });
 
       // 2. Call Backend Agent Service
       this.agentService.processIntent(command).subscribe({
         next: (response: AgentIntentResponse) => {
-            // Remove the temporary "processing" log if you want, or just append
-            this.logs.push({ 
-                sender: 'ai', 
-                text: `Analysis: ${response.explanation}`, // Updated property
-                type: 'success' 
-            });
+          this.terminalService.addLog({
+            sender: 'ai',
+            text: `Analysis: ${response.explanation}`,
+            type: 'success'
+          });
 
-            if (response.script) { // Updated property
-                this.logs.push({ 
-                    sender: 'ai', 
-                    text: `Generated Script:\n`, 
-                    script: response.script,
-                    type: 'warning' 
-                });
-            }
-            
-            inputElement.disabled = false;
-            setTimeout(() => inputElement.focus(), 100);
+          if (response.script) {
+            this.terminalService.addLog({
+              sender: 'ai',
+              text: `Generated Script:\n`,
+              script: response.script,
+              taskId: response.taskId,
+              type: 'warning'
+            });
+          }
+
+          inputElement.disabled = false;
+          setTimeout(() => inputElement.focus(), 100);
         },
         error: (err) => {
-            this.logs.push({ sender: 'system', text: 'Error connecting to Agent backend.', type: 'error' });
-            console.error(err);
-            inputElement.disabled = false;
-            setTimeout(() => inputElement.focus(), 100);
+          this.terminalService.addLog({ sender: 'system', text: 'Error connecting to Agent backend.', type: 'error' });
+          console.error(err);
+          inputElement.disabled = false;
+          setTimeout(() => inputElement.focus(), 100);
         }
       });
     }

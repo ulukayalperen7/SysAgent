@@ -1,0 +1,9 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.sysagent:sysagent-backend >--------------------
+[INFO] Building sysagent-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.3:run (default-cli) > test-compile @ sysagent-backend >>>
+Terminate batch job (Y/N)? Terminate batch job (Y/N)? 
