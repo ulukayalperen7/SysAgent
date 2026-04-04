@@ -9,8 +9,9 @@ class Settings(BaseSettings):
     """
     # LLM Settings
     llm_provider: str = Field(default="gemini", env="LLM_PROVIDER")
-    llm_model: str = Field(default="gemini-2.0-flash", env="LLM_MODEL")
+    llm_model: str = Field(default="gemini-2.5-flash", env="LLM_MODEL")
     google_api_key: str = Field(default="", env="GOOGLE_API_KEY")
+    gemini_api_key: str = Field(default="", env="GEMINI_API_KEY")
     openai_api_key: str = Field(default="", env="OPENAI_API_KEY")
 
     # API Settings
@@ -27,26 +28,31 @@ settings = Settings()
 
 def get_llm():
     """
-    Returns the configured LLM instance based on settings.
-    Defaulting to Google Gemini as requested.
+    Returns the configured LLM name/instance based on settings.
+    For CrewAI, using the model string with provider prefix is often most reliable.
     """
     if settings.llm_provider.lower() == "gemini":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        if not settings.google_api_key:
-            raise ValueError("GOOGLE_API_KEY is not set in the environment.")
-        return ChatGoogleGenerativeAI(
-            model=settings.llm_model,
-            google_api_key=settings.google_api_key,
-            temperature=0.3
-        )
+        api_key = settings.google_api_key or settings.gemini_api_key
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY is not set.")
+        
+        # Ensure API keys are in environment for LiteLLM (CrewAI uses LiteLLM internally)
+        os.environ["GOOGLE_API_KEY"] = api_key
+        os.environ["GEMINI_API_KEY"] = api_key
+        
+        # LiteLLM (CrewAI's engine) uses 'gemini/' prefix to differentiate 
+        # Google AI Studio (API Key) from Google Cloud Vertex AI.
+        model_name = settings.llm_model
+        if not model_name.startswith("gemini/"):
+            model_name = f"gemini/{model_name}"
+        
+        # returning the string allows CrewAI to handle the LiteLLM routing properly
+        return model_name
+        
     elif settings.llm_provider.lower() == "openai":
-        from langchain_openai import ChatOpenAI
         if not settings.openai_api_key:
-            raise ValueError("OPENAI_API_KEY is not set in the environment.")
-        return ChatOpenAI(
-            model=settings.llm_model,
-            api_key=settings.openai_api_key,
-            temperature=0.3
-        )
+            raise ValueError("OPENAI_API_KEY is not set.")
+        os.environ["OPENAI_API_KEY"] = settings.openai_api_key
+        return settings.llm_model
     else:
         raise ValueError(f"Unsupported LLM provider: {settings.llm_provider}")
