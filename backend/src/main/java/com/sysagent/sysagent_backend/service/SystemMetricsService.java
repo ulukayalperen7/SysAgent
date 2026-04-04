@@ -48,7 +48,7 @@ public class SystemMetricsService {
         messagingTemplate.convertAndSend("/topic/system-metrics", metrics);
     }
 
-    private SystemMetricsDto collectMetrics() {
+    public SystemMetricsDto collectMetrics() {
         // Read RAM
         GlobalMemory memory = hardware.getMemory();
         long totalRam = memory.getTotal();
@@ -105,4 +105,5 @@ public class SystemMetricsService {
                 .macAddress(macAddress)
                 .build();
     }
+
 }

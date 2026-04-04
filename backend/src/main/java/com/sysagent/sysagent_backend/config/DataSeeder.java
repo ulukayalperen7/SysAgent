@@ -49,9 +49,10 @@ public class DataSeeder implements CommandLineRunner {
                     .ownerId("another-user-99") // Intentionally assigning to someone else to test access control
                     .build();
 
-            deviceRepository.save(windowsPc);
-            deviceRepository.save(macbook);
-            deviceRepository.save(linuxServer);
+            // Phase 2: Removing mock devices since we will track real node registrations later.
+            // deviceRepository.save(windowsPc);
+            // deviceRepository.save(macbook);
+            // deviceRepository.save(linuxServer);
             
             System.out.println("--- MOCK DATA SEEDED: 3 Devices created ---");
         }

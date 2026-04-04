@@ -18,7 +18,11 @@ reporting_task:
   description: >
     Review the root cause analysis. 
     1. Write a friendly, concise message to the human explaining the problem and your team's suggested fix. 
-    2. Use the Script Recommendation Tool to generate a safe script for {os_type} addressing the issue. Format the final output clearly.
+    2. Use the Script Recommendation Tool to generate a safe script for {os_type} addressing the issue. 
+    
+    Format the final output exactly as follows:
+    Explanation: <Your concise explanation here>
+    Script: <The generated script here, enclosed in backticks if multi-line>
   expected_output: >
-    Final user-facing report and the proposed script (Bash or PowerShell).
+    A structured report containing both the explanation and the recommended script.
   agent: chief_reporter
