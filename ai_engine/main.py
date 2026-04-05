@@ -45,9 +45,40 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
+    """Structured fields for Java; avoids fragile string splitting in the backend."""
+
     status: str
-    reply: str
     original_prompt: str
+    explanation: str
+    script: str | None = None
+
+
+def _parse_explanation_script(raw: str) -> tuple[str, str | None]:
+    """
+    Parses Chief Reporter output (Explanation: / Script:) into structured fields.
+    Mirrors the cleanup logic in RealAiAgentAdapterImpl.
+    """
+    default_expl = "Detailed analysis completed by SysAgent AI."
+    if not raw or not str(raw).strip():
+        return default_expl, None
+    s = str(raw).strip()
+    if "Explanation:" in s and "Script:" in s:
+        try:
+            parts = s.split("Script:", 2)
+            explanation = parts[0].replace("Explanation:", "").strip()
+            raw_script = parts[1].strip() if len(parts) > 1 else ""
+            if raw_script.upper() == "NONE" or not raw_script:
+                return explanation or default_expl, None
+            cleaned = (
+                raw_script.replace("```bash", "")
+                .replace("```powershell", "")
+                .replace("```", "")
+                .strip()
+            )
+            return explanation or default_expl, cleaned or None
+        except Exception:
+            return s, None
+    return s, None
 
 
 def _is_casual_chat(prompt: str) -> bool:
@@ -72,8 +103,9 @@ async def analyze_system(request: AnalyzeRequest):
     if _is_casual_chat(sanitized_prompt):
         return AnalyzeResponse(
             status="success",
-            reply="Explanation: Hi! SysAgent is actively monitoring your system. How can I help?\nScript: NONE",
-            original_prompt=sanitized_prompt
+            original_prompt=sanitized_prompt,
+            explanation="Hi! SysAgent is actively monitoring your system. How can I help?",
+            script=None,
         )
 
     # Step 3: Acquire semaphore before running the crew (prevents concurrent crew runs)
@@ -81,8 +113,9 @@ async def analyze_system(request: AnalyzeRequest):
         # Another request is already being processed — tell the user to wait
         return AnalyzeResponse(
             status="success",
-            reply="Explanation: SysAgent is already processing a request. Please wait a moment and try again.\nScript: NONE",
-            original_prompt=sanitized_prompt
+            original_prompt=sanitized_prompt,
+            explanation="SysAgent is already processing a request. Please wait a moment and try again.",
+            script=None,
         )
 
     async with _crew_semaphore:
@@ -101,10 +134,12 @@ async def analyze_system(request: AnalyzeRequest):
                 lambda: crew_instance.crew().kickoff(inputs=inputs)
             )
 
+            explanation, script = _parse_explanation_script(str(result))
             return AnalyzeResponse(
                 status="success",
-                reply=str(result),
-                original_prompt=sanitized_prompt
+                original_prompt=sanitized_prompt,
+                explanation=explanation,
+                script=script,
             )
 
         except ValueError as ve:
