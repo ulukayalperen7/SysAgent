@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     host: str = Field(default="0.0.0.0", env="HOST")
     debug_mode: bool = Field(default=True, env="DEBUG")
 
+    # Crew: only one concurrent run by default (LLM + shared context); increase via env if needed
+    crew_concurrency: int = Field(default=1, ge=1, le=8, env="CREW_CONCURRENCY")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
