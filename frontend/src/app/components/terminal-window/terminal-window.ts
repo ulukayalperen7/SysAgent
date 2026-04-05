@@ -99,7 +99,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         this.isThinking = false;
         this.terminalService.addLog({
           sender: 'ai',
-          text: response.explanation,
+          text: `> ${response.explanation}`,
           type: 'success'
         });
 
@@ -132,19 +132,24 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
     this.agentService.executeTask(logEntry.taskId).subscribe({
       next: (output: string) => {
         logEntry.executing = false;
+        logEntry.executed = true; // Hide the button on success
         this.isExecuting = false;
-        // Check if output contains "Errors" (case insensitive)
+
         const isError = output.toLowerCase().includes('error') || output.toLowerCase().includes('fail');
         this.terminalService.addLog({
           sender: 'system',
-          text: isError ? output : 'Task completed successfully',
+          text: isError ? 'Execution encountered an issue. Please review the target.' : 'Task completed successfully.',
           type: isError ? 'error' : 'success'
         });
       },
       error: (err) => {
         logEntry.executing = false;
         this.isExecuting = false;
-        this.terminalService.addLog({ sender: 'system', text: 'Execution Failed: ' + err.message, type: 'error' });
+        this.terminalService.addLog({
+          sender: 'system',
+          text: 'Execution failed: Unable to reach the host system.',
+          type: 'error'
+        });
       }
     });
   }

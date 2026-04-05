@@ -15,7 +15,7 @@ Date: 2026-04-04
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from core.config import get_llm
-from agents.crewai.tools import system_audit_tool, network_audit_tool
+from agents.crewai.tools import system_audit_tool, network_audit_tool, open_app_tool
 
 
 @CrewBase
@@ -60,7 +60,7 @@ class SystemDiagnosticsCrew():
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
-            tools=[system_audit_tool, network_audit_tool]  # Both read-only tools
+            tools=[system_audit_tool, network_audit_tool, open_app_tool]  # Added open_app_tool
         )
 
     @agent

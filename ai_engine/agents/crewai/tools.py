@@ -138,3 +138,31 @@ def network_audit_tool(query: str) -> str:
         )
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Tool 3: Open App Tool
+# Purpose: Launches a specific application on the host OS.
+# Owner:   Log Investigator agent
+# ---------------------------------------------------------------------------
+
+@tool("Open App Tool")
+def open_app_tool(app_name: str) -> str:
+    """
+    Launches a specific application (e.g., 'notepad', 'calc', 'chrome') 
+    on the host operating system. This is a non-blocking operation.
+    Returns a confirmation that the launch command was sent.
+    """
+    import subprocess
+    import os
+
+    # Basic normalization
+    app = app_name.lower().strip().replace(".exe", "")
+    
+    try:
+        # On Windows, 'start' is a shell command, so we use shell=True
+        # We use Popen so we don't wait for the app to close
+        subprocess.Popen(f"start {app}", shell=True)
+        return f"SUCCESS: Sent command to launch '{app}'. The application should open shortly."
+    except Exception as e:
+        return f"ERROR: Failed to launch '{app}': {str(e)}"
