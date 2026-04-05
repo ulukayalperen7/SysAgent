@@ -50,29 +50,34 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> responseBody = response.getBody();
-                String reply = (String) responseBody.getOrDefault("reply", "");
-                
-                // The AI replies in a combined format. We need to parse explanation and script.
-                // Since our tasks.yaml guarantees "Explanation:" and "Script:" format, we can parse it.
-                String explanation = "Detailed analysis completed by SysAgent AI.";
-                String script = reply;
+                String explanation;
+                String script;
 
-                if (reply.contains("Explanation:") && reply.contains("Script:")) {
-                    try {
-                        String[] parts = reply.split("Script:", 2);
-                        explanation = parts[0].replace("Explanation:", "").trim();
-                        String rawScript = parts[1].trim();
-                        
-                        if (rawScript.equalsIgnoreCase("NONE") || rawScript.isEmpty()) {
-                            script = null;
-                        } else {
-                            script = rawScript.replace("```bash", "")
-                                              .replace("```powershell", "")
-                                              .replace("```", "")
-                                              .trim();
+                Object explObj = responseBody.get("explanation");
+                Object scriptObj = responseBody.get("script");
+                if (explObj instanceof String && !((String) explObj).isBlank()) {
+                    explanation = ((String) explObj).trim();
+                    script = normalizeScript(scriptObj);
+                } else {
+                    // Legacy: single "reply" with "Explanation:" / "Script:" lines
+                    String reply = String.valueOf(responseBody.getOrDefault("reply", ""));
+                    explanation = "Detailed analysis completed by SysAgent AI.";
+                    script = reply;
+
+                    if (reply.contains("Explanation:") && reply.contains("Script:")) {
+                        try {
+                            String[] parts = reply.split("Script:", 2);
+                            explanation = parts[0].replace("Explanation:", "").trim();
+                            String rawScript = parts[1].trim();
+
+                            if (rawScript.equalsIgnoreCase("NONE") || rawScript.isEmpty()) {
+                                script = null;
+                            } else {
+                                script = stripCodeFences(rawScript);
+                            }
+                        } catch (Exception e) {
+                            log.warn("Failed to parse legacy AI reply format. Proceeding with raw output.");
                         }
-                    } catch (Exception e) {
-                        log.warn("Failed to nicely parse AI output format. Proceeding with raw output.");
                     }
                 }
 
@@ -90,6 +95,30 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             log.error("Failed to connect to Python AI Engine at {}. Error: {}", analyzeEndpoint, e.getMessage());
             return fallbackResponse(taskId, "Could not reach Python AI Engine. Ensure FastAPI is running on port 8001.");
         }
+    }
+
+    /**
+     * Accepts JSON null or NONE; strips markdown fences from script text.
+     */
+    private static String normalizeScript(Object scriptObj) {
+        if (scriptObj == null) {
+            return null;
+        }
+        if (!(scriptObj instanceof String)) {
+            return null;
+        }
+        String raw = ((String) scriptObj).trim();
+        if (raw.isEmpty() || "NONE".equalsIgnoreCase(raw)) {
+            return null;
+        }
+        return stripCodeFences(raw);
+    }
+
+    private static String stripCodeFences(String raw) {
+        return raw.replace("```bash", "")
+                .replace("```powershell", "")
+                .replace("```", "")
+                .trim();
     }
 
     private AgentIntentResponseDto fallbackResponse(String taskId, String errorReason) {
