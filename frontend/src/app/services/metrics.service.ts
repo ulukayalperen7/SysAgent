@@ -13,14 +13,14 @@ import SockJS from 'sockjs-client';
 })
 export class MetricsService {
     private apiUrl = `${environment.apiUrl}/metrics`;
-    
+
     private stompClient: Client | null = null;
     private systemMetricsSubject = new Subject<SystemMetrics>();
-    
+
     // Observable that components can subscribe to for real-time updates
     public systemMetrics$ = this.systemMetricsSubject.asObservable();
 
-    constructor(private http: HttpClient) { 
+    constructor(private http: HttpClient) {
         this.initializeWebSocketConnection();
     }
 
@@ -50,9 +50,20 @@ export class MetricsService {
             });
         };
 
+        this.stompClient.onWebSocketClose = () => {
+            console.warn('WebSocket connection closed');
+            // Clear metrics so the UI shows 'Offline'
+            this.systemMetricsSubject.next(null as any);
+        };
+
+        this.stompClient.onDisconnect = () => {
+            console.warn('STOMP broker disconnected');
+            this.systemMetricsSubject.next(null as any);
+        };
+
         this.stompClient.onStompError = (frame) => {
             console.error('Broker reported error: ' + frame.headers['message']);
-            console.error('Additional details: ' + frame.body);
+            this.systemMetricsSubject.next(null as any);
         };
 
         this.stompClient.activate();

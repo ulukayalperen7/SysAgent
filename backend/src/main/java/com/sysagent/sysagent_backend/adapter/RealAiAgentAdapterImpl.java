@@ -29,11 +29,23 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
 
     @Override
     public AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics) {
-        log.info("Sending natural language intent to REAL Python AI Engine via FastAPI. Task ID: {}", taskId);
+        log.info("Analyzing intent for task: {}", taskId);
+
+        // --- Defense-in-depth: Java-side Security Checks ---
+        if (intent == null || intent.isBlank()) {
+            return fallbackResponse(taskId, "Empty prompt.");
+        }
+        if (intent.length() > 500) {
+            return fallbackResponse(taskId, "Prompt is too long (max 500 chars).");
+        }
+        String lowerIntent = intent.toLowerCase();
+        if (lowerIntent.contains("system.exit") || lowerIntent.contains("runtime.exec")) {
+            return fallbackResponse(taskId, "Potential Java-level code injection detected.");
+        }
 
         String analyzeEndpoint = aiEngine.getUrl().replaceAll("/$", "") + "/analyze";
 
-        // Prepare the payload (mapping to FastAPI AnalyzeRequest)
+        // Prepare the payload
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("user_prompt", intent);
         requestPayload.put("metrics", metrics);
@@ -48,34 +60,21 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> responseBody = response.getBody();
-                String explanation;
-                String script;
+                
+                // --- STRUCTURED JSON PATTERN (Preferred) ---
+                String explanation = (String) responseBody.get("explanation");
+                String script = normalizeScript(responseBody.get("script"));
 
-                Object explObj = responseBody.get("explanation");
-                Object scriptObj = responseBody.get("script");
-                if (explObj instanceof String && !((String) explObj).isBlank()) {
-                    explanation = ((String) explObj).trim();
-                    script = normalizeScript(scriptObj);
-                } else {
-                    // Legacy: single "reply" with "Explanation:" / "Script:" lines
+                // --- LEGACY STRING-SPLIT PATTERN (Fallback) ---
+                if (explanation == null || explanation.isBlank()) {
                     String reply = String.valueOf(responseBody.getOrDefault("reply", ""));
-                    explanation = "Detailed analysis completed by SysAgent AI.";
-                    script = reply;
-
                     if (reply.contains("Explanation:") && reply.contains("Script:")) {
-                        try {
-                            String[] parts = reply.split("Script:", 2);
-                            explanation = parts[0].replace("Explanation:", "").trim();
-                            String rawScript = parts[1].trim();
-
-                            if (rawScript.equalsIgnoreCase("NONE") || rawScript.isEmpty()) {
-                                script = null;
-                            } else {
-                                script = stripCodeFences(rawScript);
-                            }
-                        } catch (Exception e) {
-                            log.warn("Failed to parse legacy AI reply format. Proceeding with raw output.");
-                        }
+                        String[] parts = reply.split("Script:", 2);
+                        explanation = parts[0].replace("Explanation:", "").trim();
+                        script = normalizeScript(parts[1].trim());
+                    } else {
+                        explanation = reply;
+                        script = null;
                     }
                 }
 
@@ -86,12 +85,11 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
                         .confidenceScore(0.95)
                         .build();
             } else {
-                log.error("AI Engine returned unhappy status: {}", response.getStatusCode());
-                return fallbackResponse(taskId, "AI Engine returned an error status.");
+                return fallbackResponse(taskId, "AI Engine error: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("Failed to connect to Python AI Engine at {}. Error: {}", analyzeEndpoint, e.getMessage());
-            return fallbackResponse(taskId, "Could not reach Python AI Engine. Ensure FastAPI is running on port 8001.");
+            log.error("AI Engine connection failed: {}", e.getMessage());
+            return fallbackResponse(taskId, "AI Engine unreachable on " + aiEngine.getUrl());
         }
     }
 

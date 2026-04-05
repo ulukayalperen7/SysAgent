@@ -89,11 +89,52 @@ public class SystemMetricsService {
             // Ignore if networking info is unavailable
         }
 
+        // Disk Usage (Detect primary drive: C: on Windows, / on Unix)
+        long totalDisk = 0;
+        long freeDisk = 0;
+        
+        // Strategy 1: OSHI FileStore
+        for (oshi.software.os.OSFileStore store : os.getFileSystem().getFileStores()) {
+            String mount = store.getMount();
+            String name = store.getName();
+            if (mount.toUpperCase().contains("C:") || mount.equals("/") || name.toUpperCase().contains("C:")) {
+                totalDisk = store.getTotalSpace();
+                freeDisk = store.getUsableSpace();
+                break;
+            }
+        }
+        
+        // Strategy 2: java.io.File Fallback (Robust against OSHI filtering)
+        if (totalDisk == 0) {
+            java.io.File root = new java.io.File("C:");
+            if (!root.exists() || root.getTotalSpace() == 0) {
+                root = new java.io.File("/");
+            }
+            if (root.exists() && root.getTotalSpace() > 0) {
+                totalDisk = root.getTotalSpace();
+                freeDisk = root.getUsableSpace();
+            }
+        }
+        
+        // Final Fallback: Sum all stores if still 0
+        if (totalDisk == 0) {
+            for (oshi.software.os.OSFileStore store : os.getFileSystem().getFileStores()) {
+                totalDisk += store.getTotalSpace();
+                freeDisk += store.getUsableSpace();
+            }
+        }
+
+        long usedDisk = totalDisk - freeDisk;
+        // console.log help (user sees this)
+        // System.out.println("[SysAgent] Detected Disk: " + (totalDisk/(1024*1024*1024)) + " GB");
+
         return SystemMetricsDto.builder()
                 .cpuUsage(cpuPercent)
                 .ramUsage(ramPercent)
                 .totalRam(totalRam)
                 .usedRam(usedRam)
+                .totalDisk(totalDisk)
+                .usedDisk(usedDisk)
                 .cpuCores(logicalCores)
                 .osName(osName)
                 .osVersion(osVersion)

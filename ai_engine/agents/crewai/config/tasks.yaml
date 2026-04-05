@@ -1,110 +1,31 @@
-# tasks.yaml — CrewAI Task Definitions for SysAgent
-# Tasks define WHAT each agent does, step by step, in sequence.
-# Context flows from one task to the next automatically via CrewAI.
-# Date: 2026-04-04
-
-# --------------------------------------------------------------------------
-# Task 1: Classify user intent and assess hardware state.
-# Agent:  metric_analyst
-# --------------------------------------------------------------------------
 analysis_task:
   description: >
-    Review the user's message: '{user_prompt}'.
-
-    Step 1 — Intent Classification (choose ONE):
-      TYPE_CHAT      — Casual conversation, greetings (e.g., 'hi', 'hello', 'thanks')
-      TYPE_INFO      — User wants information only (e.g., 'show me', 'check', 'list', 'what is')
-      TYPE_FIX       — User wants a problem fixed (e.g., 'slow', 'clean', 'kill', 'free up ram')
-
-    For TYPE_CHAT: output exactly "Casual conversation detected. No system issue."
-    For TYPE_INFO or TYPE_FIX: analyze the provided hardware snapshot: {metrics}.
-    Report the system state (CPU load, RAM pressure, disk usage) and flag notable issues.
+    Analyze the user prompt: "{user_prompt}". 
+    Review the metrics: {metrics}.
+    Determine the INTENT (ACTION, INFO, or CHAT). 
+    If ACTION, identify the exact TARGET application.
   expected_output: >
-    A one-line intent type label (TYPE_CHAT / TYPE_INFO / TYPE_FIX) followed by a brief
-    hardware summary, or just "Casual conversation detected." for TYPE_CHAT.
+    A clear statement: "INTENT: [Type]. TARGET: [Name or NONE]." 
   agent: metric_analyst
 
-# --------------------------------------------------------------------------
-# Task 2: Investigate the system using available tools.
-# Agent:  log_investigator
-# --------------------------------------------------------------------------
-investigation_task:
+diagnostic_task:
   description: >
-    Review the Metric Analyst's output.
-
-    If it contains "Casual conversation detected", output exactly:
-    "No investigation needed." and stop.
-
-    Otherwise (TYPE_INFO or TYPE_FIX):
-      Use the System Audit Tool to find the top RAM/CPU consuming processes.
-      Use the Network Audit Tool to capture active connections.
-      Structure your findings clearly:
-        - 5 heaviest processes (name, PID, RAM, CPU)
-        - Active network connections, noting any unexpected remote IPs or ports
-      OS context: {os_type}.
+    Read the output from analysis_task.
+    - IF INTENT IS ACTION: Use the System Audit Tool to find the TARGET's PID.
+    - IF INTENT IS INFO/CHAT: Do nothing. Output "No investigation needed."
   expected_output: >
-    Structured investigation with process list and network snapshot,
-    or "No investigation needed." for casual prompts.
+    PID/Network data if ACTION. "No investigation needed" if INFO/CHAT.
   agent: log_investigator
 
-# --------------------------------------------------------------------------
-# Task 3: Security review of investigation findings.
-# Agent:  security_auditor
-# --------------------------------------------------------------------------
-security_review_task:
-  description: >
-    Review the Log Investigator's findings.
-
-    If the previous output is "No investigation needed.", output exactly:
-    "No security review needed."
-
-    Otherwise, assess the process list and network connections for anomalies.
-
-    IMPORTANT — Do NOT flag these as suspicious (they are known developer tools):
-      java.exe, node.exe, python.exe, Code.exe, chrome.exe, msedge.exe,
-      explorer.exe, svchost.exe, lsass.exe, services.exe, spoolsv.exe
-
-    Flag only processes that are:
-      - Not in the known-safe list above AND have unusual names (random characters, no extension, etc.)
-      - Connecting to ports in suspicious ranges: 1337, 4444, 6666, 6667, 31337, 12345
-
-    Assign ONE rating:
-      SAFE     — Everything looks like normal activity
-      LOW_RISK — Minor anomalies, nothing definitive
-      REVIEW   — Clear red flag (suspicious process name OR suspicious port connection)
-
-    Output the rating and one short sentence explaining why.
-  expected_output: >
-    A risk rating (SAFE / LOW_RISK / REVIEW) with a one-sentence justification,
-    or "No security review needed."
-  agent: security_auditor
-
-# --------------------------------------------------------------------------
-# Task 4: Write the final user-facing response.
-# Agent:  chief_reporter
-# --------------------------------------------------------------------------
 reporting_task:
   description: >
-    Review ALL prior task outputs and write the final response.
-
-    CASE A — casual conversation ("Casual conversation detected"):
-      Reply warmly. No script.
-      Example: "Hi! SysAgent is actively monitoring your system. What can I help with?"
-
-    CASE B — information request (TYPE_INFO, e.g. 'check my network', 'show me processes'):
-      Summarize what was found in plain language. Do NOT generate a kill/fix script.
-      The user asked to SEE, not to FIX. Describe the findings clearly.
-      No script needed for pure information requests.
-
-    CASE C — fix request (TYPE_FIX, e.g. 'my pc is slow', 'free up ram'):
-      Write ONE concise sentence explaining the root cause.
-      Generate a safe, targeted terminal script for {os_type}.
-      Prefix the script with the Security Auditor's risk label:
-        "[SAFE]" or "[LOW_RISK]" or "[REVIEW - read before approving]"
-
-    You MUST ALWAYS output in this EXACT format (no exceptions):
-    Explanation: <Your response — summary or greeting or root-cause sentence>
-    Script: <Script with risk label for CASE C, or NONE for CASE A and CASE B>
+    Read all previous context.
+    1. If the user asked for system stats (INFO), answer ONLY what they asked briefly based on: {metrics}.
+    2. If the user wants to close an app (ACTION), give a 1-2 sentence risk warning and provide the EXACT command to kill the TARGET.
+    
+    Format strictly as:
+    Explanation: <Your short response>
+    Script: <OS Command or NONE>
   expected_output: >
-    Always exactly two lines: "Explanation: ..." and "Script: ..." (or NONE).
+    Exactly two lines starting with "Explanation:" and "Script:".
   agent: chief_reporter

@@ -22,21 +22,31 @@ def system_audit_tool(query: str) -> str:
     """
     Scans the live host operating system for running processes,
     memory usage, and CPU percentages to investigate a performance problem.
-    Returns the top 10 heaviest processes sorted by RAM usage.
+    If a query string is provided (e.g., 'spotify'), it will also specifically 
+    search for and include processes matching that name.
+    Returns the top 10 heaviest processes plus any specific matches found.
     """
     processes = []
+    search_matches = []
+    search_query = query.lower() if query and query.strip() != "None" else None
 
     for proc in psutil.process_iter(['pid', 'name', 'memory_info', 'cpu_percent']):
         try:
+            name = proc.info['name']
             mem_mb = proc.info['memory_info'].rss / (1024 * 1024)
-            processes.append({
+            p_data = {
                 'pid': proc.info['pid'],
-                'name': proc.info['name'],
+                'name': name,
                 'memory_mb': round(mem_mb, 2),
                 'cpu_percent': proc.info['cpu_percent']
-            })
+            }
+            processes.append(p_data)
+            
+            # If we are searching for a specific process, check if it matches
+            if search_query and search_query in name.lower():
+                search_matches.append(p_data)
+                
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            # Skip processes we no longer have access to — this is expected
             pass
 
     # Rank by memory usage, heaviest first
@@ -45,6 +55,13 @@ def system_audit_tool(query: str) -> str:
     result = "TOP 10 PROCESSES BY RAM USAGE:\n"
     for p in top_processes:
         result += f"PID: {p['pid']} | Name: {p['name']} | RAM: {p['memory_mb']} MB | CPU: {p['cpu_percent']}%\n"
+
+    if search_query and search_matches:
+        result += f"\nMATCHES FOR SEARCH '{search_query}':\n"
+        for p in search_matches[:5]: # Limit search matches to avoid context bloat
+            result += f"PID: {p['pid']} | Name: {p['name']} | RAM: {p['memory_mb']} MB | CPU: {p['cpu_percent']}%\n"
+    elif search_query:
+        result += f"\nNO PROCESSES FOUND MATCHING '{search_query}'.\n"
 
     return result
 

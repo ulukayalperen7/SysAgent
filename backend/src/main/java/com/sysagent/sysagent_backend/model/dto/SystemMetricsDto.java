@@ -13,6 +13,8 @@ public class SystemMetricsDto {
     private int ramUsage; // Percentage RAM usage
     private long totalRam; // Total RAM in bytes
     private long usedRam; // Used RAM in bytes
+    private long totalDisk; // Total Disk in bytes
+    private long usedDisk; // Used Disk in bytes
     
     // Additional OS info
     private String osName;

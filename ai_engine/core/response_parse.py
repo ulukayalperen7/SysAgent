@@ -1,37 +1,38 @@
 """
-Single place for turning Chief Reporter text into explanation + optional script.
-Keeps behavior aligned with the Java adapter (strip fences, NONE handling).
+response_parse.py — Utilities for splitting raw CrewAI string output into 
+human-readable explanation and executable script components.
+
+Expects the LLM to follow the "Explanation: ... Script: ..." format defined 
+in the task configurations.
 """
 
-DEFAULT_EXPLANATION = "Detailed analysis completed by SysAgent AI."
+import re
+from typing import Tuple
 
-
-def strip_code_fences(raw: str) -> str:
-    return (
-        raw.replace("```bash", "")
-        .replace("```powershell", "")
-        .replace("```", "")
-        .strip()
-    )
-
-
-def parse_explanation_script(raw: str) -> tuple[str, str | None]:
+def parse_explanation_and_script(raw_result: str) -> Tuple[str, str]:
     """
-    Parses crew final output that uses 'Explanation:' and 'Script:' markers.
-    If markers are missing, returns the full text as explanation and no script.
+    Parses a raw string from the AI pipeline into (explanation, script).
+    Returns ("NONE", "NONE") if parsing fails or result is empty.
     """
-    if not raw or not str(raw).strip():
-        return DEFAULT_EXPLANATION, None
-    s = str(raw).strip()
-    if "Explanation:" in s and "Script:" in s:
+    if not raw_result:
+        return "No response from AI.", "NONE"
+
+    # Default values
+    explanation = "Detailed analysis completed by SysAgent AI."
+    script = "NONE"
+
+    # Strict parsing based on keywords
+    if "Explanation:" in raw_result and "Script:" in raw_result:
         try:
-            parts = s.split("Script:", 2)
+            # Split by 'Script:' to separate the two parts
+            parts = raw_result.split("Script:", 1)
             explanation = parts[0].replace("Explanation:", "").strip()
-            raw_script = parts[1].strip() if len(parts) > 1 else ""
-            if raw_script.upper() == "NONE" or not raw_script:
-                return explanation or DEFAULT_EXPLANATION, None
-            cleaned = strip_code_fences(raw_script)
-            return explanation or DEFAULT_EXPLANATION, cleaned or None
+            script = parts[1].strip()
         except Exception:
-            return s, None
-    return s, None
+            # Fallback if structure is slightly distorted
+            explanation = raw_result.strip()
+    else:
+        # If the LLM failed to follow the format, treat the whole thing as explanation
+        explanation = raw_result.strip()
+
+    return explanation, script
