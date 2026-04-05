@@ -30,9 +30,9 @@
     
     <!-- Disk Usage -->
     <app-metric-card 
-      title="C:\ Drive Free" 
-      [value]="((metrics.freeDiskBytes || 0) | bytes:1).split(' ')[0]" 
-      [unit]="((metrics.freeDiskBytes || 0) | bytes:1).split(' ')[1] + ' / ' + ((metrics.totalDiskBytes || 0) | bytes:1)" 
+      title="System Storage" 
+      [value]="((metrics.totalDisk - metrics.usedDisk) || 0 | bytes:1).split(' ')[0]" 
+      [unit]="((metrics.totalDisk - metrics.usedDisk) || 0 | bytes:1).split(' ')[1] + ' / ' + ((metrics.totalDisk || 0) | bytes:1)" 
       color="#d29922">
     </app-metric-card>
 

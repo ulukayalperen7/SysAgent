@@ -60,7 +60,7 @@ public class TaskController {
         taskService.updateTaskStatus(taskId, TaskStatus.IN_PROGRESS, null);
 
         try {
-            String output = scriptExecutionService.executePowerShell(task.getScript());
+            String output = scriptExecutionService.executeScript(task.getScript());
             taskService.updateTaskStatus(taskId, TaskStatus.COMPLETED, null);
             
             return ResponseEntity.ok(ApiResponse.<String>builder()

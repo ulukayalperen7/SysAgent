@@ -99,22 +99,17 @@ class SystemDiagnosticsCrew():
 
     @task
     def analysis_task(self) -> Task:
-        """Task 1: Classify intent and assess hardware metrics."""
+        """Task 1: System Gatekeeper / Intent classification."""
         return Task(config=self.tasks_config['analysis_task'])
 
     @task
-    def investigation_task(self) -> Task:
-        """Task 2: Run audit tools and gather live system data."""
-        return Task(config=self.tasks_config['investigation_task'])
-
-    @task
-    def security_review_task(self) -> Task:
-        """Task 3: Review investigation findings for security anomalies."""
-        return Task(config=self.tasks_config['security_review_task'])
+    def diagnostic_task(self) -> Task:
+        """Task 2: Full system diagnostics and safety review."""
+        return Task(config=self.tasks_config['diagnostic_task'])
 
     @task
     def reporting_task(self) -> Task:
-        """Task 4: Write the final explanation and script for the user."""
+        """Task 3: Synthesis and final response."""
         return Task(config=self.tasks_config['reporting_task'])
 
     # ------------------------------------------------------------------
@@ -125,13 +120,12 @@ class SystemDiagnosticsCrew():
     def crew(self) -> Crew:
         """
         Assembles all agents and tasks into a sequential crew.
-        Tasks execute in definition order: analyst → investigator → auditor → reporter.
-        Memory is intentionally disabled — it requires OpenAI embeddings (ChromaDB),
-        which conflicts with the Gemini-only setup used in this project.
+        Each agent completes their task and passes the result to the next.
         """
         return Crew(
             agents=self.agents,
             tasks=self.tasks,
             process=Process.sequential,
-            verbose=True
+            verbose=True,
+            memory=False # Keep false to avoid ChromaDB/OpenAI dependencies
         )

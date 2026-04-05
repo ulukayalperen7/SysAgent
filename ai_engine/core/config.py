@@ -34,6 +34,10 @@ def get_llm():
     Returns the configured LLM name/instance based on settings.
     For CrewAI, using the model string with provider prefix is often most reliable.
     """
+    # Performance & Reliability: Prevent LiteLLM from hanging on network calls for cost maps
+    os.environ["LITELLM_OFFLINE"] = "True"
+    os.environ["LITELLM_LOCAL_RESOURCES"] = "True"
+    
     if settings.llm_provider.lower() == "gemini":
         api_key = settings.google_api_key or settings.gemini_api_key
         if not api_key:

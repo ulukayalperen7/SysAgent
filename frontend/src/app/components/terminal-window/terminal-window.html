@@ -25,7 +25,18 @@
 
   <div class="terminal-input-area font-mono">
     <span class="prompt">sysagent@local:~$</span>
-    <input type="text" placeholder="Type a command or natural language intent..." (keyup.enter)="onCommandEnter($event)"
-      autocomplete="off" autofocus>
+    <div class="input-wrapper">
+      <input #termInput type="text" placeholder="Type a command or natural language intent..." 
+        (keyup.enter)="onCommandEnter($event)" [disabled]="isThinking || isExecuting"
+        autocomplete="off" autofocus>
+      
+      <button class="send-btn" (click)="onSendClick(termInput)" 
+        [disabled]="isThinking || isExecuting || !termInput.value.trim()">
+        <span *ngIf="!isThinking && !isExecuting">➤</span>
+        <div *ngIf="isThinking || isExecuting" class="thinking-dots">
+          <span>.</span><span>.</span><span>.</span>
+        </div>
+      </button>
+    </div>
   </div>
 </div>

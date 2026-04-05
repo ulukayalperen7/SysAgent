@@ -1,11 +1,8 @@
 """
 main.py — FastAPI entry point for the SysAgent AI Engine.
 
-Receives analysis requests from the Java backend and routes them through
-the CrewAI pipeline. Includes a fast-path classifier that intercepts simple
-conversational messages (greetings, thanks, etc.) before they hit the LLM
-pipeline, reducing average response time for non-system queries to <100ms.
-
+Updated to return structured JSON (explanation and script) to match the
+Java backend's preferred communication contract.
 """
 
 import asyncio
@@ -16,20 +13,19 @@ from typing import Dict, Any
 
 from core.config import settings
 from core.security import SecurityAnalyzer
-from core.response_parse import parse_explanation_script
+from core.response_parse import parse_explanation_and_script
 from agents.crewai.crew import SystemDiagnosticsCrew
 
 app = FastAPI(
     title="SysAgent AI Engine",
     description="Multi-Agent AI Endpoint for System Diagnostics",
-    version="1.0.0"
+    version="1.1.0"
 )
 
-# Limits concurrent crew runs (default 1). Configurable via CREW_CONCURRENCY / settings.
-_crew_semaphore = asyncio.Semaphore(settings.crew_concurrency)
+# Semaphore ensures only one crew runs at a time.
+_crew_semaphore = asyncio.Semaphore(1)
 
 # Simple patterns that never need the full 4-agent pipeline.
-# Matching any of these triggers an instant response without calling the LLM.
 CHAT_TRIGGERS = {
     "hi", "hello", "hey", "hi there", "howdy",
     "thanks", "thank you", "thank u", "ty",
@@ -39,85 +35,106 @@ CHAT_TRIGGERS = {
 }
 
 
+# Thread-safe global memory (sliding window of last 5 messages)
+session_history = []
+
+
 class AnalyzeRequest(BaseModel):
     user_prompt: str
     metrics: Dict[str, Any]
 
 
 class AnalyzeResponse(BaseModel):
-    """Structured fields for Java; avoids fragile string splitting in the backend."""
-
     status: str
-    original_prompt: str
+    reply: str  # Kept for legacy compatibility
     explanation: str
-    script: str | None = None
+    script: str
+    original_prompt: str
 
 
 def _is_casual_chat(prompt: str) -> bool:
-    """
-    Returns True if the prompt is a simple greeting or acknowledgement.
-    These messages are intercepted before the crew pipeline to save 30-60 seconds.
-    """
     normalized = prompt.strip().lower().rstrip("!.,?")
     return normalized in CHAT_TRIGGERS
 
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_system(request: AnalyzeRequest):
-    """
-    Receives a user prompt and system metrics from the Java backend.
-    Routes simple chat messages instantly; sends real queries through the CrewAI pipeline.
-    """
-    # Step 1: Sanitize the incoming prompt
     sanitized_prompt = SecurityAnalyzer.sanitize_prompt(request.user_prompt)
 
-    # Step 2: Fast-path — respond immediately to casual conversation
+    # Fast-path for casual conversation
     if _is_casual_chat(sanitized_prompt):
         return AnalyzeResponse(
             status="success",
-            original_prompt=sanitized_prompt,
-            explanation="Hi! SysAgent is actively monitoring your system. How can I help?",
-            script=None,
+            reply=f"Explanation: Hello! How can I help you today?\nScript: NONE",
+            explanation="Hello! How can I help you today?",
+            script="NONE",
+            original_prompt=sanitized_prompt
         )
 
-    # Step 3: Acquire semaphore before running the crew (prevents concurrent crew runs)
+    # Concurrent request protection
     if _crew_semaphore.locked():
-        # Another request is already being processed — tell the user to wait
         return AnalyzeResponse(
             status="success",
-            original_prompt=sanitized_prompt,
-            explanation="SysAgent is already processing a request. Please wait a moment and try again.",
-            script=None,
+            reply="Explanation: Thinking... SysAgent is busy.\nScript: NONE",
+            explanation="I'm currently thinking about another task. Please wait a moment.",
+            script="NONE",
+            original_prompt=sanitized_prompt
         )
 
     async with _crew_semaphore:
         try:
+            # Build context from history
+            history_str = "\n".join([f"User: {h['user']}\nAI: {h['ai']}" for h in session_history])
+
+            # Optimize metrics
+            m = request.metrics
+            summarized_metrics = (
+                f"CPU: {m.get('cpuUsage', 0)}%, "
+                f"RAM: {m.get('ramUsage', 0)}% ({m.get('usedRam', 0)//(1024**2)}MB/{m.get('totalRam', 0)//(1024**2)}MB), "
+                f"Disk: {m.get('usedDisk', 0)//(1024**3)}GB/{m.get('totalDisk', 0)//(1024**3)}GB"
+            )
+
             crew_instance = SystemDiagnosticsCrew()
             inputs = {
-                "metrics": str(request.metrics),
+                "metrics": summarized_metrics,
                 "user_prompt": sanitized_prompt,
-                "os_type": request.metrics.get("osName", "Unknown OS")
+                "history": history_str,
+                "os_type": m.get("osName", "Unknown OS")
             }
 
-            # Run the blocking crew pipeline in a thread pool to avoid blocking the event loop
+            # Run kickoff
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
+            raw_result = await loop.run_in_executor(
                 None,
-                lambda: crew_instance.crew().kickoff(inputs=inputs)
+                lambda: str(crew_instance.crew().kickoff(inputs=inputs))
             )
 
-            explanation, script = parse_explanation_script(str(result))
+            # Split fields
+            explanation, script = parse_explanation_and_script(raw_result)
+
+            # Update history (keep last 5)
+            session_history.append({"user": sanitized_prompt, "ai": explanation})
+            if len(session_history) > 5:
+                session_history.pop(0)
+
             return AnalyzeResponse(
                 status="success",
-                original_prompt=sanitized_prompt,
+                reply=raw_result,
                 explanation=explanation,
                 script=script,
+                original_prompt=sanitized_prompt
             )
 
-        except ValueError as ve:
-            raise HTTPException(status_code=400, detail=str(ve))
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"AI Engine Error: {str(e)}")
+            # ENSURE we always return a structured response even on failure
+            err_msg = f"AI Engine Error: {str(e)}"
+            return AnalyzeResponse(
+                status="error",
+                reply=f"Explanation: {err_msg}\nScript: NONE",
+                explanation=err_msg,
+                script="NONE",
+                original_prompt=sanitized_prompt
+            )
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface TerminalLog {
     sender: string;
@@ -19,15 +20,20 @@ export class TerminalService {
         { sender: 'system', text: 'Agent ready. Type a command or natural language intent.', type: 'success' }
     ];
 
+    private logsSubject = new BehaviorSubject<TerminalLog[]>(this._logs);
+    public logs$: Observable<TerminalLog[]> = this.logsSubject.asObservable();
+
     get logs(): TerminalLog[] {
         return this._logs;
     }
 
     addLog(log: TerminalLog) {
         this._logs.push(log);
+        this.logsSubject.next([...this._logs]);
     }
 
     clearLogs() {
         this._logs = [];
+        this.logsSubject.next(this._logs);
     }
 }

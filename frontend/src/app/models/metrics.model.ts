@@ -11,7 +11,9 @@ export interface SystemMetrics {
     totalRamBytes?: number; // legacy
     availableRamBytes?: number; // legacy
     usedRamBytes?: number; // legacy
-    totalDiskBytes?: number;
-    freeDiskBytes?: number;
-    usedDiskBytes?: number;
+    totalDisk: number;
+    usedDisk: number;
+    totalDiskBytes?: number; // legacy
+    freeDiskBytes?: number; // legacy
+    usedDiskBytes?: number; // legacy
 }
