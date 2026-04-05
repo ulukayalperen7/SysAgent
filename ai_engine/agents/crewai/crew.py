@@ -125,12 +125,13 @@ class SystemDiagnosticsCrew():
     def crew(self) -> Crew:
         """
         Assembles all agents and tasks into a sequential crew.
-        CrewAI automatically detects @agent and @task decorators above.
-        The pipeline order follows the order tasks are defined in this file.
+        Tasks execute in definition order: analyst → investigator → auditor → reporter.
+        Memory is intentionally disabled — it requires OpenAI embeddings (ChromaDB),
+        which conflicts with the Gemini-only setup used in this project.
         """
         return Crew(
-            agents=self.agents,  # Detected via @agent decorators
-            tasks=self.tasks,    # Detected via @task decorators, executed in definition order
+            agents=self.agents,
+            tasks=self.tasks,
             process=Process.sequential,
             verbose=True
         )

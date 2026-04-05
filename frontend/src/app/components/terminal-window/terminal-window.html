@@ -8,7 +8,7 @@
     <div class="title">sysagent@local:~</div>
   </div>
 
-  <div class="terminal-body font-mono">
+  <div class="terminal-body font-mono" #terminalBody>
     <div *ngFor="let log of logs" class="log-entry">
       <div class="log-line"
         [ngClass]="{'user': log.sender === 'user', 'sys': log.sender === 'system', 'ai': log.sender === 'ai', 'error': log.type === 'error'}">

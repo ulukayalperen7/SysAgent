@@ -93,10 +93,11 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
     }
 
     private AgentIntentResponseDto fallbackResponse(String taskId, String errorReason) {
+        // script must be null — NOT a string — so the frontend hides the Approve button
         return AgentIntentResponseDto.builder()
                 .taskId(taskId)
-                .explanation("System Error: " + errorReason)
-                .script("# Execution Blocked")
+                .explanation("⚠ SysAgent Error: " + errorReason)
+                .script(null)
                 .confidenceScore(0.0)
                 .build();
     }
