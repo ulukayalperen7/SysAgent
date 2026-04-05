@@ -48,14 +48,19 @@ public class TaskController {
                     .build());
         }
 
-        // Mark task as executing
+        // Guard: prevent re-executing a task that already ran
+        if (task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.FAILED) {
+            return ResponseEntity.badRequest().body(ApiResponse.<String>builder()
+                    .status("ERROR")
+                    .message("Task has already been executed with status: " + task.getStatus())
+                    .build());
+        }
+
+        // Mark task as in-progress to block concurrent duplicate calls
         taskService.updateTaskStatus(taskId, TaskStatus.IN_PROGRESS, null);
 
         try {
-            // Execute the script securely
             String output = scriptExecutionService.executePowerShell(task.getScript());
-            
-            // Mark task as completed
             taskService.updateTaskStatus(taskId, TaskStatus.COMPLETED, null);
             
             return ResponseEntity.ok(ApiResponse.<String>builder()
@@ -64,7 +69,6 @@ public class TaskController {
                     .data(output)
                     .build());
         } catch (Exception e) {
-            // Mark task as failed
             taskService.updateTaskStatus(taskId, TaskStatus.FAILED, null);
             return ResponseEntity.internalServerError().body(ApiResponse.<String>builder()
                     .status("ERROR")
