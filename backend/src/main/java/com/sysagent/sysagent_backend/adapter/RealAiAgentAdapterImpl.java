@@ -3,7 +3,6 @@ package com.sysagent.sysagent_backend.adapter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -12,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import com.sysagent.sysagent_backend.config.AiEngineProperties;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
@@ -25,15 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 public class RealAiAgentAdapterImpl implements AiAgentAdapter {
 
     private final RestTemplate restTemplate;
-
-    @Value("${ai.engine.url:http://localhost:8001}")
-    private String aiEngineUrl;
+    private final AiEngineProperties aiEngine;
 
     @Override
     public AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics) {
         log.info("Sending natural language intent to REAL Python AI Engine via FastAPI. Task ID: {}", taskId);
 
-        String analyzeEndpoint = aiEngineUrl + "/analyze";
+        String analyzeEndpoint = aiEngine.getUrl().replaceAll("/$", "") + "/analyze";
 
         // Prepare the payload (mapping to FastAPI AnalyzeRequest)
         Map<String, Object> requestPayload = new HashMap<>();
