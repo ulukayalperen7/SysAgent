@@ -8,6 +8,7 @@ export interface TerminalLog {
     script?: string;
     taskId?: string;
     executing?: boolean;
+    executed?: boolean; // Track if the action was successfully performed
 }
 
 @Injectable({

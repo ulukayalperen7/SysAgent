@@ -2,30 +2,32 @@ analysis_task:
   description: >
     Analyze the user prompt: "{user_prompt}". 
     Review the metrics: {metrics}.
-    Determine the INTENT (ACTION, INFO, or CHAT). 
-    If ACTION, identify the exact TARGET application.
+    Determine the INTENT (ACTION_CLOSE, ACTION_OPEN, INFO, or CHAT). 
+    If ACTION_CLOSE or ACTION_OPEN, identify the TARGET application.
   expected_output: >
-    A clear statement: "INTENT: [Type]. TARGET: [Name or NONE]." 
+    "INTENT: [Type]. TARGET: [Name or NONE]."
   agent: metric_analyst
 
 diagnostic_task:
   description: >
-    Read the output from analysis_task.
-    - IF INTENT IS ACTION: Use the System Audit Tool to find the TARGET's PID.
-    - IF INTENT IS INFO/CHAT: Do nothing. Output "No investigation needed."
+    Read the output from analysis_task:
+    - IF ACTION_CLOSE: Use 'System Audit Tool' to find the TARGET's PID/status.
+    - IF ACTION_OPEN: Use 'Open App Tool' to launch the TARGET. 
+    - IF INFO/CHAT: Do nothing.
   expected_output: >
-    PID/Network data if ACTION. "No investigation needed" if INFO/CHAT.
+    Status/PID data for ACTION_CLOSE, or confirmation of launch for ACTION_OPEN.
   agent: log_investigator
 
 reporting_task:
   description: >
-    Read all previous context.
-    1. If the user asked for system stats (INFO), answer ONLY what they asked briefly based on: {metrics}.
-    2. If the user wants to close an app (ACTION), give a 1-2 sentence risk warning and provide the EXACT command to kill the TARGET.
+    Read all previously gathered facts.
+    1. For INFO: Answer only what they asked briefly based on: {metrics}.
+    2. For ACTION_CLOSE: Warn about data loss and provide the 'taskkill' command.
+    3. For ACTION_OPEN: Confirm the application has been started and provide 'start [target].exe' as the script.
     
     Format strictly as:
-    Explanation: <Your short response>
+    Explanation: <Short response>
     Script: <OS Command or NONE>
   expected_output: >
-    Exactly two lines starting with "Explanation:" and "Script:".
+    Exactly two lines: "Explanation:" and "Script:".
   agent: chief_reporter

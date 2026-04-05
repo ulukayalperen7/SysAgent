@@ -9,16 +9,22 @@
   </div>
 
   <div class="terminal-body font-mono" #terminalBody>
-    <div *ngFor="let log of logs" class="log-entry">
-      <div class="log-line"
-        [ngClass]="{'user': log.sender === 'user', 'sys': log.sender === 'system', 'ai': log.sender === 'ai', 'error': log.type === 'error'}">
-        <span class="sender" *ngIf="log.sender !== 'system'">[{{ log.sender }}]</span> {{ log.text }}
+    <div *ngFor="let log of logs" class="log-entry" [ngClass]="log.type || 'info'">
+      <div class="log-line">
+        <span class="sender"
+          [ngClass]="{'user-tag': log.sender === 'user', 'ai-tag': log.sender === 'ai', 'sys-tag': log.sender === 'system'}">
+          [{{ log.sender }}]
+        </span>
+        <span class="log-text">{{ log.text }}</span>
       </div>
-      <div *ngIf="log.script" class="script-container">
+      <div *ngIf="log.script && !log.executed" class="script-container">
         <pre class="script-block">{{ log.script }}</pre>
         <button class="btn-execute" *ngIf="log.taskId" [disabled]="log.executing" (click)="executeScript(log)">
           {{ log.executing ? 'Executing...' : 'Approve & Run locally' }}
         </button>
+      </div>
+      <div *ngIf="log.executed" class="execution-badge success">
+        ✅ Action Completed Successfully
       </div>
     </div>
   </div>
@@ -26,11 +32,10 @@
   <div class="terminal-input-area font-mono">
     <span class="prompt">sysagent@local:~$</span>
     <div class="input-wrapper">
-      <input #termInput type="text" placeholder="Type a command or natural language intent..." 
-        (keyup.enter)="onCommandEnter($event)" [disabled]="isThinking || isExecuting"
-        autocomplete="off" autofocus>
-      
-      <button class="send-btn" (click)="onSendClick(termInput)" 
+      <input #termInput type="text" placeholder="Type a command or natural language intent..."
+        (keyup.enter)="onCommandEnter($event)" [disabled]="isThinking || isExecuting" autocomplete="off" autofocus>
+
+      <button class="send-btn" (click)="onSendClick(termInput)"
         [disabled]="isThinking || isExecuting || !termInput.value.trim()">
         <span *ngIf="!isThinking && !isExecuting">➤</span>
         <div *ngIf="isThinking || isExecuting" class="thinking-dots">
