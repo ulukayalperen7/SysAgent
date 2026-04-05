@@ -1,7 +1,6 @@
 package com.sysagent.sysagent_backend.service;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +20,6 @@ import java.net.UnknownHostException;
  * Service: Reads OS metrics every 2 seconds in the background and broadcasts them via WebSocket.
  */
 @Service
-@EnableScheduling // To enable Scheduled annotations
 @RequiredArgsConstructor
 public class SystemMetricsService {
 

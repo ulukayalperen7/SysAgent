@@ -8,6 +8,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 /**
  * Configuration for WebSocket to stream real-time metrics to the frontend.
+ * Scheduling for periodic broadcasts is enabled on {@link com.sysagent.sysagent_backend.SysagentBackendApplication}.
  */
 @Configuration
 @EnableWebSocketMessageBroker
