@@ -62,6 +62,10 @@ public class AgentController {
         // 4. Save the generated script back to the DB so it can be executed later via /execute
         if (response.getScript() != null && !response.getScript().isEmpty()) {
             taskService.updateTaskScript(task.getId(), response.getScript());
+            taskService.updateTaskStatus(task.getId(), com.sysagent.sysagent_backend.model.enums.TaskStatus.ANALYZED, null);
+        } else if (response.getExplanation() != null) {
+            // Even if no script, mark as analyzed if AI gave an explanation
+            taskService.updateTaskStatus(task.getId(), com.sysagent.sysagent_backend.model.enums.TaskStatus.ANALYZED, null);
         }
         
         return ResponseEntity.ok(ApiResponse.<AgentIntentResponseDto>builder()
