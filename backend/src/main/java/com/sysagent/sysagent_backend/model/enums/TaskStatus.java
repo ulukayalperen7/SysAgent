@@ -11,6 +11,11 @@ public enum TaskStatus {
     PENDING,
 
     /**
+     * The AI has analyzed the task and provided a script/explanation.
+     */
+    ANALYZED,
+
+    /**
      * The task is currently being executed on the target node.
      */
     IN_PROGRESS,

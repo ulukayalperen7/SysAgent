@@ -27,11 +27,12 @@ _crew_semaphore = asyncio.Semaphore(1)
 
 # Simple patterns that never need the full 4-agent pipeline.
 CHAT_TRIGGERS = {
-    "hi", "hello", "hey", "hi there", "howdy",
-    "thanks", "thank you", "thank u", "ty",
-    "ok", "okay", "okey", "k", "got it",
-    "bye", "goodbye", "cya", "see ya",
-    "good morning", "good afternoon", "good evening", "good night"
+    "hi", "hello", "hey", "hi there", "howdy", "yo", "sup", "what's up",
+    "thanks", "thank you", "thank u", "ty", "cheers",
+    "ok", "okay", "okey", "k", "got it", "clear",
+    "bye", "goodbye", "cya", "see ya", "later",
+    "good morning", "good afternoon", "good evening", "good night",
+    "help", "who are you", "what can you do"
 }
 
 
