@@ -1,38 +1,32 @@
 # SysAgent
 
-SysAgent is a web-based dashboard prototype designed to act as a centralized control center. The main goal of this project is to allow users to manage multiple computers (nodes) remotely and utilize AI agents to automate cross-device tasks.
-
-Currently, this repository contains the **Draft Version** of the frontend application, operating as a Single Page Application (SPA).
+SysAgent is a centralized control panel and web-based dashboard designed to orchestrate multiple operating systems (nodes) remotely. Going beyond traditional metrics, it acts as an "AI-Native Operating System Manager," utilizing multi-agent AI workflows to automate cross-device tasks, diagnose issues, and execute OS-level commands safely.
 
 ### Live Demo
-You can view the deployed prototype here: **[https://sys-agent.vercel.app/home](https://sys-agent.vercel.app/home)**
+You can view the deployed frontend prototype here: **[https://sys-agent.vercel.app/home](https://sys-agent.vercel.app/home)**
 
-### Core Features (Draft Version)
-The current frontend prototype includes the following functional sections:
+### Core Features (v1.0 - CrewAI Integrated)
 - **Home Page:** Outlines the vision and capabilities of SysAgent.
 - **Dashboard:** Provides a comprehensive system summary and rapid statistics.
-- **Devices:** Tracks connected nodes in real-time with hardware metrics.
-- **Agent Hub:** A marketplace directory of ready-to-use execution scripts.
-- **Automations:** A visual rule engine interface to define Trigger-Action workflows.
+- **Devices:** Tracks connected nodes in real-time with live hardware metrics (CPU, RAM, Disk).
+- **Agent Terminal:** A natural language interface where users can command the AI to analyze the system or execute tasks (e.g., "Close Spotify").
+- **Human-in-the-Loop Execution:** AI proposes scripts, but execution requires strict user approval.
 
 ### Technologies Used
-- **Frontend Framework:** Angular 17+
-- **Styling:** SCSS 
-- **Icons:** Lucide Angular
-- **Deployment:** Vercel
+- **Frontend:** Angular 17+, SCSS, Lucide Angular (Deployed via Vercel)
+- **Backend Hub:** Java Spring Boot, PostgreSQL, OSHI (System Metrics), WebSocket
+- **AI Engine:** Python, FastAPI, CrewAI, LiteLLM
 
-### Backend Status & Future Architecture
-I have already developed a Java Spring Boot backend for this project. However, per the assignment instructions emphasizing the draft website, this current frontend submission is temporarily disconnected from it. 
+### Architecture Status
+The system operates on a decoupled architecture. The Angular frontend communicates with the Java Spring Boot Backend, which manages security, state, and WebSocket telemetry. When a natural language command is issued, the backend seamlessly routes the prompt and real-time system metrics to the isolated Python FastAPI AI Engine, which runs the CrewAI multi-agent pipeline to return a structured execution script.
 
-To deliver a clean, functional UI prototype, the application currently uses mock data injected directly into the Angular components. The existing Spring Boot backend and the local AI Engine (Ollama) will be fully integrated in the upcoming phases to securely handle natural language automation and local node WebSocket connections.
-
-### How to Run Locally
+### How to Run Locally (Frontend)
 
 Follow these instructions to run the Angular development server on your local machine:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/ulukayalperen7/SysAgent.git
+   git clone [https://github.com/ulukayalperen7/SysAgent.git](https://github.com/ulukayalperen7/SysAgent.git)
    ```
 
 2. **Navigate to the project folder:**
@@ -49,10 +43,9 @@ Follow these instructions to run the Angular development server on your local ma
    ```bash
    npm run start
    ```
-   *(Alternatively, you can use `ng serve`)*
 
 5. **View the application:**
    Open your web browser and navigate to `http://localhost:4200`.
 
 ### AI Agent Integration Plan
-The comprehensive planning document describing the future AI integration, problem statement, and system architecture can be found in the repository: **[AI_Agent_Planning.md](./AI_Agent_Planning.md)**.
+For a deep dive into the multi-agent architecture (CrewAI, LangGraph, AutoGen) and security protocols, refer to the planning document: **[AI_Agent_Planning.md](./AI_Agent_Planning.md)**.
