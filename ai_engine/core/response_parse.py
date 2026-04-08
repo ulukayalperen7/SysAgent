@@ -24,10 +24,18 @@ def parse_explanation_and_script(raw_result: str) -> Tuple[str, str]:
     # Strict parsing based on keywords
     if "Explanation:" in raw_result and "Script:" in raw_result:
         try:
-            # Split by 'Script:' to separate the two parts
+            # 1. Split on Script
             parts = raw_result.split("Script:", 1)
-            explanation = parts[0].replace("Explanation:", "").strip()
-            script = parts[1].strip()
+            script_part = parts[1].strip()
+            
+            # 2. Extract explanation safely ignoring "Thought:" blocks
+            exp_part = parts[0]
+            if "Explanation:" in exp_part:
+                explanation = exp_part.split("Explanation:", 1)[-1].strip()
+            else:
+                explanation = exp_part.strip()
+                
+            script = script_part
         except Exception:
             # Fallback if structure is slightly distorted
             explanation = raw_result.strip()

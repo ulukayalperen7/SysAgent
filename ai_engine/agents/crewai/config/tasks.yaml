@@ -1,33 +1,46 @@
 analysis_task:
   description: >
-    Analyze the user prompt: "{user_prompt}". 
-    Review the metrics: {metrics}.
-    Determine the INTENT (ACTION_CLOSE, ACTION_OPEN, INFO, or CHAT). 
-    If ACTION_CLOSE or ACTION_OPEN, identify the TARGET application.
+    Analyze the user prompt: "{user_prompt}" considering the recent conversation history:
+    {history}
+    and the base system metrics: {metrics}.
+    Determine exactly what the user is trying to achieve. Resolve pronouns like "it" or "that" based on the context of the conversation history.
+    Extract any specific application names mentioned.
   expected_output: >
-    "INTENT: [Type]. TARGET: [Name or NONE]."
+    A clear summary of the user's defined goal and target applications.
   agent: metric_analyst
 
 diagnostic_task:
   description: >
-    Read the output from analysis_task:
-    - IF ACTION_CLOSE: Use 'System Audit Tool' to find the TARGET's PID/status.
-    - IF ACTION_OPEN: Use 'Open App Tool' to launch the TARGET. 
-    - IF INFO/CHAT: Do nothing.
+    Read the output from analysis_task. Use your tools to accomplish the user's goal.
+    - If they ask about running processes or specific apps, USE the 'System Audit Tool'.
+    - If they ask about ports or network, USE the 'Network Audit Tool'.
+    - If they want to open an app, you do NOT need a tool! Just identify the exact application name so the reporting agent can generate the launch command.
+    - If they want to close or kill an app, you DO NOT need a close tool! Just USE the 'System Audit Tool' to find all identifiers (exact process name and PIDs) so the reporting agent can generate the best termination command.
+    Gather all necessary facts to answer the user's question completely but concisely.
   expected_output: >
-    Status/PID data for ACTION_CLOSE, or confirmation of launch for ACTION_OPEN.
+    A comprehensive report of the tool outputs, or action confirmations, relevant to the user's query.
   agent: log_investigator
+
+security_task:
+  description: >
+    Review the diagnostic report. If the user's goal involves KILLING or CLOSING an application,
+    provide a safety warning and the exact PID to kill.
+    If it's just gathering info or opening apps, declare it SAFE.
+  expected_output: >
+    Risk assessment and the required OS commands (if any).
+  agent: security_auditor
 
 reporting_task:
   description: >
-    Read all previously gathered facts.
-    1. For INFO: Answer only what they asked briefly based on: {metrics}.
-    2. For ACTION_CLOSE: Warn about data loss and provide the 'taskkill' command.
-    3. For ACTION_OPEN: Confirm the application has been started and provide 'start [target].exe' as the script.
+    Generate the final response to the user.
+    Use the diagnostic findings, the base system metrics: {metrics}, and the OS Type: {os_type} to answer the question directly. 
+    If the user asks for overall CPU or RAM, grab it from the {metrics}.
+    Do not dump raw unstructured data; be conversational but concise.
+    If the user asked for a specific number of items (e.g., "top 3 apps"), you MUST respect that limit and filter the data.
     
-    Format strictly as:
-    Explanation: <Short response>
-    Script: <OS Command or NONE>
+    MUST be formatted strictly as:
+    Explanation: <Your tailored, human-readable response>
+    Script: <The exact, native, and correct terminal command to execute the user's intent on {os_type}. Provide ONLY the valid command. For closing on Windows, prefer process tree termination (e.g. taskkill /IM /T) if applicable. For opening apps, generate the correct command natively without blindly appending .exe or .app extensions. If no action, output NONE.>
   expected_output: >
-    Exactly two lines: "Explanation:" and "Script:".
+    Exactly two lines matching the "Explanation:" and "Script:" format.
   agent: chief_reporter
