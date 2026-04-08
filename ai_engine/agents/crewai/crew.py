@@ -1,26 +1,24 @@
 """
-crew.py — CrewAI Crew Assembly for SysAgent AI Engine.
+crew.py - CrewAI Crew Assembly for SysAgent AI Engine.
 
-This file wires together agents and tasks into a sequential pipeline.
-The execution order is strictly:
-  metric_analyst → log_investigator → security_auditor → chief_reporter
+This file wires together agents and tasks into a strict sequential pipeline:
+  Analysis (LLM) -> Diagnostic (Tools) -> Security (Review) -> Reporting (Final Answer)
 
 Each agent only uses tools appropriate for its role. The security_auditor
-is a reasoning-only agent — it does not call tools, it reviews tool output
+is a reasoning-only agent - it does not call tools, it reviews tool output
 from the log_investigator via shared CrewAI context.
-
-Date: 2026-04-04
 """
 
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from core.config import get_llm
-from agents.crewai.tools import system_audit_tool, network_audit_tool, open_app_tool
+from agents.crewai.tools import system_audit_tool, network_audit_tool
+from agents.crewai.models import AnalysisOutput, DiagnosticOutput, SecurityOutput
 
 
 @CrewBase
-class SystemDiagnosticsCrew():
-    """System Diagnostics Crew — 4-agent sequential pipeline with security review."""
+class SystemDiagnosticsCrew:
+    """System Diagnostics Crew — 4-agent sequential pipeline with structured security review."""
 
     # Path to YAML config files (relative to the package root, resolved by CrewBase)
     agents_config = 'config/agents.yaml'
@@ -60,7 +58,7 @@ class SystemDiagnosticsCrew():
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
-            tools=[system_audit_tool, network_audit_tool, open_app_tool]  # Added open_app_tool
+            tools=[system_audit_tool, network_audit_tool]
         )
 
     @agent
@@ -100,17 +98,32 @@ class SystemDiagnosticsCrew():
     @task
     def analysis_task(self) -> Task:
         """Task 1: System Gatekeeper / Intent classification."""
-        return Task(config=self.tasks_config['analysis_task'])
+        return Task(
+            config=self.tasks_config['analysis_task'],
+            output_pydantic=AnalysisOutput
+        )
 
     @task
     def diagnostic_task(self) -> Task:
-        """Task 2: Full system diagnostics and safety review."""
-        return Task(config=self.tasks_config['diagnostic_task'])
+        """Task 2: Full system diagnostics and tool usage."""
+        return Task(
+            config=self.tasks_config['diagnostic_task'],
+            output_pydantic=DiagnosticOutput
+        )
+
+    @task
+    def security_task(self) -> Task:
+        """Task 3: Security and safety review."""
+        return Task(
+            config=self.tasks_config['security_task'],
+            output_pydantic=SecurityOutput
+        )
 
     @task
     def reporting_task(self) -> Task:
-        """Task 3: Synthesis and final response."""
+        """Task 4: Synthesis and final response."""
         return Task(config=self.tasks_config['reporting_task'])
+
 
     # ------------------------------------------------------------------
     # Crew Assembly
