@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../services/agent.service';
 import { TerminalService, TerminalLog } from '../../services/terminal.service';
 import { AgentIntentResponse } from '../../models/agent.model';
+import { ApiResponse } from '../../models/api-response.model';
 
 // Maximum number of characters a user can send in one message
 const MAX_PROMPT_LENGTH = 500;
@@ -114,7 +115,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         }
         setTimeout(() => inputElement.focus(), 100);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isThinking = false;
         this.terminalService.addLog({ sender: 'system', text: 'Connection lost. Please try again.', type: 'error' });
         console.error(err);
@@ -130,19 +131,27 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
     this.isExecuting = true;
 
     this.agentService.executeTask(logEntry.taskId).subscribe({
-      next: (output: string) => {
+      next: (response: ApiResponse<string>) => {
         logEntry.executing = false;
-        logEntry.executed = true; // Hide the button on success
         this.isExecuting = false;
 
-        const isError = output.toLowerCase().includes('error') || output.toLowerCase().includes('fail');
-        this.terminalService.addLog({
-          sender: 'system',
-          text: isError ? 'Execution encountered an issue. Please review the target.' : 'Task completed successfully.',
-          type: isError ? 'error' : 'success'
-        });
+        // Use the backend's explicit status — not string matching on output content
+        if (response.status === 'SUCCESS') {
+          logEntry.executed = true; // Hide button, show green badge
+          this.terminalService.addLog({
+            sender: 'system',
+            text: 'Task completed successfully.',
+            type: 'success'
+          });
+        } else {
+          this.terminalService.addLog({
+            sender: 'system',
+            text: `Execution encountered an issue: ${response.message}`,
+            type: 'error'
+          });
+        }
       },
-      error: (err) => {
+      error: (err: any) => {
         logEntry.executing = false;
         this.isExecuting = false;
         this.terminalService.addLog({

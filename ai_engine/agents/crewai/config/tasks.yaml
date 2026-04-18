@@ -38,9 +38,17 @@ reporting_task:
     Do not dump raw unstructured data; be conversational but concise.
     If the user asked for a specific number of items (e.g., "top 3 apps"), you MUST respect that limit and filter the data.
     
+    SCRIPT GENERATION RULES (follow strictly based on {os_type}):
+    - If OS is Windows, you MUST generate valid PowerShell commands ONLY. Never use CMD-style commands.
+      - To OPEN an app: Use `Start-Process "AppName:"` (e.g., `Start-Process "spotify:"`). Wait, appending a colon (like a URI scheme) works best for Windows Store apps. If it's a known traditional .exe like notepad, `Start-Process "notepad.exe"` is fine. When in doubt for modern apps like Spotify or WhatsApp, append `:`.
+        Do NOT use `start AppName`, `start appname.exe`, or any CMD syntax.
+      - To CLOSE/KILL an app: Use `Stop-Process -Name "processname" -Force` or `taskkill /IM processname.exe /F /T`.
+      - To CHECK processes: Use `Get-Process "name"`.
+    - If OS is Linux/macOS, use bash commands (e.g., `spotify &`, `pkill spotify`).
+    
     MUST be formatted strictly as:
     Explanation: <Your tailored, human-readable response>
-    Script: <The exact, native, and correct terminal command to execute the user's intent on {os_type}. Provide ONLY the valid command. For closing on Windows, prefer process tree termination (e.g. taskkill /IM /T) if applicable. For opening apps, generate the correct command natively without blindly appending .exe or .app extensions. If no action, output NONE.>
+    Script: <The valid command per the rules above. If no action is needed, output NONE.>
   expected_output: >
     Exactly two lines matching the "Explanation:" and "Script:" format.
   agent: chief_reporter
