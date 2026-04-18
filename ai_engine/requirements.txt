@@ -10,3 +10,4 @@ langchain-openai
 
 # Other utils
 psutil
+langgraph>=0.0.30
