@@ -61,8 +61,17 @@ public class TaskController {
 
         try {
             String output = scriptExecutionService.executeScript(task.getScript());
+
+            if (output != null && output.startsWith("EXEC_FAILED:")) {
+                taskService.updateTaskStatus(taskId, TaskStatus.FAILED, null);
+                return ResponseEntity.ok(ApiResponse.<String>builder()
+                        .status("ERROR")
+                        .message("Script execution failed")
+                        .data(output)
+                        .build());
+            }
+
             taskService.updateTaskStatus(taskId, TaskStatus.COMPLETED, null);
-            
             return ResponseEntity.ok(ApiResponse.<String>builder()
                     .status("SUCCESS")
                     .message("Script executed successfully")

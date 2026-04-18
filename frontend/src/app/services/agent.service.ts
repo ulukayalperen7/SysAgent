@@ -14,7 +14,7 @@ export class AgentService {
 
     constructor(private http: HttpClient) { }
 
-    processIntent(intent: string): Observable<any> { // Update return type if needed
+    processIntent(intent: string): Observable<any> {
         const payload: AgentIntentRequest = { intent };
         return this.http.post<ApiResponse<AgentIntentResponse>>(`${this.apiUrl}/process`, payload).pipe(
             map(response => response.data),
@@ -25,11 +25,9 @@ export class AgentService {
         );
     }
 
-    executeTask(taskId: string): Observable<string> {
-        // TaskController maps to /api/tasks
+    executeTask(taskId: string): Observable<ApiResponse<string>> {
         const tasksUrl = `${environment.apiUrl}/tasks`;
         return this.http.post<ApiResponse<string>>(`${tasksUrl}/${taskId}/execute`, {}).pipe(
-            map(response => response.data),
             catchError(error => {
                 console.error('AgentService: Error executing task', error);
                 throw error;

@@ -1,13 +1,17 @@
 package com.sysagent.sysagent_backend.model.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Data Transfer Object for carrying real-time OS metrics.
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SystemMetricsDto {
     private int cpuUsage; // Percentage CPU usage
     private int ramUsage; // Percentage RAM usage

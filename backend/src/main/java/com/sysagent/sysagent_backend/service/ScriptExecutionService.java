@@ -54,8 +54,6 @@ public class ScriptExecutionService {
     private String executeBash(String script) {
         log.info("Executing Bash script on Unix-like system...");
         try {
-            // We use 'bash -c' for direct execution. 
-            // Note: For absolute security, we could write to a temp file, but 'bash -c' is standard for quick tasks.
             ProcessBuilder pb = new ProcessBuilder("bash", "-c", script);
             return runProcess(pb);
         } catch (Exception e) {
@@ -84,7 +82,7 @@ public class ScriptExecutionService {
         }
 
         if (exitCode != 0) {
-            return "Finished with Errors (Code " + exitCode + "):\n" + result;
+            return "EXEC_FAILED: " + result;
         }
         return result;
     }
