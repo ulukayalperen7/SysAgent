@@ -42,7 +42,7 @@ async def analyze_system(request: AnalyzeRequest):
             "user_input": sanitized_prompt,
             "metrics": request.metrics,
             "os_type": request.metrics.get("osName", "Unknown OS"),
-            "messages": [], # Existing messages in checkpoint are preserved by Reducer logic
+            "messages": [{"role": "user", "content": sanitized_prompt}], # Preserved + Appended by Reducer
             "errors": []
         }
         

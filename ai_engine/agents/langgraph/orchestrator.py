@@ -1,45 +1,76 @@
 from langgraph.graph import StateGraph, START, END
 from core.agent_state import AgentState
-from agents.langgraph.nodes import detect_intent_node, direct_chat_node, run_crewai_diagnostics_node
+from agents.langgraph.nodes import (
+    detect_intent_node, 
+    direct_chat_node, 
+    run_crewai_diagnostics_node,
+    generate_action_script_node,
+    execute_safe_action_node
+)
+from core.security_guardian import SecurityGuardian
 
-def route_intent(state: AgentState):
-    """
-    Conditional routing function used by LangGraph conditional edges.
-    """
-    intent = state.get("current_intent", "UNKNOWN")
-    
-    if intent == "CHAT" or intent == "UNKNOWN":
-        return "direct_chat_node"
-    elif intent == "SYSTEM_OPERATION":
-        return "run_crewai_diagnostics_node"
-    else:
-        return "direct_chat_node"
-
-# 1. Initialize StateGraph with our TypedDict State
+# 1. Initialize StateGraph
 builder = StateGraph(AgentState)
 
 # 2. Add Nodes
 builder.add_node("detect_intent_node", detect_intent_node)
 builder.add_node("direct_chat_node", direct_chat_node)
 builder.add_node("run_crewai_diagnostics_node", run_crewai_diagnostics_node)
+builder.add_node("generate_action_script_node", generate_action_script_node)
+builder.add_node("execute_safe_action_node", execute_safe_action_node)
 
-# 3. Add Edges (Control Flow)
-# The graph starts by analyzing the intent
-builder.add_edge(START, "detect_intent_node")
+# 3. Define Conditional Edges and Flow
+builder.set_entry_point("detect_intent_node")
 
-# Routing Logic: From Intent Node -> target action node
+def route_after_intent(state: AgentState):
+    intent = state.get("current_intent", "UNKNOWN")
+    if intent == "CHAT":
+        return "direct_chat_node"
+    elif intent == "SYSTEM_OPERATION":
+        return "run_crewai_diagnostics_node" 
+    else:
+        # DEVOPS, APP_CONTROL, FILE_SYSTEM, NETWORK, etc.
+        return "generate_action_script_node"
+
+def route_after_script_generation(state: AgentState):
+    script = state.get("script", "NONE")
+    intent = state.get("current_intent", "UNKNOWN")
+    
+    if not script or script == "NONE":
+        return END # E.g., Blocked by security, or just not actionable
+        
+    if SecurityGuardian.requires_approval(intent):
+        # Requires UI approval. END LangGraph directly.
+        # Frontend sees the script and prompts User.
+        return END 
+    else:
+        # Autonomous Read Node. Safe to execute instantly in Python.
+        return "execute_safe_action_node"
+
+
 builder.add_conditional_edges(
     "detect_intent_node",
-    route_intent,
+    route_after_intent,
     {
         "direct_chat_node": "direct_chat_node",
-        "run_crewai_diagnostics_node": "run_crewai_diagnostics_node"
+        "run_crewai_diagnostics_node": "run_crewai_diagnostics_node",
+        "generate_action_script_node": "generate_action_script_node"
     }
 )
 
-# Terminate after execution nodes
+builder.add_conditional_edges(
+    "generate_action_script_node",
+    route_after_script_generation,
+    {
+        END: END,
+        "execute_safe_action_node": "execute_safe_action_node"
+    }
+)
+
+# Terminal edges for existing nodes
 builder.add_edge("direct_chat_node", END)
 builder.add_edge("run_crewai_diagnostics_node", END)
+builder.add_edge("execute_safe_action_node", END)
 
 from langgraph.checkpoint.memory import MemorySaver
 
