@@ -35,8 +35,8 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         if (intent == null || intent.isBlank()) {
             return fallbackResponse(taskId, "Empty prompt.");
         }
-        if (intent.length() > 500) {
-            return fallbackResponse(taskId, "Prompt is too long (max 500 chars).");
+        if (intent.length() > 4000) {
+            return fallbackResponse(taskId, "Prompt is too long (max 4000 chars).");
         }
         String lowerIntent = intent.toLowerCase();
         if (lowerIntent.contains("system.exit") || lowerIntent.contains("runtime.exec")) {
