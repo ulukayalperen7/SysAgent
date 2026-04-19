@@ -34,4 +34,10 @@ public class AgentIntentResponseDto {
      * Confidence score of the AI model for this generation (0.0 to 1.0).
      */
     private Double confidenceScore;
+
+    /**
+     * Number of tasks still queued after this response.
+     * Used by frontend to decide whether to trigger auto-resume after script approval.
+     */
+    private int pendingCount;
 }

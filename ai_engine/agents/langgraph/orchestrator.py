@@ -7,7 +7,8 @@ from agents.langgraph.nodes import (
     direct_chat_node, 
     run_crewai_diagnostics_node,
     generate_action_script_node,
-    execute_safe_action_node
+    execute_safe_action_node,
+    final_synthesis_node
 )
 from core.security_guardian import SecurityGuardian
 
@@ -22,6 +23,7 @@ builder.add_node("direct_chat_node", direct_chat_node)
 builder.add_node("run_crewai_diagnostics_node", run_crewai_diagnostics_node)
 builder.add_node("generate_action_script_node", generate_action_script_node)
 builder.add_node("execute_safe_action_node", execute_safe_action_node)
+builder.add_node("final_synthesis_node", final_synthesis_node)
 
 # 3. Define Flow
 builder.add_edge(START, "decompose_task_node")
@@ -29,7 +31,7 @@ builder.add_edge("decompose_task_node", "pop_next_task_node")
 
 def route_after_pop(state: AgentState):
     if not state.get("user_input"):
-        return END # Queue empty
+        return END
     return "detect_intent_node"
 
 builder.add_conditional_edges(
@@ -83,11 +85,27 @@ builder.add_conditional_edges(
     }
 )
 
-# Loop back edges
-builder.add_edge("execute_safe_action_node", "pop_next_task_node")
+def route_after_safe_execution(state: AgentState):
+    errors = state.get("errors", [])
+    retry_count = state.get("retry_count", 0)
+    
+    # If there are errors tightly coupled to the last execute node and we haven't exhausted retries
+    if errors and retry_count <= 2:
+        return "generate_action_script_node"
+        
+    return "pop_next_task_node"
+
+builder.add_conditional_edges(
+    "execute_safe_action_node",
+    route_after_safe_execution,
+    {
+        "generate_action_script_node": "generate_action_script_node",
+        "pop_next_task_node": "pop_next_task_node"
+    }
+)
+
 builder.add_edge("direct_chat_node", "pop_next_task_node")
 builder.add_edge("run_crewai_diagnostics_node", "pop_next_task_node")
-
 
 from langgraph.checkpoint.memory import MemorySaver
 

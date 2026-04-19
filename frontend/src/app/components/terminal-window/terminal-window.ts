@@ -105,11 +105,13 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         });
 
         if (response.script) {
+          console.log('AI Response with pendingCount:', response.pendingCount);
           this.terminalService.addLog({
             sender: 'ai',
             text: `Recommended Action:`,
             script: response.script,
             taskId: response.taskId,
+            pendingCount: response.pendingCount ?? 0,  // carry queue info for auto-resume
             type: 'warning'
           });
         }
@@ -138,17 +140,34 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         // Use the backend's explicit status — not string matching on output content
         if (response.status === 'SUCCESS') {
           logEntry.executed = true; // Hide button, show green badge
-          this.terminalService.addLog({
-            sender: 'system',
-            text: 'Task completed successfully.',
-            type: 'success'
-          });
+
+          // Only resume if the API told us there are pending tasks in the queue
+          const hasPendingTasks = (logEntry.pendingCount ?? 0) > 0;
+          console.log('Task success. pendingCount in logEntry:', logEntry.pendingCount, 'hasPendingTasks:', hasPendingTasks);
+
+          if (hasPendingTasks) {
+            this.terminalService.addLog({
+              sender: 'system',
+              text: 'Task completed successfully. Resuming queue...',
+              type: 'success'
+            });
+            this.autoResumeQueue();
+          } else {
+            this.terminalService.addLog({
+              sender: 'system',
+              text: 'Task completed successfully.',
+              type: 'success'
+            });
+          }
         } else {
+          // WRITE/DELETE task failed — do NOT stop. Feed the error back to the AI for self-healing.
+          const execError = response.data || response.message || 'Unknown execution error';
           this.terminalService.addLog({
             sender: 'system',
-            text: `Execution encountered an issue: ${response.message}`,
-            type: 'error'
+            text: `Script failed. Asking AI to self-correct...`,
+            type: 'warning'
           });
+          this.selfHealScript(execError, logEntry);
         }
       },
       error: (err: any) => {
@@ -157,6 +176,81 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         this.terminalService.addLog({
           sender: 'system',
           text: 'Execution failed: Unable to reach the host system.',
+          type: 'error'
+        });
+      }
+    });
+  }
+
+  private autoResumeQueue() {
+    this.isThinking = true;
+    this.agentService.processIntent("continue").subscribe({
+      next: (response: AgentIntentResponse) => {
+        this.isThinking = false;
+
+        // If the AI returned explanations for the next steps
+        if (response.explanation && response.explanation.trim() !== '') {
+          this.terminalService.addLog({
+            sender: 'ai',
+            text: `> ${response.explanation}`,
+            type: 'success'
+          });
+        }
+
+        if (response.script) {
+          this.terminalService.addLog({
+            sender: 'ai',
+            text: `Recommended Action:`,
+            script: response.script,
+            taskId: response.taskId,
+            type: 'warning'
+          });
+        }
+      },
+      error: (err: any) => {
+        this.isThinking = false;
+      }
+    });
+  }
+
+  /**
+   * Called when a WRITE/DELETE script execution fails.
+   * Sends the exact error back to the AI as context so it can reason about
+   * the failure, fix the command, and re-present a new Approve button.
+   */
+  private selfHealScript(errorOutput: string, failedLogEntry: any) {
+    this.isThinking = true;
+    // Mark old entry as failed so user can see it
+    failedLogEntry.executed = true;
+    failedLogEntry.failed = true;
+
+    const healPrompt = `EXEC_FAILED: The previous script failed with the following error:\n${errorOutput}\n\nPlease analyze the error, fix the command, and try again.`;
+
+    this.agentService.processIntent(healPrompt).subscribe({
+      next: (response: AgentIntentResponse) => {
+        this.isThinking = false;
+        if (response.explanation && response.explanation.trim() !== '') {
+          this.terminalService.addLog({
+            sender: 'ai',
+            text: `> ${response.explanation}`,
+            type: 'success'
+          });
+        }
+        if (response.script) {
+          this.terminalService.addLog({
+            sender: 'ai',
+            text: `Recommended Action (Corrected):`,
+            script: response.script,
+            taskId: response.taskId,
+            type: 'warning'
+          });
+        }
+      },
+      error: () => {
+        this.isThinking = false;
+        this.terminalService.addLog({
+          sender: 'system',
+          text: 'Self-healing failed: Could not reach the AI engine.',
           type: 'error'
         });
       }

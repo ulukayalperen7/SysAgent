@@ -78,11 +78,20 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
                     }
                 }
 
+                int pendingCount = 0;
+                Object pendingObj = responseBody.get("pending_count");
+                if (pendingObj instanceof Number) {
+                    pendingCount = ((Number) pendingObj).intValue();
+                }
+
+                log.info("AI response received: explanation={}, script={}, pendingCount={}", explanation, script, pendingCount);
+
                 return AgentIntentResponseDto.builder()
                         .taskId(taskId)
                         .explanation(explanation)
                         .script(script)
                         .confidenceScore(0.95)
+                        .pendingCount(pendingCount)
                         .build();
             } else {
                 return fallbackResponse(taskId, "AI Engine error: " + response.getStatusCode());

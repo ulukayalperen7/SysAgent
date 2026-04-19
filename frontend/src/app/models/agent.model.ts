@@ -5,7 +5,8 @@ export interface AgentIntentRequest {
 
 export interface AgentIntentResponse {
     taskId: string;
-    script: string;       // Matches backend
-    explanation: string;  // Matches backend
+    script: string;
+    explanation: string;
     confidenceScore?: number;
+    pendingCount?: number; // Number of tasks still queued after this response
 }

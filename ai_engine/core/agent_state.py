@@ -21,7 +21,7 @@ class AgentState(TypedDict):
     
     # State tracking
     current_intent: str
-    task_queue: List[Dict[str, Any]]
+    task_queue: List[str]
     
     # Output variables corresponding to the API contract
     explanation: str
@@ -29,3 +29,4 @@ class AgentState(TypedDict):
     
     # Error management
     errors: List[str]
+    retry_count: int
