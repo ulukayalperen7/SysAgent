@@ -1,6 +1,8 @@
 from langgraph.graph import StateGraph, START, END
 from core.agent_state import AgentState
 from agents.langgraph.nodes import (
+    decompose_task_node,
+    pop_next_task_node,
     detect_intent_node, 
     direct_chat_node, 
     run_crewai_diagnostics_node,
@@ -13,14 +15,31 @@ from core.security_guardian import SecurityGuardian
 builder = StateGraph(AgentState)
 
 # 2. Add Nodes
+builder.add_node("decompose_task_node", decompose_task_node)
+builder.add_node("pop_next_task_node", pop_next_task_node)
 builder.add_node("detect_intent_node", detect_intent_node)
 builder.add_node("direct_chat_node", direct_chat_node)
 builder.add_node("run_crewai_diagnostics_node", run_crewai_diagnostics_node)
 builder.add_node("generate_action_script_node", generate_action_script_node)
 builder.add_node("execute_safe_action_node", execute_safe_action_node)
 
-# 3. Define Conditional Edges and Flow
-builder.set_entry_point("detect_intent_node")
+# 3. Define Flow
+builder.add_edge(START, "decompose_task_node")
+builder.add_edge("decompose_task_node", "pop_next_task_node")
+
+def route_after_pop(state: AgentState):
+    if not state.get("user_input"):
+        return END # Queue empty
+    return "detect_intent_node"
+
+builder.add_conditional_edges(
+    "pop_next_task_node",
+    route_after_pop,
+    {
+        END: END,
+        "detect_intent_node": "detect_intent_node"
+    }
+)
 
 def route_after_intent(state: AgentState):
     intent = state.get("current_intent", "UNKNOWN")
@@ -29,7 +48,6 @@ def route_after_intent(state: AgentState):
     elif intent == "SYSTEM_OPERATION":
         return "run_crewai_diagnostics_node" 
     else:
-        # DEVOPS, APP_CONTROL, FILE_SYSTEM, NETWORK, etc.
         return "generate_action_script_node"
 
 def route_after_script_generation(state: AgentState):
@@ -37,14 +55,11 @@ def route_after_script_generation(state: AgentState):
     intent = state.get("current_intent", "UNKNOWN")
     
     if not script or script == "NONE":
-        return END # E.g., Blocked by security, or just not actionable
+        return "pop_next_task_node" # Skip to next step
         
     if SecurityGuardian.requires_approval(intent):
-        # Requires UI approval. END LangGraph directly.
-        # Frontend sees the script and prompts User.
-        return END 
+        return END # Halt for UI approval
     else:
-        # Autonomous Read Node. Safe to execute instantly in Python.
         return "execute_safe_action_node"
 
 
@@ -63,14 +78,16 @@ builder.add_conditional_edges(
     route_after_script_generation,
     {
         END: END,
-        "execute_safe_action_node": "execute_safe_action_node"
+        "execute_safe_action_node": "execute_safe_action_node",
+        "pop_next_task_node": "pop_next_task_node"
     }
 )
 
-# Terminal edges for existing nodes
-builder.add_edge("direct_chat_node", END)
-builder.add_edge("run_crewai_diagnostics_node", END)
-builder.add_edge("execute_safe_action_node", END)
+# Loop back edges
+builder.add_edge("execute_safe_action_node", "pop_next_task_node")
+builder.add_edge("direct_chat_node", "pop_next_task_node")
+builder.add_edge("run_crewai_diagnostics_node", "pop_next_task_node")
+
 
 from langgraph.checkpoint.memory import MemorySaver
 
