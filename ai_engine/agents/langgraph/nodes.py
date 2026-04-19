@@ -33,14 +33,16 @@ def decompose_task_node(state: AgentState):
     user_msg = state.get("user_input", "").lower().strip()
     existing_queue = state.get("task_queue", [])
     
-    # RESUMPTION LOGIC: If user says "devam", "continue", "donner", "ok" etc. 
+    # RESUMPTION LOGIC: If user says "continue", "next", "ok" etc. 
     # and we have a queue, don't re-decompose.
-    resumption_keywords = ["devam", "devam et", "continue", "next", "ok", "tamam", "hadi", "sıradaki"]
+    resumption_keywords = ["continue", "next", "ok", "proceed", "resume", "yes", "go", "go on", "let's go"]
     if existing_queue and any(k == user_msg or user_msg.startswith(k) for k in resumption_keywords):
-        # We keep the existing queue as is.
-        # But we need to return something to signal "no change" to the reducer.
-        # Actually, returning an empty dict or just the existing queue is fine.
         return {"task_queue": existing_queue}
+
+    # SELF-HEALING BYPASS: Error feedback from a failed WRITE/DELETE task
+    # Skip decomposition and send it directly for immediate script repair
+    if user_msg.startswith("exec_failed:"):
+        return {"task_queue": [state['user_input']]}
 
     llm = _get_langchain_llm()
     prompt = f"""
@@ -48,15 +50,16 @@ def decompose_task_node(state: AgentState):
     Analyze the following User Input and break it down into a list of atomic, sequential steps.
     
     CRITICAL RULES:
-    1. If the input is a simple greeting (e.g., 'hi', 'hello', 'how are you'), return it as a single task. DO NOT split it.
-    2. If the input is a single command or question, return it as a single task.
-    3. ONLY split if the user uses conjunctions like 'and then', 'also', 'after that' or sequential logic.
+    1. BREAK DOWN the input into ALL distinct actions requested.
+    2. If the user asks for multiple things (e.g., "read X and then delete Y"), return them as separate strings in a list.
+    3. DO NOT omit any part of the request.
+    4. If it's a simple greeting, return it as a single task.
     
     User Input: {state['user_input']}
     
     Return the result as a JSON list of strings.
-    Example Input: "Create a file named logs.txt and then list the directory"
-    Result: ["Create a file named logs.txt", "List the directory contents"]
+    Example Input: "Read deneme1.txt then create deneme3.txt then delete deneme2.txt"
+    Result: ["Read deneme1.txt on the desktop", "Create deneme3.txt on the desktop", "Delete deneme2.txt from the desktop"]
     
     Return ONLY the JSON list. No other text.
     """
@@ -64,7 +67,7 @@ def decompose_task_node(state: AgentState):
     response = llm.invoke([HumanMessage(content=prompt)])
     content_raw = response.content
     if isinstance(content_raw, list):
-        content_str = content_raw[0].get("text", "") if isinstance(content_raw[0], dict) else str(content_raw[0])
+        content_str = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""
     else:
         content_str = str(content_raw)
         
@@ -125,7 +128,7 @@ def detect_intent_node(state: AgentState):
     
     content_raw = response.content
     if isinstance(content_raw, list):
-        content_str = content_raw[0].get("text", "") if isinstance(content_raw[0], dict) else str(content_raw[0])
+        content_str = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""
     else:
         content_str = str(content_raw)
         
@@ -157,19 +160,16 @@ def direct_chat_node(state: AgentState):
     
     content_raw = response.content
     if isinstance(content_raw, list):
-        content_str = content_raw[0].get("text", "") if isinstance(content_raw[0], dict) else str(content_raw[0])
+        content_str = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""
     else:
         content_str = str(content_raw)
         
     answer = content_str.strip()
-    
-    current_explanation = state.get("explanation", "")
-    new_explanation = f"{current_explanation}\n{answer}".strip()
-    
     msg = {"role": "ai", "content": answer}
     
+    # For simple chat, synthesis node is overkill - just write result directly
     return {
-        "explanation": new_explanation,
+        "explanation": answer,
         "script": "NONE",
         "messages": [msg]
     }
@@ -228,6 +228,27 @@ def generate_action_script_node(state: AgentState):
     for m in state.get("messages", []):
         history_str += f"{m['role'].capitalize()}: {m['content']}\n"
 
+    platform_rules = ""
+    if "win" in os_name.lower():
+        platform_rules = """
+    WINDOWS POWERSHELL RULES (critical - follow exactly):
+    - ALWAYS use "$env:USERPROFILE" for home.
+    - Desktop path: "$env:USERPROFILE\Desktop"
+    - ALL paths in double quotes.
+    - For new files: Use 'New-Item -Path ... -ItemType File' (Avoid -Force unless overwrite requested).
+    - For deleting: Use 'Remove-Item -Path ... -Force'.
+    - For writing: Use 'Set-Content -Path ... -Value "..." -Force'
+    - For reading: Use 'Get-Content -Path "..."'
+    - NO markdown code fences. Raw command only.
+        """
+    else:
+        platform_rules = """
+    UNIX BASH RULES:
+    - ALWAYS use absolute paths or $HOME.
+    - Use standard commands: ls, cat, rm, mkdir, touch.
+    - Wrap paths in quotes.
+        """
+
     prompt = f"""
     You are a system command generator. Your intent is {intent}.
     Target OS: {os_name}
@@ -240,17 +261,17 @@ def generate_action_script_node(state: AgentState):
     Explanation: <A very brief description of what you are about to do>
     Script: <The exact command to run in the terminal>
     
-    IMPORTANT: 
-    - Use only standard markdown blocks (```bash or ```powershell) for the Script part if needed, but the 'Script:' keyword must be present.
+    {platform_rules}
+    
+    IMPORTANT:
+    - NO markdown code fences in the Script value. Raw command only.
     - If no command is needed, you MUST still say 'Script: NONE'.
-    - Ensure the command is correct for {os_name}.
-    - Resolve relative paths or file references using the Context History above.
     """
     
     response = llm.invoke([HumanMessage(content=prompt)])
     content_raw = response.content
     if isinstance(content_raw, list):
-        content_str = content_raw[0].get("text", "") if isinstance(content_raw[0], dict) else str(content_raw[0])
+        content_str = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""
     else:
         content_str = str(content_raw)
         
@@ -277,10 +298,9 @@ def generate_action_script_node(state: AgentState):
     if remaining_tasks:
         pending_info = f"\n\n**(Pending after this step: {len(remaining_tasks)} more tasks)**"
         
+    msg = {"role": "ai", "content": explanation}
     current_explanation = state.get("explanation", "")
     new_explanation = f"{current_explanation}\n{explanation}{pending_info}".strip()
-    
-    msg = {"role": "ai", "content": explanation}
     return {"script": script, "explanation": new_explanation, "messages": [msg]}
 
 
@@ -296,19 +316,90 @@ def execute_safe_action_node(state: AgentState):
         
     result = ExecutorService.execute_safe_command(script)
     
-    current_explanation = state.get("explanation", "")
     if result.get("success"):
-        answer = f"{state.get('user_input')} Result:\n```\n{result.get('stdout', '')}\n```"
-    else:
-        answer = f"{state.get('user_input')} Error:\n```\n{result.get('stderr', '')}\n```"
+        stdout_text = result.get("stdout", "").strip()
+        # Use LLM to summarize stdout cleanly instead of dumping raw output
+        llm = _get_langchain_llm()
+        summary_prompt = f"""The user asked: '{state.get('user_input')}'
+The command ran successfully and produced this output:
+{stdout_text}
+
+Summarize the result in 1-3 clear sentences for the user. Be direct and factual. No markdown fences."""
+        summary_response = llm.invoke([HumanMessage(content=summary_prompt)])
+        content_raw = summary_response.content
+        if isinstance(content_raw, list):
+            clean_answer = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else stdout_text
+        else:
+            clean_answer = str(content_raw).strip() or stdout_text
         
-    new_explanation = f"{current_explanation}\n{answer}"
-    msg = {"role": "ai", "content": answer}
+        current_explanation = state.get("explanation", "")
+        new_explanation = f"{current_explanation}\n{clean_answer}".strip()
+        msg = {"role": "ai", "content": clean_answer}
+        return {
+            "explanation": new_explanation,
+            "script": "NONE",
+            "messages": [msg],
+            "retry_count": 0,
+            "errors": []
+        }
+    else:
+        retry = state.get("retry_count", 0)
+        sys_msg = {"role": "system", "content": f"The script you generated failed with stderr:\n{result.get('stderr', '')}\nPlease generate a corrected script to accomplish the task."}
+        
+        if retry < 2:
+            # Silent retry, feed error back to LLM context
+            return {
+                "script": "NONE",
+                "messages": [sys_msg],
+                "errors": [result.get('stderr', 'Unknown Auto-Correction Error')],
+                "retry_count": retry + 1
+            }
+        else:
+            # Fatal failure after retries, notify user
+            answer = f"{state.get('user_input')} Failed (After Retries):\n```\n{result.get('stderr', '')}\n```"
+            new_explanation = f"{current_explanation}\n{answer}".strip()
+            msg = {"role": "ai", "content": answer}
+            
+            return {
+                "explanation": new_explanation,
+                "script": "NONE",
+                "messages": [msg],
+                "errors": [],
+                "retry_count": 0
+            }
+
+def final_synthesis_node(state: AgentState):
+    """
+    Called when the task queue is empty.
+    Reads the accumulated messages (which include stdout from executed commands)
+    and provides a final, synthesized answer to the user.
+    """
+    llm = _get_langchain_llm()
+    prompt = """
+You are the final response synthesizer for SysAgent Enterprise AI.
+Review the conversation and system execution history.
+Provide a clear, brief, and helpful final response to the user.
+If the user requested data (like reading a file or checking ping), present the information clearly.
+If the user only requested actions (like creating/deleting a file) and they succeeded, just say "All requested actions have been completed successfully."
+CRITICAL: DO NOT output JSON, raw code blocks, or system logs unless specifically asked. Respond in natural language.
+    """
+    messages = state.get("messages", []) + [{"role": "system", "content": prompt}]
     
-    return {
-        "explanation": new_explanation.strip(),
-        "script": "NONE", 
-        "messages": [msg]
-    }
-
-
+    from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+    lc_messages = []
+    for m in messages:
+        if m["role"] == "user": lc_messages.append(HumanMessage(content=m["content"]))
+        elif m["role"] == "system": lc_messages.append(SystemMessage(content=m["content"]))
+        elif m["role"] == "ai": lc_messages.append(AIMessage(content=m["content"]))
+        
+    response = llm.invoke(lc_messages)
+    content_raw = response.content
+    if isinstance(content_raw, list):
+        final_text = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""
+    else:
+        final_text = str(content_raw)
+        
+    current_explanation = state.get("explanation", "")
+    new_explanation = f"{current_explanation}\n\n{final_text}".strip()
+    
+    return {"explanation": new_explanation}

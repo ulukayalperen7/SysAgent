@@ -30,6 +30,7 @@ class AnalyzeResponse(BaseModel):
     explanation: str
     script: str
     original_prompt: str
+    pending_count: int = 0  # Number of tasks remaining in the execution queue
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_system(request: AnalyzeRequest):
@@ -45,7 +46,8 @@ async def analyze_system(request: AnalyzeRequest):
             "messages": [{"role": "user", "content": sanitized_prompt}], # Preserved + Appended by Reducer
             "explanation": "", # Clear any previous explanation loop aggregation
             "script": "NONE",
-            "errors": []
+            "errors": [],
+            "retry_count": 0
         }
         
         config = {"configurable": {"thread_id": request.thread_id}}
@@ -53,12 +55,15 @@ async def analyze_system(request: AnalyzeRequest):
         # Invoke the robust LangGraph orchestrator
         final_state = orchestrator_graph.invoke(initial_state, config)
         
+        pending_count = len(final_state.get("task_queue", []))
+        print(f"DEBUG: sending pending_count={pending_count} to backend")
         return AnalyzeResponse(
             status="success",
             reply=final_state.get("explanation", "No explanation provided."),
             explanation=final_state.get("explanation", "No explanation provided."),
             script=final_state.get("script", "NONE"),
-            original_prompt=sanitized_prompt
+            original_prompt=sanitized_prompt,
+            pending_count=pending_count
         )
 
     except Exception as e:

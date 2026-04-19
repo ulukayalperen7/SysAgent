@@ -9,6 +9,8 @@ export interface TerminalLog {
     taskId?: string;
     executing?: boolean;
     executed?: boolean; // Track if the action was successfully performed
+    failed?: boolean;   // Track if the execution failed (for self-healing UI State)
+    pendingCount?: number; // Number of tasks remaining in the queue
 }
 
 @Injectable({

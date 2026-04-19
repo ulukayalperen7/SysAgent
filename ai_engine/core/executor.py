@@ -10,7 +10,7 @@ class ExecutorService:
     @staticmethod
     def execute_safe_command(command: str, timeout: int = 15) -> dict:
         if not command or command.strip() == "NONE" or command.strip() == "":
-            return {"success": False, "stdout": "", "stderr": "Boş komut.", "code": -1}
+            return {"success": False, "stdout": "", "stderr": "Empty command.", "code": -1}
             
         # Strip markdown fences (e.g. ```powershell, ```bash, etc.) case-insensitively
         clean_command = re.sub(r'```[a-zA-Z0-9]*', '', command)
