@@ -7,7 +7,7 @@ import { AgentIntentResponse } from '../../models/agent.model';
 import { ApiResponse } from '../../models/api-response.model';
 
 // Maximum number of characters a user can send in one message
-const MAX_PROMPT_LENGTH = 500;
+const MAX_PROMPT_LENGTH = 4000;
 
 @Component({
   selector: 'app-terminal-window',
