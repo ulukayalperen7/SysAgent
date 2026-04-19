@@ -43,6 +43,8 @@ async def analyze_system(request: AnalyzeRequest):
             "metrics": request.metrics,
             "os_type": request.metrics.get("osName", "Unknown OS"),
             "messages": [{"role": "user", "content": sanitized_prompt}], # Preserved + Appended by Reducer
+            "explanation": "", # Clear any previous explanation loop aggregation
+            "script": "NONE",
             "errors": []
         }
         

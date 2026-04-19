@@ -8,6 +8,7 @@ from core.response_parse import parse_explanation_and_script
 from core.executor import ExecutorService
 from core.security_guardian import SecurityGuardian
 import os
+import json
 
 def _get_langchain_llm():
     """
@@ -24,28 +25,100 @@ def _get_langchain_llm():
         temperature=0
     )
 
+def decompose_task_node(state: AgentState):
+    """
+    Analyzes the user input and decomposes it into a list of atomic tasks.
+    If the input is simple, it returns a single-item list.
+    """
+    user_msg = state.get("user_input", "").lower().strip()
+    existing_queue = state.get("task_queue", [])
+    
+    # RESUMPTION LOGIC: If user says "devam", "continue", "donner", "ok" etc. 
+    # and we have a queue, don't re-decompose.
+    resumption_keywords = ["devam", "devam et", "continue", "next", "ok", "tamam", "hadi", "sıradaki"]
+    if existing_queue and any(k == user_msg or user_msg.startswith(k) for k in resumption_keywords):
+        # We keep the existing queue as is.
+        # But we need to return something to signal "no change" to the reducer.
+        # Actually, returning an empty dict or just the existing queue is fine.
+        return {"task_queue": existing_queue}
+
+    llm = _get_langchain_llm()
+    prompt = f"""
+    You are a Task Decomposer for an Enterprise AI. 
+    Analyze the following User Input and break it down into a list of atomic, sequential steps.
+    
+    CRITICAL RULES:
+    1. If the input is a simple greeting (e.g., 'hi', 'hello', 'how are you'), return it as a single task. DO NOT split it.
+    2. If the input is a single command or question, return it as a single task.
+    3. ONLY split if the user uses conjunctions like 'and then', 'also', 'after that' or sequential logic.
+    
+    User Input: {state['user_input']}
+    
+    Return the result as a JSON list of strings.
+    Example Input: "Create a file named logs.txt and then list the directory"
+    Result: ["Create a file named logs.txt", "List the directory contents"]
+    
+    Return ONLY the JSON list. No other text.
+    """
+    
+    response = llm.invoke([HumanMessage(content=prompt)])
+    content_raw = response.content
+    if isinstance(content_raw, list):
+        content_str = content_raw[0].get("text", "") if isinstance(content_raw[0], dict) else str(content_raw[0])
+    else:
+        content_str = str(content_raw)
+        
+    try:
+        clean_json = content_str.strip().replace("```json", "").replace("```", "").strip()
+        tasks = json.loads(clean_json)
+        if not isinstance(tasks, list):
+            tasks = [state['user_input']]
+        if not tasks:
+            tasks = [state['user_input']]
+    except:
+        tasks = [state['user_input']]
+        
+    return {"task_queue": tasks}
+
+def pop_next_task_node(state: AgentState):
+    """
+    Pops the next step from the task_queue and sets it as the current active input for following nodes.
+    """
+    queue = state.get("task_queue", [])
+    if not queue:
+        return {"user_input": "", "task_queue": []}
+    
+    current_step = queue[0]
+    remaining = queue[1:]
+    
+    return {
+        "user_input": current_step, 
+        "task_queue": remaining
+    }
+
 def detect_intent_node(state: AgentState):
     """
-    First node in the LangGraph Orchestrator.
-    Determines the Intent of the user to route the graph appropriately.
+    Determines the Intent of the current active input.
     """
     llm = _get_langchain_llm()
+    current_input = state.get("user_input")
+    
     prompt = f"""
     You are an intent classifier for an Enterprise AI Agent. 
     Classify the incoming user input into EXACTLY ONE of these categories:
     - FILE_SYSTEM_READ (Listing files, viewing text files, searching for files)
     - FILE_SYSTEM_WRITE (Creating, deleting, modifying, moving files or folders) 
-    - APP_CONTROL (Opening, closing, managing desktop applications like Spotify, Chrome)
-    - DEVOPS_READ (Checking git status, docker ps, reading package.json, reading code)
+    - APP_CONTROL (Opening, closing, managing desktop applications)
+    - DEVOPS_READ (Checking git status, docker ps, reading code)
     - DEVOPS_WRITE (git push, npm install, docker restart)
-    - SYSTEM_OPERATION (Queries about OS stats, RAM, CPU, killing OS processes, system status)
-    - NETWORK_READ (Ping, port scanning, checking IP)
-    - CHAT (Basic greetings, casual chat, no system operation needed)
-    - UNKNOWN (If it doesn't clearly fit any above)
+    - SYSTEM_OPERATION (Queries about OS stats, RAM, CPU, killing OS processes)
+    - NETWORK_READ (Ping, port scanning)
+    - CHAT (Greetings, casual talk)
+    - UNKNOWN (If it doesn't clearly fit)
     
-    User Input: {state['user_input']}
+    User Input: {current_input}
     
-    Output ONLY THE EXACT CATEGORY STRING. Do not add any extra text or punctuation.
+    Output ONLY THE EXACT CATEGORY STRING.
     """
     
     response = llm.invoke([HumanMessage(content=prompt)])
@@ -90,11 +163,13 @@ def direct_chat_node(state: AgentState):
         
     answer = content_str.strip()
     
-    # We append to the message history using the reducer logic
+    current_explanation = state.get("explanation", "")
+    new_explanation = f"{current_explanation}\n{answer}".strip()
+    
     msg = {"role": "ai", "content": answer}
     
     return {
-        "explanation": answer,
+        "explanation": new_explanation,
         "script": "NONE",
         "messages": [msg]
     }
@@ -185,14 +260,28 @@ def generate_action_script_node(state: AgentState):
         is_safe, sec_reason = SecurityGuardian.validate_command(script, os_name)
         if not is_safe:
             # BLOCKED! Return warning directly to user.
-            block_msg = f"⚠ GÜVENLİK MUHAFIZI (Security Guardian) TARAFINDAN ENGELLENDİ: İsteğiniz riskli bulundu.\n\nSebep: {sec_reason}"
+            block_msg = f"Security Guardian Blocked: {sec_reason}"
             return {
                 "explanation": block_msg,
                 "script": "NONE",
                 "messages": [{"role": "ai", "content": block_msg}]
             }
-            
-    return {"script": script, "explanation": explanation}
+        
+        step_exp = explanation
+    else:
+        step_exp = explanation
+        
+    # Check if there are more tasks pending in the queue
+    remaining_tasks = state.get("task_queue", [])
+    pending_info = ""
+    if remaining_tasks:
+        pending_info = f"\n\n**(Pending after this step: {len(remaining_tasks)} more tasks)**"
+        
+    current_explanation = state.get("explanation", "")
+    new_explanation = f"{current_explanation}\n{explanation}{pending_info}".strip()
+    
+    msg = {"role": "ai", "content": explanation}
+    return {"script": script, "explanation": new_explanation, "messages": [msg]}
 
 
 def execute_safe_action_node(state: AgentState):
@@ -207,16 +296,19 @@ def execute_safe_action_node(state: AgentState):
         
     result = ExecutorService.execute_safe_command(script)
     
+    current_explanation = state.get("explanation", "")
     if result.get("success"):
-        answer = f"İşlem Otonom Olarak Tamamlandı (Safe Read Mode). Çıktı:\n```\n{result.get('stdout', '')}\n```"
+        answer = f"{state.get('user_input')} Result:\n```\n{result.get('stdout', '')}\n```"
     else:
-        answer = f"İşlem Sırasında Hata Oluştu:\n```\n{result.get('stderr', '')}\n```"
+        answer = f"{state.get('user_input')} Error:\n```\n{result.get('stderr', '')}\n```"
         
+    new_explanation = f"{current_explanation}\n{answer}"
     msg = {"role": "ai", "content": answer}
     
     return {
-        "explanation": answer,
-        "script": "NONE", # We wipe the script so frontend does not ask for execution approval again
+        "explanation": new_explanation.strip(),
+        "script": "NONE", 
         "messages": [msg]
     }
+
 
