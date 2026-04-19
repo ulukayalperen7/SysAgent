@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     Loads settings from environment variables or .env file.
     """
     # LLM Settings
+    # LLM Settings
     llm_provider: str = Field(default="gemini", env="LLM_PROVIDER")
     llm_model: str = Field(default="gemini-2.5-flash", env="LLM_MODEL")
     google_api_key: str = Field(default="", env="GOOGLE_API_KEY")
@@ -22,9 +23,20 @@ class Settings(BaseSettings):
     # Crew: only one concurrent run by default (LLM + shared context); increase via env if needed
     crew_concurrency: int = Field(default=1, ge=1, le=8, env="CREW_CONCURRENCY")
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # LangChain Tracing
+    langchain_tracing_v2: str = Field(default="false", env="LANGCHAIN_TRACING_V2")
+    langchain_endpoint: str = Field(default="https://api.smith.langchain.com", env="LANGCHAIN_ENDPOINT")
+    langchain_api_key: str = Field(default="", env="LANGCHAIN_API_KEY")
+    langchain_project: str = Field(default="SysAgent", env="LANGCHAIN_PROJECT")
+
+    # DB Settings (Supabase)
+    database_url: str = Field(default="", env="DATABASE_URL")
+
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore"
+    }
 
 # Instantiate settings globally
 settings = Settings()
