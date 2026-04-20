@@ -31,14 +31,14 @@ builder.add_edge("decompose_task_node", "pop_next_task_node")
 
 def route_after_pop(state: AgentState):
     if not state.get("user_input"):
-        return END
+        return "final_synthesis_node"
     return "detect_intent_node"
 
 builder.add_conditional_edges(
     "pop_next_task_node",
     route_after_pop,
     {
-        END: END,
+        "final_synthesis_node": "final_synthesis_node",
         "detect_intent_node": "detect_intent_node"
     }
 )
@@ -85,6 +85,16 @@ builder.add_conditional_edges(
     }
 )
 
+builder.add_conditional_edges(
+    "run_crewai_diagnostics_node",
+    route_after_script_generation,
+    {
+        END: END,
+        "execute_safe_action_node": "execute_safe_action_node",
+        "pop_next_task_node": "pop_next_task_node"
+    }
+)
+
 def route_after_safe_execution(state: AgentState):
     errors = state.get("errors", [])
     retry_count = state.get("retry_count", 0)
@@ -105,7 +115,7 @@ builder.add_conditional_edges(
 )
 
 builder.add_edge("direct_chat_node", "pop_next_task_node")
-builder.add_edge("run_crewai_diagnostics_node", "pop_next_task_node")
+builder.add_edge("final_synthesis_node", END)
 
 from langgraph.checkpoint.memory import MemorySaver
 

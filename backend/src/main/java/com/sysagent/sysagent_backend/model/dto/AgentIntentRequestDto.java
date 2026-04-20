@@ -22,4 +22,9 @@ public class AgentIntentRequestDto {
      * The ID of the target device where this intent should be executed.
      */
     private Long deviceId;
+
+    /**
+     * Stable conversation/session id for AI memory continuity.
+     */
+    private String threadId;
 }

@@ -11,7 +11,7 @@ from typing import Dict, Any
 
 from core.config import settings
 from core.security import SecurityAnalyzer
-from agents.langgraph.orchestrator import orchestrator_graph
+from agents.langgraph.graphs.orchestrator import orchestrator_graph
 
 app = FastAPI(
     title="SysAgent AI Engine",

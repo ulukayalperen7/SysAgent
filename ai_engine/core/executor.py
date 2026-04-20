@@ -1,5 +1,6 @@
 import subprocess
 import re
+import base64
 
 class ExecutorService:
     """
@@ -17,9 +18,17 @@ class ExecutorService:
         clean_command = clean_command.replace('```', '').strip()
         
         try:
-            # On Windows, shell=True uses cmd.exe by default. 
-            # We force 'powershell' to support advanced cmdlets like Test-Path.
-            full_command = ["powershell", "-Command", clean_command]
+            wrapped_command = (
+                "$ErrorActionPreference = 'Stop'\n"
+                "try {\n"
+                f"{clean_command}\n"
+                "} catch {\n"
+                "Write-Error $_\n"
+                "exit 1\n"
+                "}"
+            )
+            encoded = base64.b64encode(wrapped_command.encode("utf-16le")).decode("ascii")
+            full_command = ["powershell", "-NoProfile", "-EncodedCommand", encoded]
             
             result = subprocess.run(
                 full_command,

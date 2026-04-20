@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  */
 public final class PromptSanitizer {
 
-    public static final int MAX_PROMPT_LENGTH = 500;
+    public static final int MAX_PROMPT_LENGTH = 4000;
 
     private static final Pattern[] INJECTION_PATTERNS = {
             Pattern.compile("ignore all previous instructions", Pattern.CASE_INSENSITIVE),

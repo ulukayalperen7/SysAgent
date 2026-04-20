@@ -14,8 +14,8 @@ export class AgentService {
 
     constructor(private http: HttpClient) { }
 
-    processIntent(intent: string): Observable<any> {
-        const payload: AgentIntentRequest = { intent };
+    processIntent(intent: string, threadId?: string): Observable<any> {
+        const payload: AgentIntentRequest = { intent, threadId };
         return this.http.post<ApiResponse<AgentIntentResponse>>(`${this.apiUrl}/process`, payload).pipe(
             map(response => response.data),
             catchError(error => {

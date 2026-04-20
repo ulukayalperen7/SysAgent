@@ -57,7 +57,12 @@ public class AgentController {
         SystemMetricsDto currentMetrics = systemMetricsService.collectMetrics();
 
         // 3. Pass the intent and metrics to our AI Adapter
-        AgentIntentResponseDto response = aiAgentAdapter.analyzeIntent(task.getId(), sanitizedIntent, currentMetrics);
+        String threadId = request.getThreadId();
+        if (threadId == null || threadId.isBlank()) {
+            threadId = "thread_" + task.getId();
+        }
+
+        AgentIntentResponseDto response = aiAgentAdapter.analyzeIntent(task.getId(), sanitizedIntent, currentMetrics, threadId);
         
         // 4. Save the generated script back to the DB so it can be executed later via /execute
         if (response.getScript() != null && !response.getScript().isEmpty()) {

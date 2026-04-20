@@ -28,7 +28,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
     private final AiEngineProperties aiEngine;
 
     @Override
-    public AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics) {
+    public AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics, String threadId) {
         log.info("Analyzing intent for task: {}", taskId);
 
         // --- Defense-in-depth: Java-side Security Checks ---
@@ -49,6 +49,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("user_prompt", intent);
         requestPayload.put("metrics", metrics);
+        requestPayload.put("thread_id", threadId);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
