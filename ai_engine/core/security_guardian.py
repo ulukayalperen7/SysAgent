@@ -61,10 +61,8 @@ class SecurityGuardian:
         SAFE_INTENTS = [
             "FILE_SYSTEM_READ", 
             "DEVOPS_READ", 
-            "SYSTEM_OPERATION", # Reading RAM/CPU/OS info
             "NETWORK_READ",     # Ping, nslookup 
-            "CHAT",
-            "UNKNOWN"
+            "CHAT"
         ]
         # Any WRITE, DELETE, or APP execution requires User UI Approval.
         return intent not in SAFE_INTENTS

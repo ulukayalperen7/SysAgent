@@ -26,7 +26,7 @@ class SecurityAnalyzer:
             return ""
 
         # Enforce maximum prompt length to prevent context overflow and abuse
-        MAX_PROMPT_LENGTH = 500
+        MAX_PROMPT_LENGTH = 4000
         if len(prompt) > MAX_PROMPT_LENGTH:
             return f"[INPUT_TOO_LONG: Message truncated to {MAX_PROMPT_LENGTH} chars] {prompt[:MAX_PROMPT_LENGTH]}"
 

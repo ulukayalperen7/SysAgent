@@ -11,7 +11,7 @@ import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 public class MockAiAgentAdapterImpl implements AiAgentAdapter {
 
     @Override
-    public AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics) {
+    public AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics, String threadId) {
         log.info("Mock AI Adapter analyzing intent for Task ID: {}", taskId);
         
         // This simulates a slight delay that a real AI request would take

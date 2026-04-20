@@ -1,6 +1,7 @@
 export interface AgentIntentRequest {
     intent: string;
     targetDeviceId?: number;
+    threadId?: string;
 }
 
 export interface AgentIntentResponse {

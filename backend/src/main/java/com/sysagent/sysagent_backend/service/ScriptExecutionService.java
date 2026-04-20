@@ -39,7 +39,14 @@ public class ScriptExecutionService {
     private String executePowerShell(String script) {
         log.info("Executing PowerShell script on Windows...");
         try {
-            String encodedCommand = Base64.getEncoder().encodeToString(script.getBytes(StandardCharsets.UTF_16LE));
+            String wrappedScript = "$ErrorActionPreference = 'Stop'\n"
+                    + "try {\n"
+                    + script + "\n"
+                    + "} catch {\n"
+                    + "Write-Error $_\n"
+                    + "exit 1\n"
+                    + "}";
+            String encodedCommand = Base64.getEncoder().encodeToString(wrappedScript.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-ExecutionPolicy", "Bypass", "-NoProfile", "-EncodedCommand", encodedCommand);
             return runProcess(pb);
         } catch (Exception e) {

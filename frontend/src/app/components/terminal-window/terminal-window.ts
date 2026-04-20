@@ -28,6 +28,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
   // UI States
   isThinking = false;
   isExecuting = false;
+  private readonly threadId = this.getOrCreateThreadId();
 
   private shouldScrollToBottom = false;
 
@@ -95,7 +96,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
     inputElement.value = '';
     this.isThinking = true;
 
-    this.agentService.processIntent(command).subscribe({
+    this.agentService.processIntent(command, this.threadId).subscribe({
       next: (response: AgentIntentResponse) => {
         this.isThinking = false;
         this.terminalService.addLog({
@@ -184,7 +185,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
 
   private autoResumeQueue() {
     this.isThinking = true;
-    this.agentService.processIntent("continue").subscribe({
+    this.agentService.processIntent("continue", this.threadId).subscribe({
       next: (response: AgentIntentResponse) => {
         this.isThinking = false;
 
@@ -203,6 +204,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
             text: `Recommended Action:`,
             script: response.script,
             taskId: response.taskId,
+            pendingCount: response.pendingCount ?? 0,
             type: 'warning'
           });
         }
@@ -226,7 +228,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
 
     const healPrompt = `EXEC_FAILED: The previous script failed with the following error:\n${errorOutput}\n\nPlease analyze the error, fix the command, and try again.`;
 
-    this.agentService.processIntent(healPrompt).subscribe({
+    this.agentService.processIntent(healPrompt, this.threadId).subscribe({
       next: (response: AgentIntentResponse) => {
         this.isThinking = false;
         if (response.explanation && response.explanation.trim() !== '') {
@@ -242,6 +244,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
             text: `Recommended Action (Corrected):`,
             script: response.script,
             taskId: response.taskId,
+            pendingCount: response.pendingCount ?? 0,
             type: 'warning'
           });
         }
@@ -255,5 +258,17 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         });
       }
     });
+  }
+
+  private getOrCreateThreadId(): string {
+    const storageKey = 'sysagent_terminal_thread_id';
+    const existing = localStorage.getItem(storageKey);
+    if (existing && existing.trim().length > 0) {
+      return existing;
+    }
+
+    const created = `sysagent-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(storageKey, created);
+    return created;
   }
 }
