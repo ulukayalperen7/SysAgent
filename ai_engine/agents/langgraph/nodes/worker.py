@@ -3,7 +3,6 @@ from core.agent_state import AgentState
 from core.response_parse import parse_explanation_and_script
 from core.executor import ExecutorService
 from core.security_guardian import SecurityGuardian
-from agents.crewai.crew import SystemDiagnosticsCrew
 from .base import _get_langchain_llm
 
 def _compact_history(messages: list[dict], max_messages: int = 10, max_chars: int = 500) -> str:
@@ -28,6 +27,8 @@ def run_crewai_diagnostics_node(state: AgentState):
     Terminal node implementing the Facade Pattern.
     Wraps the existing CrewAI architecture, hands over control, and retrieves the expert final report.
     """
+    from agents.crewai.crew import SystemDiagnosticsCrew
+
     crew_instance = SystemDiagnosticsCrew()
 
     history_str = _compact_history(state.get("messages", []), max_messages=8, max_chars=400)
@@ -72,7 +73,7 @@ def generate_action_script_node(state: AgentState):
         platform_rules = """
     WINDOWS POWERSHELL RULES (critical - follow exactly):
     - ALWAYS use "$env:USERPROFILE" for home.
-    - Desktop path: "$env:USERPROFILE\Desktop"
+    - Desktop path: "$env:USERPROFILE\\Desktop"
     - ALL paths in double quotes.
     - For new files: Use 'New-Item -Path ... -ItemType File' (Avoid -Force unless overwrite requested).
     - For deleting: Use 'Remove-Item -Path ... -Force'.

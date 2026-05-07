@@ -5,6 +5,8 @@ from agents.langgraph.nodes import (
     pop_next_task_node,
     detect_intent_node, 
     direct_chat_node, 
+    is_mcp_read_only_supported,
+    mcp_read_only_node,
     run_crewai_diagnostics_node,
     generate_action_script_node,
     execute_safe_action_node,
@@ -20,6 +22,7 @@ builder.add_node("decompose_task_node", decompose_task_node)
 builder.add_node("pop_next_task_node", pop_next_task_node)
 builder.add_node("detect_intent_node", detect_intent_node)
 builder.add_node("direct_chat_node", direct_chat_node)
+builder.add_node("mcp_read_only_node", mcp_read_only_node)
 builder.add_node("run_crewai_diagnostics_node", run_crewai_diagnostics_node)
 builder.add_node("generate_action_script_node", generate_action_script_node)
 builder.add_node("execute_safe_action_node", execute_safe_action_node)
@@ -47,6 +50,8 @@ def route_after_intent(state: AgentState):
     intent = state.get("current_intent", "UNKNOWN")
     if intent == "CHAT":
         return "direct_chat_node"
+    elif is_mcp_read_only_supported(state):
+        return "mcp_read_only_node"
     elif intent == "SYSTEM_OPERATION":
         return "run_crewai_diagnostics_node" 
     else:
@@ -70,6 +75,7 @@ builder.add_conditional_edges(
     route_after_intent,
     {
         "direct_chat_node": "direct_chat_node",
+        "mcp_read_only_node": "mcp_read_only_node",
         "run_crewai_diagnostics_node": "run_crewai_diagnostics_node",
         "generate_action_script_node": "generate_action_script_node"
     }
@@ -115,6 +121,7 @@ builder.add_conditional_edges(
 )
 
 builder.add_edge("direct_chat_node", "pop_next_task_node")
+builder.add_edge("mcp_read_only_node", "pop_next_task_node")
 builder.add_edge("final_synthesis_node", END)
 
 from langgraph.checkpoint.memory import MemorySaver

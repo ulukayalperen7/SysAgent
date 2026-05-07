@@ -267,6 +267,8 @@ Do not expose direct shell execution.
 
 ### Phase 2 - Connect LangGraph to MCP Without Rewriting It
 
+Status: Completed.
+
 Goal:
 
 - Update existing LangGraph read-only/tool-access nodes to use MCP client wrappers.
@@ -383,3 +385,15 @@ Notes:
 - Added an in-process MCP client facade so LangGraph/CrewAI can use stable tool names before transport wiring.
 - Added tests for tool discovery, process inspection, platform inspection, bounded file reading, and secret-like file blocking.
 - Kept dangerous execution out of MCP.
+
+### Phase 2
+
+Status: Completed.
+
+Notes:
+
+- Added an MCP-backed LangGraph read-only node for safe local inspection.
+- Routed supported read-only intents to MCP without rewriting the orchestrator.
+- Preserved CrewAI routing for deeper diagnostic system-operation requests.
+- Preserved script proposal and approval flow for risky intents.
+- Added tests for MCP read-only routing and risky intent exclusion.
