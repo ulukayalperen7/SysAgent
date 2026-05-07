@@ -11,3 +11,4 @@ langchain-openai
 # Other utils
 psutil
 langgraph>=0.0.30
+mcp[cli]>=1.0.0

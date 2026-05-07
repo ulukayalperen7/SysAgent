@@ -1,0 +1,78 @@
+"""FastMCP server exposing SysAgent read-only local system tools."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from mcp_servers.local_system_tools import (
+    filesystem_list_directory as _filesystem_list_directory,
+    filesystem_read_file as _filesystem_read_file,
+    network_list_connections as _network_list_connections,
+    system_get_metrics_snapshot as _system_get_metrics_snapshot,
+    system_get_platform_info as _system_get_platform_info,
+    system_get_top_memory_processes as _system_get_top_memory_processes,
+    system_list_processes as _system_list_processes,
+)
+
+try:
+    from mcp.server.fastmcp import FastMCP
+except ImportError:
+    FastMCP = None  # type: ignore[assignment]
+
+
+def build_server() -> Any:
+    """Build the optional FastMCP server without making app imports depend on MCP."""
+    if FastMCP is None:
+        raise RuntimeError("MCP Python SDK is not installed. Install with: pip install 'mcp[cli]'")
+
+    mcp = FastMCP(
+        "SysAgent Local System",
+        instructions="Read-only local system inspection tools for SysAgent.",
+        json_response=True,
+    )
+
+    @mcp.tool()
+    def system_get_metrics_snapshot() -> dict[str, Any]:
+        """Return a read-only local CPU, memory, disk, and boot metrics snapshot."""
+        return _system_get_metrics_snapshot()
+
+    @mcp.tool()
+    def system_list_processes(query: str | None = None, limit: int = 50) -> dict[str, Any]:
+        """List local processes by optional name query."""
+        return _system_list_processes(query=query, limit=limit)
+
+    @mcp.tool()
+    def system_get_top_memory_processes(limit: int = 10) -> dict[str, Any]:
+        """Return top local processes sorted by resident memory usage."""
+        return _system_get_top_memory_processes(limit=limit)
+
+    @mcp.tool()
+    def network_list_connections(limit: int = 50) -> dict[str, Any]:
+        """List active local network connections without mutation."""
+        return _network_list_connections(limit=limit)
+
+    @mcp.tool()
+    def filesystem_list_directory(path: str | None = None, limit: int = 100) -> dict[str, Any]:
+        """List entries in a non-restricted local directory."""
+        return _filesystem_list_directory(path=path, limit=limit)
+
+    @mcp.tool()
+    def filesystem_read_file(path: str, max_bytes: int = 200_000) -> dict[str, Any]:
+        """Read a bounded non-secret local text file."""
+        return _filesystem_read_file(path=path, max_bytes=max_bytes)
+
+    @mcp.tool()
+    def system_get_platform_info() -> dict[str, Any]:
+        """Return OS and Python runtime platform information."""
+        return _system_get_platform_info()
+
+    return mcp
+
+
+def main() -> None:
+    """Run the local system MCP server over stdio for local clients."""
+    build_server().run()
+
+
+if __name__ == "__main__":
+    main()

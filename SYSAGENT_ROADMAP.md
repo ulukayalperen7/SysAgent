@@ -1,0 +1,385 @@
+# SysAgent Roadmap
+
+Date: May 7, 2026
+
+## Mission
+
+SysAgent is a local-first, privacy-focused system administration platform. Its main product surface is the terminal: the user writes natural language, SysAgent understands the request, inspects the local system when needed, proposes safe scripts for risky actions, waits for human approval, executes only through the Spring Boot backend, and preserves task/session context.
+
+The current system is working. The roadmap is therefore incremental: improve capability, reliability, and safety without replacing the existing architecture.
+
+## Current Architecture
+
+The current request path is:
+
+```text
+Angular terminal
+-> Spring Boot backend
+-> FastAPI AI Engine
+-> LangGraph orchestrator
+-> CrewAI diagnostics when needed
+-> script proposal or read-only result
+-> Angular approval when risky
+-> Spring Boot ScriptExecutionService
+```
+
+The future MCP-enabled path is:
+
+```text
+Angular terminal
+-> Spring Boot backend
+-> FastAPI AI Engine
+-> LangGraph orchestrator
+-> CrewAI diagnostics when needed
+-> MCP client
+-> read-only MCP servers/tools
+```
+
+MCP is a capability layer under the AI workflow. It is not the workflow brain and it must not bypass approval.
+
+## Angular Role
+
+Angular remains the human-facing terminal and approval gateway.
+
+Responsibilities:
+
+- Show terminal conversation and task output.
+- Send natural language intents to the backend.
+- Display proposed scripts.
+- Require the user to click "Approve & Run locally" before risky execution.
+- Trigger self-healing by sending structured execution failure context back to the AI.
+- Preserve the current terminal-first UX.
+
+Angular should not execute scripts directly. Angular should not call MCP servers directly in the current architecture.
+
+## Spring Boot Role
+
+Spring Boot remains the gatekeeper and execution boundary.
+
+Responsibilities:
+
+- Create and update task records.
+- Store generated scripts and task lifecycle state.
+- Collect host metrics and expose metrics APIs/WebSocket updates.
+- Call the FastAPI AI Engine.
+- Execute approved scripts through `ScriptExecutionService`.
+- Maintain auditability and rollback fields.
+- Enforce the backend-side security boundary.
+
+Spring Boot is the only layer allowed to execute approved OS scripts. Dangerous execution must not move into Python MCP tools.
+
+## FastAPI Role
+
+FastAPI remains the AI Engine HTTP boundary.
+
+Responsibilities:
+
+- Receive analysis requests from Spring Boot.
+- Sanitize prompts before AI processing.
+- Build the LangGraph state with prompt, metrics, OS info, and `thread_id`.
+- Invoke the LangGraph orchestrator.
+- Return explanation, optional script, original prompt, and pending queue count.
+
+The public API contract should remain stable unless a later phase explicitly documents a necessary change.
+
+## LangGraph Role
+
+LangGraph remains the main orchestrator and state machine.
+
+Responsibilities:
+
+- Decompose multi-step user requests into a task queue.
+- Pop and process one task at a time.
+- Detect intent.
+- Route chat, diagnostics, read-only inspection, and script generation.
+- Decide when CrewAI should be used.
+- Decide when approval is required.
+- Preserve thread/session memory.
+- Continue queued tasks after approval.
+- Handle self-healing after execution failure.
+- Produce final synthesized responses.
+
+LangGraph is the brain of the workflow. MCP must be integrated as a tool access layer under existing nodes, not as a replacement for the graph.
+
+## CrewAI Role
+
+CrewAI remains the specialist diagnostics team.
+
+Use CrewAI for deeper investigations:
+
+- Memory or CPU pressure investigation.
+- Suspicious process analysis.
+- Network inspection.
+- Security audit.
+- Complex troubleshooting.
+- "Why is my system slow?"
+- "What process should I close?"
+
+Do not use CrewAI for every simple command. Simple read-only requests and script proposals should stay lightweight through LangGraph nodes.
+
+CrewAI reasons. MCP provides standardized tools.
+
+## MCP Role
+
+MCP is the standardized capability/tool layer.
+
+MCP should answer:
+
+- What tools are available?
+- What read-only system data can be inspected?
+- What filesystem resources can be safely listed or read?
+- What process/network/system capabilities exist?
+- What future remote nodes can expose?
+
+Initial MCP integration must be read-only.
+
+Initial safe MCP tools:
+
+- `system_get_metrics_snapshot`
+- `system_list_processes`
+- `system_get_top_memory_processes`
+- `network_list_connections`
+- `filesystem_list_directory`
+- `filesystem_read_file`
+- `system_get_platform_info`
+
+MCP must not initially expose direct shell execution, file deletion, package installation, process killing, firewall mutation, or persistent system configuration changes.
+
+## Terminal-First Priority
+
+The terminal is the current product focus.
+
+The terminal should feel capable, reliable, safe, and practical. It should prioritize useful action over long academic explanations.
+
+Read-only examples should return concise summaries and findings without approval:
+
+- "show top memory processes"
+- "list files in my Downloads folder"
+- "read this log file"
+- "analyze my network connections"
+
+Risky examples should return an explanation and script proposal, then wait for approval:
+
+- "delete all temp files"
+- "close Chrome"
+- "install package X"
+- "move this folder"
+- "change firewall rules"
+
+## Safety Model
+
+Human approval is mandatory for risky operations.
+
+Risky operations include:
+
+- File write, delete, move, or overwrite.
+- Closing apps or killing processes.
+- Shell command execution.
+- Package install/remove/update.
+- DevOps write operations.
+- Network/firewall changes.
+- System configuration changes.
+- Persistent or destructive changes.
+- Unknown actions with unclear blast radius.
+
+For risky actions, AI and MCP may only:
+
+- Propose a script.
+- Explain what the script will do.
+- Validate risk.
+- Suggest rollback where possible.
+
+Actual execution flow must remain:
+
+```text
+Angular approval
+-> Spring Boot task execution endpoint
+-> ScriptExecutionService
+```
+
+Security layers that must remain in place:
+
+- Frontend prompt length guard.
+- Backend prompt sanitizer.
+- AI Engine prompt sanitizer.
+- LangGraph intent-aware approval routing.
+- `SecurityGuardian` command validation.
+- Backend task lifecycle checks.
+- User approval before execution.
+
+## Do Not Break
+
+Do not break the existing terminal flow:
+
+```text
+User prompt
+-> backend task creation
+-> metrics collection
+-> AI Engine analysis
+-> explanation/script response
+-> frontend approval button for scripts
+-> backend-only execution
+-> execution result
+-> self-healing on failure
+```
+
+Do not:
+
+- Rewrite Angular from scratch.
+- Replace Spring Boot execution with Python execution.
+- Replace FastAPI.
+- Rewrite the LangGraph orchestrator from scratch.
+- Replace CrewAI with MCP.
+- Make MCP the top-level router.
+- Expose dangerous MCP execution tools in the first implementation.
+- Remove existing CrewAI tools before MCP replacements are verified.
+- Hardcode app-specific behavior as the main implementation path.
+- Change public API contracts without documenting why.
+
+## Phased Roadmap
+
+### Phase 0 - Architecture Documentation and Safety Lock
+
+Status: Completed.
+
+Goal:
+
+- Document the current architecture.
+- Lock the safety boundaries before MCP code is added.
+- Define MCP as a read-only capability layer first.
+
+Deliverable:
+
+- `SYSAGENT_ROADMAP.md`
+
+### Phase 1 - Read-Only MCP Foundation
+
+Status: Completed.
+
+Goal:
+
+- Add a local MCP server inside the Python AI Engine.
+- Add an MCP client wrapper.
+- Expose safe read-only system, process, network, platform, and filesystem tools.
+- Keep the application working even if MCP fails gracefully.
+
+Do not expose direct shell execution.
+
+### Phase 2 - Connect LangGraph to MCP Without Rewriting It
+
+Goal:
+
+- Update existing LangGraph read-only/tool-access nodes to use MCP client wrappers.
+- Preserve intent detection, queue behavior, memory, approval gates, and self-healing.
+
+Target behavior:
+
+- Read-only inspection can use MCP autonomously.
+- Risky requests still produce approval-required scripts.
+
+### Phase 3 - CrewAI Uses MCP Tool Wrappers for Diagnostics
+
+Goal:
+
+- Wrap MCP read-only tools as CrewAI-compatible tools.
+- Keep CrewAI as the specialist diagnostics team.
+- Replace direct diagnostic tool internals gradually after verification.
+
+### Phase 4 - Terminal Command Quality Upgrade
+
+Goal:
+
+- Improve OS-aware script generation.
+- Improve concise terminal response formatting.
+- Improve unknown intent handling.
+- Improve `EXEC_FAILED` repair behavior.
+
+Preferred risky-action response shape:
+
+```text
+Understanding:
+...
+
+Proposed Action:
+...
+
+Risk Level:
+Low / Medium / High
+
+Script:
+...
+```
+
+### Phase 5 - Risk Validation and Script Proposal Layer
+
+Goal:
+
+- Add internal logic for command proposal, risk validation, explanation, and rollback suggestions.
+- Keep all risky operations approval-gated.
+- Keep Spring Boot as the only execution layer.
+
+### Phase 6 - Agent Hub Foundation
+
+Goal:
+
+- Design deployable capabilities without rushing marketplace complexity.
+- Map agents to allowed MCP tools, prompts, device scope, and risk levels.
+- Propose database schema before implementation.
+
+No database tables should be created without explicit approval.
+
+### Phase 7 - Automations and Scheduled Rules
+
+Goal:
+
+- Design safe automation rules.
+- Automations should create approval tasks, not silently mutate the OS.
+- Propose schema before implementation.
+
+No database tables should be created without explicit approval.
+
+### Phase 8 - Remote Node Future-Proofing
+
+Goal:
+
+- Keep MCP transport-aware.
+- Document future remote device MCP servers.
+- Preserve backend audit and approval for remote devices.
+
+Future remote flow:
+
+```text
+Angular
+-> Spring Boot
+-> AI Engine
+-> LangGraph
+-> MCP client
+-> remote device MCP server
+-> proposed action
+-> Angular approval
+-> Spring Boot execution/audit
+```
+
+## Phase Progress Log
+
+### Phase 0
+
+Status: Completed.
+
+Notes:
+
+- Added the roadmap and safety contract.
+- Defined MCP as a read-only capability layer for initial implementation.
+- Reconfirmed LangGraph as orchestrator, CrewAI as diagnostics team, Spring Boot as execution gatekeeper, and Angular as human approval gateway.
+
+### Phase 1
+
+Status: Completed.
+
+Notes:
+
+- Added read-only local system MCP tool implementations.
+- Added an optional FastMCP server wrapper for those tools.
+- Added an in-process MCP client facade so LangGraph/CrewAI can use stable tool names before transport wiring.
+- Added tests for tool discovery, process inspection, platform inspection, bounded file reading, and secret-like file blocking.
+- Kept dangerous execution out of MCP.
