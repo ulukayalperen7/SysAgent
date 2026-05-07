@@ -281,6 +281,8 @@ Target behavior:
 
 ### Phase 3 - CrewAI Uses MCP Tool Wrappers for Diagnostics
 
+Status: Completed.
+
 Goal:
 
 - Wrap MCP read-only tools as CrewAI-compatible tools.
@@ -397,3 +399,15 @@ Notes:
 - Preserved CrewAI routing for deeper diagnostic system-operation requests.
 - Preserved script proposal and approval flow for risky intents.
 - Added tests for MCP read-only routing and risky intent exclusion.
+
+### Phase 3
+
+Status: Completed.
+
+Notes:
+
+- Added CrewAI-compatible MCP report builders for system and network diagnostics.
+- Preserved existing CrewAI tool names and YAML contracts.
+- Replaced direct process/network inspection inside CrewAI tools with MCP-backed read-only wrappers.
+- Kept CrewAI as the diagnostics reasoning team, not the router.
+- Added tests for CrewAI MCP wrapper output contracts.
