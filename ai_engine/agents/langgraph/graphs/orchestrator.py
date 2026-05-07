@@ -14,6 +14,8 @@ from agents.langgraph.nodes import (
 )
 from core.security_guardian import SecurityGuardian
 
+MAX_SELF_HEAL_RETRIES = 5
+
 # 1. Initialize StateGraph
 builder = StateGraph(AgentState)
 
@@ -105,8 +107,9 @@ def route_after_safe_execution(state: AgentState):
     errors = state.get("errors", [])
     retry_count = state.get("retry_count", 0)
     
-    # If there are errors tightly coupled to the last execute node and we haven't exhausted retries
-    if errors and retry_count <= 2:
+    # Retry safe autonomous reads a few times before surfacing the error.
+    # Risky approved executions are still repaired through the frontend EXEC_FAILED flow.
+    if errors and retry_count <= MAX_SELF_HEAL_RETRIES:
         return "generate_action_script_node"
         
     return "pop_next_task_node"

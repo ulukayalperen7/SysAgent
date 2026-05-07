@@ -291,6 +291,8 @@ Goal:
 
 ### Phase 4 - Terminal Command Quality Upgrade
 
+Status: Completed.
+
 Goal:
 
 - Improve OS-aware script generation.
@@ -315,6 +317,8 @@ Script:
 ```
 
 ### Phase 5 - Risk Validation and Script Proposal Layer
+
+Status: Completed.
 
 Goal:
 
@@ -411,3 +415,27 @@ Notes:
 - Replaced direct process/network inspection inside CrewAI tools with MCP-backed read-only wrappers.
 - Kept CrewAI as the diagnostics reasoning team, not the router.
 - Added tests for CrewAI MCP wrapper output contracts.
+
+### Phase 4
+
+Status: Completed.
+
+Notes:
+
+- Added deterministic terminal handling for common chat, app-control, media-control, and file-operation requests.
+- Improved multi-step queue decomposition for English and Turkish connector words.
+- Increased safe self-heal retries to 5.
+- Improved model script cleanup so markdown fences and extra sections do not reach execution.
+- Improved frontend error reporting so backend failures are visible instead of generic connection loss.
+
+### Phase 5
+
+Status: Completed.
+
+Notes:
+
+- Added a script proposal and risk validation layer.
+- Added risk/rollback metadata to terminal explanations for approval-required scripts.
+- Preserved Angular approval and Spring Boot-only execution.
+- Added deterministic script proposals for app open/close, media next/previous/play-pause, desktop file create/write/delete, and install/uninstall proposals.
+- Added Supabase/PgBouncer-safe PostgreSQL JDBC prepared-statement configuration.

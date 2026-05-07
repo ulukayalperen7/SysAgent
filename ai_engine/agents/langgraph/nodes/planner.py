@@ -1,7 +1,10 @@
 import json
+import re
 from langchain_core.messages import HumanMessage
 from core.agent_state import AgentState
 from .base import _get_langchain_llm
+
+CHAT_SHORTCUTS = {"hi", "hello", "hey", "selam", "merhaba", "sa", "slm"}
 
 def decompose_task_node(state: AgentState):
     """
@@ -21,6 +24,15 @@ def decompose_task_node(state: AgentState):
     # Skip decomposition and send it directly for immediate script repair
     if "exec_failed:" in user_msg:
         return {"task_queue": [state['user_input']]}
+
+    # Fast path for simple chat and common multi-step terminal commands. This
+    # keeps the terminal responsive even when the LLM provider is slow/down.
+    if user_msg in CHAT_SHORTCUTS:
+        return {"task_queue": [state["user_input"]]}
+
+    deterministic_tasks = _deterministic_decompose(state["user_input"])
+    if len(deterministic_tasks) > 1:
+        return {"task_queue": deterministic_tasks}
 
     llm = _get_langchain_llm()
     prompt = f"""
@@ -60,6 +72,22 @@ def decompose_task_node(state: AgentState):
         tasks = [state['user_input']]
         
     return {"task_queue": tasks}
+
+
+def _deterministic_decompose(user_input: str) -> list[str]:
+    """
+    Split obvious sequential commands before asking the LLM.
+
+    Turkish and English connectors are supported because the terminal is often
+    used casually: "open Spotify sonra next song sonra create file".
+    """
+    parts = re.split(
+        r"\s*(?:;|,?\s+\bthen\b\s+|,?\s+\band then\b\s+|,?\s+\bafter that\b\s+|,?\s+\bsonra\b\s+|,?\s+\bardından\b\s+)\s*",
+        user_input,
+        flags=re.IGNORECASE,
+    )
+    tasks = [part.strip(" .") for part in parts if part and part.strip(" .")]
+    return tasks if tasks else [user_input]
 
 def pop_next_task_node(state: AgentState):
     """

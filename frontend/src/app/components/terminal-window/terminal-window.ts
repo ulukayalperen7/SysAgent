@@ -120,7 +120,8 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
       },
       error: (err: any) => {
         this.isThinking = false;
-        this.terminalService.addLog({ sender: 'system', text: 'Connection lost. Please try again.', type: 'error' });
+        const message = this.extractApiErrorMessage(err, 'Connection lost. Please try again.');
+        this.terminalService.addLog({ sender: 'system', text: message, type: 'error' });
         console.error(err);
         setTimeout(() => inputElement.focus(), 100);
       }
@@ -174,9 +175,10 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
       error: (err: any) => {
         logEntry.executing = false;
         this.isExecuting = false;
+        const message = this.extractApiErrorMessage(err, 'Execution failed: Unable to reach the host system.');
         this.terminalService.addLog({
           sender: 'system',
-          text: 'Execution failed: Unable to reach the host system.',
+          text: message,
           type: 'error'
         });
       }
@@ -211,6 +213,11 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
       },
       error: (err: any) => {
         this.isThinking = false;
+        this.terminalService.addLog({
+          sender: 'system',
+          text: this.extractApiErrorMessage(err, 'Queue resume failed. Please type continue to retry.'),
+          type: 'error'
+        });
       }
     });
   }
@@ -226,7 +233,16 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
     failedLogEntry.executed = true;
     failedLogEntry.failed = true;
 
-    const healPrompt = `EXEC_FAILED: The previous script failed with the following error:\n${errorOutput}\n\nPlease analyze the error, fix the command, and try again.`;
+    const failedScript = failedLogEntry.script || 'UNKNOWN';
+    const healPrompt = `EXEC_FAILED: The previous script failed.
+
+Previous script:
+${failedScript}
+
+Execution error:
+${errorOutput}
+
+Please analyze the exact error, generate a corrected minimal script for the same current step, and do not repeat the same failed strategy.`;
 
     this.agentService.processIntent(healPrompt, this.threadId).subscribe({
       next: (response: AgentIntentResponse) => {
@@ -249,15 +265,23 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
           });
         }
       },
-      error: () => {
+      error: (err: any) => {
         this.isThinking = false;
         this.terminalService.addLog({
           sender: 'system',
-          text: 'Self-healing failed: Could not reach the AI engine.',
+          text: this.extractApiErrorMessage(err, 'Self-healing failed: Could not reach the AI engine.'),
           type: 'error'
         });
       }
     });
+  }
+
+  private extractApiErrorMessage(err: any, fallback: string): string {
+    const apiMessage = err?.error?.message || err?.error?.data || err?.message;
+    if (!apiMessage) {
+      return fallback;
+    }
+    return `Request failed: ${apiMessage}`;
   }
 
   private getOrCreateThreadId(): string {

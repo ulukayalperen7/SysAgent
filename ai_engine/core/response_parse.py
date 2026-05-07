@@ -35,7 +35,7 @@ def parse_explanation_and_script(raw_result: str) -> Tuple[str, str]:
             else:
                 explanation = exp_part.strip()
                 
-            script = script_part
+            script = _clean_script(script_part)
         except Exception:
             # Fallback if structure is slightly distorted
             explanation = raw_result.strip()
@@ -44,3 +44,21 @@ def parse_explanation_and_script(raw_result: str) -> Tuple[str, str]:
         explanation = raw_result.strip()
 
     return explanation, script
+
+
+def _clean_script(script_part: str) -> str:
+    """
+    Normalize model-generated script text before validation.
+
+    LLMs sometimes add markdown fences or extra sections after the command.
+    Keeping this cleanup centralized prevents those artifacts from reaching
+    either the autonomous read executor or the approval UI.
+    """
+    script = script_part.strip()
+    script = re.sub(r"```[a-zA-Z0-9]*", "", script).replace("```", "").strip()
+
+    for marker in ("\nExplanation:", "\nRisk Level:", "\nRollback:", "\nNotes:"):
+        if marker in script:
+            script = script.split(marker, 1)[0].strip()
+
+    return script or "NONE"

@@ -7,6 +7,11 @@ def direct_chat_node(state: AgentState):
     Terminal node for purely conversational intents.
     Bypasses the heavy CrewAI operations for fast, cheap responses.
     """
+    lower_input = state.get("user_input", "").lower().strip()
+    if lower_input in {"hi", "hello", "hey", "selam", "merhaba", "sa", "slm"}:
+        answer = "Hello. SysAgent is ready. Tell me what you want to inspect or control."
+        return {"explanation": answer, "script": "NONE", "messages": [{"role": "ai", "content": answer}]}
+
     llm = _get_langchain_llm()
     prompt = f"""
     You are a friendly AI assistant called SysAgent.

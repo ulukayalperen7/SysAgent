@@ -3,7 +3,14 @@ from core.agent_state import AgentState
 from core.response_parse import parse_explanation_and_script
 from core.executor import ExecutorService
 from core.security_guardian import SecurityGuardian
+from core.script_policy import (
+    format_terminal_proposal,
+    propose_deterministic_script,
+    validate_command_risk,
+)
 from .base import _get_langchain_llm
+
+MAX_SAFE_COMMAND_RETRIES = 5
 
 def _compact_history(messages: list[dict], max_messages: int = 10, max_chars: int = 500) -> str:
     """
@@ -62,9 +69,16 @@ def generate_action_script_node(state: AgentState):
     """
     Generates OS-specific scripts for actionable intents and runs them through SecurityGuardian.
     """
-    llm = _get_langchain_llm()
     os_name = state.get("os_type", "Unknown OS")
     intent = state.get("current_intent", "UNKNOWN")
+
+    # Prefer deterministic proposals for common terminal operations. This keeps
+    # app/file/media commands stable and avoids unnecessary LLM variability.
+    deterministic = propose_deterministic_script(state["user_input"], intent, os_name)
+    if deterministic:
+        return _finalize_script_proposal(state, deterministic.explanation, deterministic.script, os_name, intent)
+
+    llm = _get_langchain_llm()
     
     history_str = _compact_history(state.get("messages", []), max_messages=8, max_chars=400)
 
@@ -104,6 +118,11 @@ def generate_action_script_node(state: AgentState):
     {platform_rules}
     
     AUTONOMOUS PRECISENESS RULES:
+    - Prefer simple, minimal, OS-native commands.
+    - For app control, generate generic commands based on the app/process name; do not hardcode one app.
+    - For media controls on Windows, use a User32 virtual-key PowerShell script for next/previous/play-pause.
+    - For file writes/deletes, use -LiteralPath where possible and target user folders such as Desktop/Downloads/Documents.
+    - Include only the current step; the LangGraph queue handles future steps.
     - If you are targeting a specific application (e.g., Spotify, Chrome, Code), ALWAYS prioritize commands that find, focus, and target that application's Window or Process directly.
     - AVOID using ambiguous global hotkeys (like MediaPlayPause or Spacebar) unless you have first ensured the correct window is in focus.
     - If the user had a failure previously, analyze the Context History and do not repeat the same failed strategy.
@@ -126,23 +145,49 @@ def generate_action_script_node(state: AgentState):
     explanation, script = parse_explanation_and_script(content_str)
     
     if script and script != "NONE":
-        is_safe, sec_reason = SecurityGuardian.validate_command(script, os_name)
-        if not is_safe:
-            block_msg = f"Security Guardian Blocked: {sec_reason}"
-            return {
-                "explanation": block_msg,
-                "script": "NONE",
-                "messages": [{"role": "ai", "content": block_msg}]
-            }
-        
+        return _finalize_script_proposal(state, explanation, script, os_name, intent)
+
+    msg = {"role": "ai", "content": explanation}
+    current_explanation = state.get("explanation", "")
+    new_explanation = f"{current_explanation}\n{explanation}".strip()
+    return {"script": "NONE", "explanation": new_explanation, "messages": [msg]}
+
+
+def _finalize_script_proposal(state: AgentState, explanation: str, script: str, os_name: str, intent: str):
+    """
+    Apply security and risk policy to a proposed script before it reaches Angular.
+
+    The script is still only a proposal. Risky execution remains gated by the
+    frontend approval button and Spring Boot's ScriptExecutionService.
+    """
+    is_safe, sec_reason = SecurityGuardian.validate_command(script, os_name)
+    if not is_safe:
+        block_msg = f"Security Guardian Blocked: {sec_reason}"
+        return {
+            "explanation": block_msg,
+            "script": "NONE",
+            "messages": [{"role": "ai", "content": block_msg}]
+        }
+
+    risk = validate_command_risk(script, intent, os_name)
+    from core.script_policy import ScriptProposal
+
+    proposal = ScriptProposal(
+        explanation=explanation,
+        script=script,
+        risk_level=risk.risk_level,
+        rollback=risk.rollback,
+    )
+
     remaining_tasks = state.get("task_queue", [])
     pending_info = ""
     if remaining_tasks:
         pending_info = f"\n\n**(Pending after this step: {len(remaining_tasks)} more tasks)**"
-        
-    msg = {"role": "ai", "content": explanation}
+
+    terminal_explanation = f"{format_terminal_proposal(proposal)}{pending_info}"
+    msg = {"role": "ai", "content": terminal_explanation}
     current_explanation = state.get("explanation", "")
-    new_explanation = f"{current_explanation}\n{explanation}{pending_info}".strip()
+    new_explanation = f"{current_explanation}\n{terminal_explanation}".strip()
     return {"script": script, "explanation": new_explanation, "messages": [msg]}
 
 def execute_safe_action_node(state: AgentState):
@@ -185,7 +230,7 @@ Summarize the result in 1-3 clear sentences for the user. Be direct and factual.
         retry = state.get("retry_count", 0)
         sys_msg = {"role": "system", "content": f"The script you generated failed with stderr:\n{result.get('stderr', '')}\nPlease generate a corrected script to accomplish the task."}
         
-        if retry < 2:
+        if retry < MAX_SAFE_COMMAND_RETRIES:
             return {
                 "script": "NONE",
                 "messages": [sys_msg],

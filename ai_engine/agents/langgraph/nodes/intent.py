@@ -2,12 +2,19 @@ from langchain_core.messages import HumanMessage
 from core.agent_state import AgentState
 from .base import _get_langchain_llm
 
+CHAT_SHORTCUTS = {"hi", "hello", "hey", "selam", "merhaba", "sa", "slm", "thanks", "thank you"}
+
 def detect_intent_node(state: AgentState):
     """
     Determines the Intent of the current active input.
     """
-    llm = _get_langchain_llm()
     current_input = state.get("user_input")
+
+    deterministic_intent = _detect_intent_deterministic(current_input or "")
+    if deterministic_intent:
+        return {"current_intent": deterministic_intent}
+
+    llm = _get_langchain_llm()
     
     prompt = f"""
     You are an intent classifier for an Enterprise AI Agent. 
@@ -45,3 +52,34 @@ def detect_intent_node(state: AgentState):
         intent = "UNKNOWN"
         
     return {"current_intent": intent}
+
+
+def _detect_intent_deterministic(user_input: str) -> str | None:
+    """Classify common terminal intents without waiting for the LLM."""
+    lower = user_input.lower().strip()
+    if lower in CHAT_SHORTCUTS:
+        return "CHAT"
+    if "exec_failed:" in lower:
+        return "UNKNOWN"
+
+    write_terms = ("create", "touch", "delete", "remove", "write", "set content", "move", "rename", "oluştur", "olustur", "sil", "yaz")
+    app_terms = ("open ", "launch ", "start ", "close ", "kill ", "quit ", "next song", "next track", "previous song", "play pause", "aç", "ac ", "kapat", "şarkı", "sarki")
+    devops_write_terms = ("install", "uninstall", "npm install", "pip install", "docker restart", "git push", "winget", "yükle", "kur", "kaldır")
+    fs_read_terms = ("list files", "show files", "read file", "show file", "list directory", "downloads", "desktop", "documents", ".txt", ".log")
+    network_terms = ("network", "connections", "ports", "ping", "dns", "socket")
+    system_terms = ("cpu", "ram", "memory", "process", "processes", "slow", "suspicious", "system", "metrics")
+
+    if any(term in lower for term in devops_write_terms):
+        return "DEVOPS_WRITE"
+    if any(term in lower for term in write_terms):
+        return "FILE_SYSTEM_WRITE"
+    if any(term in lower for term in app_terms):
+        return "APP_CONTROL"
+    if any(term in lower for term in network_terms):
+        return "NETWORK_READ"
+    if any(term in lower for term in fs_read_terms):
+        return "FILE_SYSTEM_READ"
+    if any(term in lower for term in system_terms):
+        return "SYSTEM_OPERATION"
+
+    return None
