@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
+import inspect
 from typing import Any
 
+from core.config import settings
 from mcp_servers.local_system_tools import (
     filesystem_list_directory as _filesystem_list_directory,
     filesystem_read_file as _filesystem_read_file,
@@ -25,11 +28,17 @@ def build_server() -> Any:
     if FastMCP is None:
         raise RuntimeError("MCP Python SDK is not installed. Install with: pip install 'mcp[cli]'")
 
-    mcp = FastMCP(
-        "SysAgent Local System",
-        instructions="Read-only local system inspection tools for SysAgent.",
-        json_response=True,
-    )
+    init_kwargs: dict[str, Any] = {
+        "instructions": "Read-only local system inspection tools for SysAgent.",
+        "json_response": True,
+    }
+    signature = inspect.signature(FastMCP)
+    if "host" in signature.parameters:
+        init_kwargs["host"] = settings.mcp_host
+    if "port" in signature.parameters:
+        init_kwargs["port"] = settings.mcp_port
+
+    mcp = FastMCP("SysAgent Local System", **init_kwargs)
 
     @mcp.tool()
     def system_get_metrics_snapshot() -> dict[str, Any]:
@@ -70,8 +79,23 @@ def build_server() -> Any:
 
 
 def main() -> None:
-    """Run the local system MCP server over stdio for local clients."""
-    build_server().run()
+    """Run the local system MCP server over the requested MCP transport."""
+    parser = argparse.ArgumentParser(description="SysAgent local read-only MCP server")
+    parser.add_argument("--transport", default=settings.mcp_transport)
+    parser.add_argument("--host", default=settings.mcp_host)
+    parser.add_argument("--port", type=int, default=settings.mcp_port)
+    args = parser.parse_args()
+
+    settings.mcp_host = args.host
+    settings.mcp_port = args.port
+    settings.mcp_transport = args.transport
+
+    server = build_server()
+    try:
+        server.run(transport=args.transport)
+    except TypeError:
+        # Older MCP SDKs only support stdio run() without a transport parameter.
+        server.run()
 
 
 if __name__ == "__main__":

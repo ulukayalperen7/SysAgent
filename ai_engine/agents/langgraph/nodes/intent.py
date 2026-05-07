@@ -34,7 +34,10 @@ def detect_intent_node(state: AgentState):
     Output ONLY THE EXACT CATEGORY STRING.
     """
     
-    response = llm.invoke([HumanMessage(content=prompt)])
+    try:
+        response = llm.invoke([HumanMessage(content=prompt)])
+    except Exception:
+        return {"current_intent": "UNKNOWN"}
     
     content_raw = response.content
     if isinstance(content_raw, list):

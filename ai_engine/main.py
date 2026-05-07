@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from typing import Dict, Any
 
 from core.config import settings
+from core.mcp_client import local_system_mcp_client
+from core.mcp_process import ensure_local_mcp_server
 from core.security import SecurityAnalyzer
 from agents.langgraph.graphs.orchestrator import orchestrator_graph
 
@@ -18,6 +20,25 @@ app = FastAPI(
     description="Multi-Agent AI Endpoint with LangGraph Orchestrator",
     version="2.0.0"
 )
+
+
+@app.on_event("startup")
+async def startup_mcp_server():
+    ensure_local_mcp_server()
+
+
+@app.get("/mcp/status")
+async def mcp_status():
+    status = local_system_mcp_client.status()
+    return {
+        "available": status.available,
+        "mode": status.mode,
+        "detail": status.detail,
+        "host": settings.mcp_host,
+        "port": settings.mcp_port,
+        "path": settings.mcp_path,
+        "tools": local_system_mcp_client.list_tools(),
+    }
 
 class AnalyzeRequest(BaseModel):
     thread_id: str = "default_thread_1" # Injected by Java Backend for isolated sessions

@@ -19,7 +19,11 @@ def direct_chat_node(state: AgentState):
     User Input: {state['user_input']}
     """
     
-    response = llm.invoke([HumanMessage(content=prompt)])
+    try:
+        response = llm.invoke([HumanMessage(content=prompt)])
+    except Exception:
+        answer = "SysAgent is online, but the language model timed out while answering chat."
+        return {"explanation": answer, "script": "NONE", "messages": [{"role": "ai", "content": answer}]}
     
     content_raw = response.content
     if isinstance(content_raw, list):

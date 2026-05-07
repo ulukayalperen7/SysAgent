@@ -13,5 +13,7 @@ def _get_langchain_llm():
     return ChatGoogleGenerativeAI(
         model=settings.llm_model,
         google_api_key=api_key,
-        temperature=0
+        temperature=0,
+        request_timeout=settings.llm_request_timeout_seconds,
+        retries=settings.llm_retries,
     )

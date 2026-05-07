@@ -43,7 +43,13 @@ CRITICAL: DO NOT output JSON, raw code blocks, or system logs unless specificall
         elif m["role"] == "system": lc_messages.append(SystemMessage(content=m["content"]))
         elif m["role"] == "ai": lc_messages.append(AIMessage(content=m["content"]))
         
-    response = llm.invoke(lc_messages)
+    try:
+        response = llm.invoke(lc_messages)
+    except Exception:
+        fallback = state.get("explanation", "").strip()
+        if fallback:
+            return {"explanation": fallback}
+        return {"explanation": "The request could not be finalized because the language model timed out."}
     content_raw = response.content
     if isinstance(content_raw, list):
         final_text = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""

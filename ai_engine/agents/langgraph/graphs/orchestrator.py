@@ -129,6 +129,11 @@ builder.add_edge("final_synthesis_node", END)
 
 from langgraph.checkpoint.memory import MemorySaver
 
+# we can change memory to postgresql PostgreSaver
+# from langgraph.checkpoint.postgres import PostgresSaver
+# memory = PostgresSaver(conn_string="postgresql://postgres:password@localhost:5432/langgraph")
+
+# 3.6. Memory/Persistence (Checkpointing)
 memory = MemorySaver()
 # 4. Compile Graph into Runnable Application with persistence
 orchestrator_graph = builder.compile(checkpointer=memory)

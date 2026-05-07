@@ -44,7 +44,7 @@ public class TaskEntity {
     /**
      * The original natural language request from the user (e.g., "Clean logs older than 7 days").
      */
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String intent;
     
     /**

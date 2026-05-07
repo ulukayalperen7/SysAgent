@@ -26,6 +26,11 @@ class TerminalHardeningTests(unittest.TestCase):
 
         self.assertEqual(result["task_queue"], ["deneme2.py ad\u0131nda dosya olu\u015ftur"])
 
+    def test_planner_keeps_english_media_command_deterministic(self):
+        result = decompose_task_node({"user_input": "previous song pls ?", "task_queue": []})
+
+        self.assertEqual(result["task_queue"], ["previous song pls ?"])
+
     def test_chat_shortcut_does_not_need_llm(self):
         result = direct_chat_node(
             {
@@ -60,13 +65,32 @@ class TerminalHardeningTests(unittest.TestCase):
 
         self.assertIsNotNone(proposal)
         self.assertIn("Start-Process", proposal.script)
+        self.assertIn("Test-AppRunning", proposal.script)
         self.assertEqual(proposal.risk_level, "Medium")
+
+    def test_windows_app_open_uses_generic_resolver_not_hardcoded_aliases(self):
+        proposal = propose_deterministic_script("open teams", "APP_CONTROL", "Windows")
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("Get-StartApps", proposal.script)
+        self.assertIn("App Paths", proposal.script)
+        self.assertIn("StartMenu", proposal.script)
+        self.assertIn("HKEY_CLASSES_ROOT", proposal.script)
+        self.assertNotIn("ms-teams.exe", proposal.script)
+        self.assertNotIn('"teams:"', proposal.script)
+        self.assertIn("Could not start application or verify process", proposal.script)
 
     def test_windows_media_next_proposal_uses_virtual_key(self):
         proposal = propose_deterministic_script("next song", "APP_CONTROL", "Windows")
 
         self.assertIsNotNone(proposal)
         self.assertIn("0xB0", proposal.script)
+
+    def test_windows_media_previous_proposal_uses_virtual_key(self):
+        proposal = propose_deterministic_script("previous song pls ?", "APP_CONTROL", "Windows")
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("0xB1", proposal.script)
 
     def test_file_delete_is_high_risk(self):
         proposal = propose_deterministic_script("delete test.txt from desktop", "FILE_SYSTEM_WRITE", "Windows")
@@ -140,6 +164,30 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertIsNotNone(proposal)
         self.assertIn('$app = "spotify"', proposal.script)
         self.assertNotIn("spotify'\u0131", proposal.script)
+
+    def test_contextual_app_open_resolves_it_from_current_prompt(self):
+        proposal = propose_deterministic_script(
+            "I closed spotify can u open it again",
+            "APP_CONTROL",
+            "Windows",
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('$app = "spotify"', proposal.script)
+        self.assertNotIn('$app = "it again"', proposal.script)
+
+    def test_contextual_app_open_resolves_it_from_history(self):
+        proposal = propose_deterministic_script(
+            "open it again",
+            "APP_CONTROL",
+            "Windows",
+            context_messages=[
+                {"role": "ai", "content": "You want to open the local application 'spotify'."},
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('$app = "spotify"', proposal.script)
 
     def test_real_turkish_intent_detects_trailing_app_open(self):
         self.assertEqual(_detect_intent_deterministic("spotify'\u0131 a\u00e7"), "APP_CONTROL")

@@ -155,18 +155,14 @@ def _propose_windows_script(
             )
 
     if intent == "APP_CONTROL" and _looks_like_open_app(lower):
-        app = _extract_app_name(user_input, close=False)
+        app = _resolve_app_reference(
+            _extract_app_name(user_input, close=False),
+            user_input,
+            context_messages,
+        )
         if app:
             clean_app = _sanitize_app_name(app)
-            script = (
-                f'$app = "{clean_app}"\n'
-                "$candidates = @($app, \"$app.exe\", \"${app}:\")\n"
-                "$started = $false\n"
-                "foreach ($candidate in $candidates) {\n"
-                "  try { Start-Process $candidate -ErrorAction Stop; $started = $true; break } catch { }\n"
-                "}\n"
-                "if (-not $started) { throw \"Could not start application: $app\" }"
-            )
+            script = _windows_open_app_script(clean_app)
             return ScriptProposal(
                 explanation=f"You want to open the local application '{clean_app}'.",
                 script=script,
@@ -280,6 +276,106 @@ def _windows_media_key_script(virtual_key: str) -> str:
     )
 
 
+def _windows_open_app_script(app: str) -> str:
+    safe_app = _escape_powershell_double_quoted(app)
+    return (
+        f'$app = "{safe_app}"\n'
+        "function Normalize-Name([string]$value) {\n"
+        "  if ([string]::IsNullOrWhiteSpace($value)) { return '' }\n"
+        "  return (($value -replace '[^a-zA-Z0-9]', '').ToLowerInvariant())\n"
+        "  }\n"
+        "$needle = Normalize-Name $app\n"
+        "$fallbackProcess = ($app -replace '\\.exe$', '')\n"
+        "$candidates = New-Object System.Collections.Generic.List[object]\n"
+        "function Add-Candidate([string]$target, [string[]]$processNames) {\n"
+        "  if ([string]::IsNullOrWhiteSpace($target)) { return }\n"
+        "  foreach ($existing in $candidates) { if ($existing.Target -eq $target) { return } }\n"
+        "  $candidates.Add([pscustomobject]@{ Target = $target; ProcessNames = $processNames }) | Out-Null\n"
+        "}\n"
+        "function Matches-App([string]$value) {\n"
+        "  $normalized = Normalize-Name $value\n"
+        "  return $normalized -and ($normalized.Contains($needle) -or $needle.Contains($normalized))\n"
+        "}\n"
+        "function Test-AppRunning([string[]]$processNames) {\n"
+        "  foreach ($name in $processNames) {\n"
+        "    if ($name -and (Get-Process -Name $name -ErrorAction SilentlyContinue)) { return $true }\n"
+        "  }\n"
+        "  foreach ($proc in Get-Process -ErrorAction SilentlyContinue) {\n"
+        "    $procName = Normalize-Name $proc.ProcessName\n"
+        "    if ($procName -and ($procName.Contains($needle) -or $needle.Contains($procName))) { return $true }\n"
+        "  }\n"
+        "  return $false\n"
+        "}\n"
+        "Add-Candidate $app @($fallbackProcess)\n"
+        "Add-Candidate \"$app.exe\" @($fallbackProcess)\n"
+        "$appPathRoots = @(\n"
+        "  'Registry::HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths',\n"
+        "  'Registry::HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths',\n"
+        "  'Registry::HKEY_LOCAL_MACHINE\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\App Paths'\n"
+        ")\n"
+        "foreach ($root in $appPathRoots) {\n"
+        "  try {\n"
+        "    foreach ($item in Get-ChildItem $root -ErrorAction Stop) {\n"
+        "      $target = (Get-Item -LiteralPath $item.PSPath -ErrorAction SilentlyContinue).GetValue('')\n"
+        "      $leaf = [IO.Path]::GetFileNameWithoutExtension($item.PSChildName)\n"
+        "      if ((Matches-App $item.PSChildName) -or (Matches-App $leaf) -or (Matches-App $target)) {\n"
+        "        $proc = if ($target) { [IO.Path]::GetFileNameWithoutExtension($target) } else { $leaf }\n"
+        "        if ($target) { Add-Candidate $target @($proc) } else { Add-Candidate $item.PSChildName @($proc) }\n"
+        "      }\n"
+        "    }\n"
+        "  } catch { }\n"
+        "}\n"
+        "$startMenus = @(\n"
+        "  [Environment]::GetFolderPath('StartMenu'),\n"
+        "  [Environment]::GetFolderPath('CommonStartMenu')\n"
+        ")\n"
+        "$shell = $null\n"
+        "try { $shell = New-Object -ComObject WScript.Shell } catch { }\n"
+        "foreach ($menu in $startMenus) {\n"
+        "  if (-not (Test-Path -LiteralPath $menu)) { continue }\n"
+        "  foreach ($shortcut in Get-ChildItem -LiteralPath $menu -Filter *.lnk -Recurse -ErrorAction SilentlyContinue) {\n"
+        "    if (-not (Matches-App $shortcut.BaseName)) { continue }\n"
+        "    $procNames = @($fallbackProcess)\n"
+        "    if ($shell) {\n"
+        "      try {\n"
+        "        $targetPath = $shell.CreateShortcut($shortcut.FullName).TargetPath\n"
+        "        if ($targetPath) { $procNames = @([IO.Path]::GetFileNameWithoutExtension($targetPath), $fallbackProcess) }\n"
+        "      } catch { }\n"
+        "    }\n"
+        "    Add-Candidate $shortcut.FullName $procNames\n"
+        "  }\n"
+        "}\n"
+        "try {\n"
+        "  foreach ($startApp in Get-StartApps -ErrorAction Stop) {\n"
+        "    if (Matches-App $startApp.Name) {\n"
+        "      Add-Candidate \"shell:AppsFolder\\$($startApp.AppID)\" @($fallbackProcess)\n"
+        "    }\n"
+        "  }\n"
+        "} catch { }\n"
+        "try {\n"
+        "  foreach ($protocol in Get-ChildItem 'Registry::HKEY_CLASSES_ROOT' -ErrorAction Stop) {\n"
+        "    try {\n"
+        "      $props = Get-ItemProperty -LiteralPath $protocol.PSPath -ErrorAction Stop\n"
+        "      $label = (Get-Item -LiteralPath $protocol.PSPath -ErrorAction SilentlyContinue).GetValue('')\n"
+        "      if ($null -ne $props.'URL Protocol' -and ((Matches-App $protocol.PSChildName) -or (Matches-App $label))) {\n"
+        "        Add-Candidate \"$($protocol.PSChildName):\" @($fallbackProcess)\n"
+        "      }\n"
+        "    } catch { }\n"
+        "  }\n"
+        "} catch { }\n"
+        "if (Test-AppRunning @($fallbackProcess)) { return }\n"
+        "$started = $false\n"
+        "foreach ($candidate in $candidates) {\n"
+        "  try {\n"
+        "    Start-Process $candidate.Target -ErrorAction Stop | Out-Null\n"
+        "    Start-Sleep -Seconds 3\n"
+        "    if (Test-AppRunning $candidate.ProcessNames) { $started = $true; break }\n"
+        "  } catch { }\n"
+        "}\n"
+        "if (-not $started) { throw \"Could not start application or verify process: $app\" }"
+    )
+
+
 def _looks_like_open_app(lower: str) -> bool:
     if re.search(r"\b(ac|calistir|baslat)\b", lower):
         return True
@@ -335,6 +431,67 @@ def _extract_app_name(text: str, close: bool) -> str | None:
     app = match.group(1).strip(" .")
     app = re.split(r"\s+(?:then|sonra|and then|ardından)\s+", app, maxsplit=1, flags=re.IGNORECASE)[0]
     return _strip_turkish_object_suffix(app.strip()) or None
+
+
+def _resolve_app_reference(app: str | None, text: str, context_messages: list[dict] | None) -> str | None:
+    """Resolve pronouns like "open it again" to a concrete recent app name."""
+    if app and not _is_app_pronoun(app):
+        return app
+
+    mentioned = _extract_app_mentioned_before_reference(text)
+    if mentioned:
+        return mentioned
+
+    return _extract_recent_app_name(context_messages)
+
+
+def _is_app_pronoun(app: str) -> bool:
+    normalized = _normalize_for_matching(app).strip(" .'\"")
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized in {"it", "it again", "again", "that", "that app", "this", "this app", "onu", "bunu"}
+
+
+def _extract_app_mentioned_before_reference(text: str) -> str | None:
+    """Handle prompts like "I closed spotify, can you open it again"."""
+    patterns = [
+        r"\b(?:closed|close|kapat(?:tim|tım)?|kapattim)\s+['\"]?([A-Za-z0-9_.+ -]{2,80})['\"]?",
+        r"\b(?:opened|open|actim|açtım)\s+['\"]?([A-Za-z0-9_.+ -]{2,80})['\"]?",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if not match:
+            continue
+        candidate = match.group(1).strip(" .")
+        candidate = re.split(
+            r"\s+(?:can|could|please|pls|and|then|sonra|open|close|again|it|onu|bunu)\b",
+            candidate,
+            maxsplit=1,
+            flags=re.IGNORECASE,
+        )[0]
+        cleaned = _sanitize_app_name(_strip_turkish_object_suffix(candidate))
+        if cleaned and not _is_app_pronoun(cleaned):
+            return cleaned
+    return None
+
+
+def _extract_recent_app_name(context_messages: list[dict] | None) -> str | None:
+    if not context_messages:
+        return None
+
+    patterns = [
+        r"local application ['\"]([^'\"]+)['\"]",
+        r"application/process named ['\"]([^'\"]+)['\"]",
+        r"\$app\s*=\s*['\"]([^'\"]+)['\"]",
+    ]
+    for message in reversed(context_messages[-12:]):
+        content = str(message.get("content", ""))
+        for pattern in patterns:
+            match = re.search(pattern, content, re.IGNORECASE)
+            if match:
+                cleaned = _sanitize_app_name(match.group(1))
+                if cleaned and not _is_app_pronoun(cleaned):
+                    return cleaned
+    return None
 
 
 def _extract_app_before_trailing_verb(text: str, close: bool) -> str | None:

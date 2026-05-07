@@ -140,7 +140,11 @@ def generate_action_script_node(state: AgentState):
     - If no command is needed, you MUST still say 'Script: NONE'.
     """
     
-    response = llm.invoke([HumanMessage(content=prompt)])
+    try:
+        response = llm.invoke([HumanMessage(content=prompt)])
+    except Exception:
+        explanation = "The language model timed out while generating a script for this request."
+        return {"script": "NONE", "explanation": explanation, "messages": [{"role": "ai", "content": explanation}]}
     content_raw = response.content
     if isinstance(content_raw, list):
         content_str = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""
@@ -214,7 +218,20 @@ The command ran successfully and produced this output:
 {stdout_text}
 
 Summarize the result in 1-3 clear sentences for the user. Be direct and factual. No markdown fences."""
-        summary_response = llm.invoke([HumanMessage(content=summary_prompt)])
+        try:
+            summary_response = llm.invoke([HumanMessage(content=summary_prompt)])
+        except Exception:
+            clean_answer = stdout_text or "The command completed successfully."
+            current_explanation = state.get("explanation", "")
+            new_explanation = f"{current_explanation}\n{clean_answer}".strip()
+            msg = {"role": "ai", "content": clean_answer}
+            return {
+                "explanation": new_explanation,
+                "script": "NONE",
+                "messages": [msg],
+                "retry_count": 0,
+                "errors": []
+            }
         content_raw = summary_response.content
         if isinstance(content_raw, list):
             clean_answer = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else stdout_text

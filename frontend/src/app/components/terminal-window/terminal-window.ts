@@ -233,14 +233,15 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
     failedLogEntry.executed = true;
     failedLogEntry.failed = true;
 
-    const failedScript = failedLogEntry.script || 'UNKNOWN';
+    const failedScript = this.truncateForAiContext(failedLogEntry.script || 'UNKNOWN', 1200);
+    const errorContext = this.truncateForAiContext(errorOutput, 1200);
     const healPrompt = `EXEC_FAILED: The previous script failed.
 
 Previous script:
 ${failedScript}
 
 Execution error:
-${errorOutput}
+${errorContext}
 
 Please analyze the exact error, generate a corrected minimal script for the same current step, and do not repeat the same failed strategy.`;
 
@@ -282,6 +283,13 @@ Please analyze the exact error, generate a corrected minimal script for the same
       return fallback;
     }
     return `Request failed: ${apiMessage}`;
+  }
+
+  private truncateForAiContext(value: string, maxChars: number): string {
+    if (!value || value.length <= maxChars) {
+      return value;
+    }
+    return `${value.slice(0, maxChars)}\n...[truncated]`;
   }
 
   private getOrCreateThreadId(): string {

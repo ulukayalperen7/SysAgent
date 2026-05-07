@@ -56,7 +56,10 @@ def decompose_task_node(state: AgentState):
     Return ONLY the JSON list. No other text.
     """
     
-    response = llm.invoke([HumanMessage(content=prompt)])
+    try:
+        response = llm.invoke([HumanMessage(content=prompt)])
+    except Exception:
+        return {"task_queue": [state['user_input']]}
     content_raw = response.content
     if isinstance(content_raw, list):
         content_str = content_raw[0].get("text", "") if len(content_raw) > 0 and isinstance(content_raw[0], dict) else str(content_raw[0]) if len(content_raw) > 0 else ""
@@ -104,6 +107,7 @@ def _looks_like_single_terminal_task(user_msg: str) -> bool:
     markers = (
         "open ", "launch ", "start ", "close ", "kill ", "quit ",
         " ac", "ac ", "kapat", "sonlandir", "sarki",
+        "song", "track", "previous", "next", "skip", "play pause",
         "create", "touch", "delete", "remove", "write", "olustur", "sil", "yaz",
         "desktop", "masaustu", ".txt", ".py", ".log",
         "top memory", "process", "network", "connection", "cpu", "ram",
