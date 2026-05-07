@@ -341,7 +341,7 @@ def _extract_quoted_content(text: str) -> str | None:
 def _windows_target_directory(text: str) -> str:
     lower = text.lower()
     if "download" in lower:
-        return "[Environment]::GetFolderPath('UserProfile') + '\\Downloads'"
+        return "[Environment]::GetFolderPath('UserProfile') + '\\\\Downloads'"
     if "document" in lower:
         return "[Environment]::GetFolderPath('MyDocuments')"
     return "[Environment]::GetFolderPath('Desktop')"
