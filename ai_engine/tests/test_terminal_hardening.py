@@ -2,7 +2,8 @@ import unittest
 
 from agents.langgraph.nodes.chat import direct_chat_node
 from agents.langgraph.nodes.intent import _detect_intent_deterministic
-from agents.langgraph.nodes.planner import _deterministic_decompose
+from agents.langgraph.nodes.planner import _deterministic_decompose, decompose_task_node
+from agents.langgraph.nodes.synthesis import final_synthesis_node
 from core.response_parse import parse_explanation_and_script
 from core.script_policy import propose_deterministic_script, validate_command_risk
 
@@ -14,6 +15,16 @@ class TerminalHardeningTests(unittest.TestCase):
         )
 
         self.assertEqual(tasks, ["open Spotify", "next song", "create test.txt on desktop"])
+
+    def test_decompose_accepts_common_turkish_typo(self):
+        tasks = _deterministic_decompose("spotify a\u00e7 sorna sonraki \u015fark\u0131")
+
+        self.assertEqual(tasks, ["spotify a\u00e7", "sonraki \u015fark\u0131"])
+
+    def test_planner_keeps_single_terminal_task_deterministic(self):
+        result = decompose_task_node({"user_input": "deneme2.py ad\u0131nda dosya olu\u015ftur", "task_queue": []})
+
+        self.assertEqual(result["task_queue"], ["deneme2.py ad\u0131nda dosya olu\u015ftur"])
 
     def test_chat_shortcut_does_not_need_llm(self):
         result = direct_chat_node(
@@ -27,6 +38,18 @@ class TerminalHardeningTests(unittest.TestCase):
 
         self.assertEqual(result["script"], "NONE")
         self.assertIn("SysAgent is ready", result["explanation"])
+
+    def test_final_synthesis_reuses_ready_terminal_answer(self):
+        result = final_synthesis_node(
+            {
+                "explanation": "Summary:\nAlready formatted.",
+                "script": "NONE",
+                "errors": [],
+                "messages": [],
+            }
+        )
+
+        self.assertEqual(result["explanation"], "Summary:\nAlready formatted.")
 
     def test_deterministic_intent_detects_app_and_file_write(self):
         self.assertEqual(_detect_intent_deterministic("open Spotify"), "APP_CONTROL")
@@ -51,6 +74,81 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertIsNotNone(proposal)
         risk = validate_command_risk(proposal.script, "FILE_SYSTEM_WRITE", "Windows")
         self.assertEqual(risk.risk_level, "High")
+
+    def test_turkish_create_extracts_clean_filename(self):
+        proposal = propose_deterministic_script(
+            "masaüstüne deneme.txt oluştursana",
+            "FILE_SYSTEM_WRITE",
+            "Windows",
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('Join-Path $targetDir "deneme.txt"', proposal.script)
+        self.assertNotIn("Create deneme.txt", proposal.script)
+
+    def test_turkish_followup_write_uses_recent_file_from_history(self):
+        proposal = propose_deterministic_script(
+            "tamam içine deneme alperen ulukaya yaz",
+            "FILE_SYSTEM_WRITE",
+            "Windows",
+            context_messages=[
+                {"role": "user", "content": "masaüstüne deneme.txt oluştursana"},
+                {"role": "ai", "content": "You want to create 'deneme.txt' in the selected local folder."},
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('Join-Path $targetDir "deneme.txt"', proposal.script)
+        self.assertIn('deneme alperen ulukaya', proposal.script)
+
+    def test_real_turkish_create_named_file_does_not_include_prompt_words(self):
+        proposal = propose_deterministic_script(
+            "deneme2.py ad\u0131nda bi dosya olu\u015ftur masa\u00fcst\u00fcnde",
+            "FILE_SYSTEM_WRITE",
+            "Windows",
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('Join-Path $targetDir "deneme2.py"', proposal.script)
+        self.assertNotIn("Create a file named", proposal.script)
+
+    def test_real_turkish_followup_fastapi_write_uses_recent_python_file(self):
+        proposal = propose_deterministic_script(
+            "i\u00e7ine basit bi fast api kodu yaz onun",
+            "FILE_SYSTEM_WRITE",
+            "Windows",
+            context_messages=[
+                {"role": "user", "content": "deneme2.py ad\u0131nda bi dosya olu\u015ftur masa\u00fcst\u00fcnde"},
+                {"role": "ai", "content": "You want to create 'deneme2.py' in the selected local folder."},
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('Join-Path $targetDir "deneme2.py"', proposal.script)
+        self.assertIn("from fastapi import FastAPI", proposal.script)
+        self.assertNotIn("onun", proposal.script)
+
+    def test_real_turkish_app_open_trailing_verb(self):
+        proposal = propose_deterministic_script("spotify a\u00e7", "APP_CONTROL", "Windows")
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('$app = "spotify"', proposal.script)
+
+    def test_real_turkish_app_open_strips_object_suffix(self):
+        proposal = propose_deterministic_script("spotify'\u0131 a\u00e7", "APP_CONTROL", "Windows")
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('$app = "spotify"', proposal.script)
+        self.assertNotIn("spotify'\u0131", proposal.script)
+
+    def test_real_turkish_intent_detects_trailing_app_open(self):
+        self.assertEqual(_detect_intent_deterministic("spotify'\u0131 a\u00e7"), "APP_CONTROL")
+
+    def test_real_turkish_next_song_uses_media_key(self):
+        proposal = propose_deterministic_script("sonraki \u015fark\u0131ya ge\u00e7", "APP_CONTROL", "Windows")
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("0xB0", proposal.script)
 
     def test_parser_strips_fences_and_extra_sections(self):
         explanation, script = parse_explanation_and_script(

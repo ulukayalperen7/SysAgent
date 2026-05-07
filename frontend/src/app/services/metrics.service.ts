@@ -71,7 +71,12 @@ export class MetricsService {
 
     getSystemMetrics(): Observable<SystemMetrics> {
         return this.http.get<ApiResponse<SystemMetrics>>(this.apiUrl).pipe(
-            map(response => response.data),
+            map(response => {
+                if (!response.data) {
+                    throw new Error(response.message || 'Metrics response did not include data.');
+                }
+                return response.data;
+            }),
             catchError(error => {
                 console.error('MetricsService: CRITICAL HTTP ERROR fetching metrics:', error);
                 throw error;

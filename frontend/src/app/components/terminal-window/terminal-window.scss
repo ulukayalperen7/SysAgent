@@ -168,6 +168,20 @@
       }
     }
 
+    .execution-badge {
+      margin: 6px 0 0 20px;
+      font-size: 13px;
+      font-weight: 600;
+
+      &.success {
+        color: #7ee787;
+      }
+
+      &.error {
+        color: #ff8080;
+      }
+    }
+
   }
 
   .terminal-input-area {

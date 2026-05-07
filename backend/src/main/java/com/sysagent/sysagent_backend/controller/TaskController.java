@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
@@ -56,33 +58,51 @@ public class TaskController {
                     .build());
         }
 
-        // Mark task as in-progress to block concurrent duplicate calls
-        taskService.updateTaskStatus(taskId, TaskStatus.IN_PROGRESS, null);
+        // Mark the task before execution. If this fails, do not execute because
+        // Spring Boot would lose the audit trail for a risky local action.
+        if (!tryUpdateStatus(taskId, TaskStatus.IN_PROGRESS)) {
+            return ResponseEntity.status(503).body(ApiResponse.<String>builder()
+                    .status("ERROR")
+                    .message("Task database is unavailable. Script was not executed.")
+                    .build());
+        }
 
         try {
             String output = scriptExecutionService.executeScript(task.getScript());
 
             if (output != null && output.startsWith("EXEC_FAILED:")) {
-                taskService.updateTaskStatus(taskId, TaskStatus.FAILED, null);
+                tryUpdateStatus(taskId, TaskStatus.FAILED);
                 return ResponseEntity.ok(ApiResponse.<String>builder()
                         .status("ERROR")
                         .message("Script execution failed")
                         .data(output)
-                        .build());
+                    .build());
             }
 
-            taskService.updateTaskStatus(taskId, TaskStatus.COMPLETED, null);
+            boolean statusSaved = tryUpdateStatus(taskId, TaskStatus.COMPLETED);
             return ResponseEntity.ok(ApiResponse.<String>builder()
                     .status("SUCCESS")
-                    .message("Script executed successfully")
+                    .message(statusSaved
+                            ? "Script executed successfully"
+                            : "Script executed successfully, but task status could not be saved.")
                     .data(output)
                     .build());
         } catch (Exception e) {
-            taskService.updateTaskStatus(taskId, TaskStatus.FAILED, null);
+            tryUpdateStatus(taskId, TaskStatus.FAILED);
             return ResponseEntity.internalServerError().body(ApiResponse.<String>builder()
                     .status("ERROR")
                     .message("Failed to execute script: " + e.getMessage())
                     .build());
+        }
+    }
+
+    private boolean tryUpdateStatus(String taskId, TaskStatus status) {
+        try {
+            taskService.updateTaskStatus(taskId, status, null);
+            return true;
+        } catch (Exception e) {
+            log.error("Could not update task {} to {}", taskId, status, e);
+            return false;
         }
     }
 }

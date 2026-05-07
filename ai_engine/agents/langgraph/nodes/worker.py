@@ -74,7 +74,12 @@ def generate_action_script_node(state: AgentState):
 
     # Prefer deterministic proposals for common terminal operations. This keeps
     # app/file/media commands stable and avoids unnecessary LLM variability.
-    deterministic = propose_deterministic_script(state["user_input"], intent, os_name)
+    deterministic = propose_deterministic_script(
+        state["user_input"],
+        intent,
+        os_name,
+        context_messages=state.get("messages", []),
+    )
     if deterministic:
         return _finalize_script_proposal(state, deterministic.explanation, deterministic.script, os_name, intent)
 

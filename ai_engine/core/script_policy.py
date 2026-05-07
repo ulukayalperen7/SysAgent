@@ -29,7 +29,12 @@ class CommandRisk:
     rollback: str
 
 
-def propose_deterministic_script(user_input: str, intent: str, os_name: str) -> ScriptProposal | None:
+def propose_deterministic_script(
+    user_input: str,
+    intent: str,
+    os_name: str,
+    context_messages: list[dict] | None = None,
+) -> ScriptProposal | None:
     """
     Generate reliable scripts for common terminal operations without relying on an LLM.
 
@@ -38,7 +43,7 @@ def propose_deterministic_script(user_input: str, intent: str, os_name: str) -> 
     """
     if "win" not in os_name.lower():
         return _propose_unix_script(user_input, intent)
-    return _propose_windows_script(user_input, intent)
+    return _propose_windows_script(user_input, intent, context_messages)
 
 
 def validate_command_risk(command: str, intent: str, os_name: str) -> CommandRisk:
@@ -107,8 +112,12 @@ def suggest_rollback(command: str, intent: str) -> str:
     return "No automatic rollback is available; review the script before approval."
 
 
-def _propose_windows_script(user_input: str, intent: str) -> ScriptProposal | None:
-    lower = user_input.lower()
+def _propose_windows_script(
+    user_input: str,
+    intent: str,
+    context_messages: list[dict] | None = None,
+) -> ScriptProposal | None:
+    lower = _normalize_for_matching(user_input)
 
     if _is_media_next(lower):
         return ScriptProposal(
@@ -167,6 +176,8 @@ def _propose_windows_script(user_input: str, intent: str) -> ScriptProposal | No
 
     if intent == "FILE_SYSTEM_WRITE":
         file_name = _extract_file_name(user_input)
+        if not file_name and _looks_like_contextual_file_write(lower):
+            file_name = _extract_recent_file_name(context_messages)
         target_dir = _windows_target_directory(user_input)
         if file_name and _looks_like_delete_file(lower):
             script = (
@@ -183,12 +194,9 @@ def _propose_windows_script(user_input: str, intent: str) -> ScriptProposal | No
             )
 
         if file_name and _looks_like_write_file(lower):
-            content = _extract_quoted_content(user_input) or ""
-            script = (
-                f"$targetDir = {target_dir}\n"
-                f'$path = Join-Path $targetDir "{file_name}"\n'
-                f'Set-Content -LiteralPath $path -Value "{_escape_powershell_double_quoted(content)}" -Encoding UTF8 -Force -ErrorAction Stop'
-            )
+            content = _extract_write_content(user_input, file_name)
+            content = _expand_code_write_request(user_input, file_name, content)
+            script = _windows_set_content_script(target_dir, file_name, content)
             return ScriptProposal(
                 explanation=f"You want to write text into '{file_name}' in the selected local folder.",
                 script=script,
@@ -233,7 +241,7 @@ def _propose_windows_script(user_input: str, intent: str) -> ScriptProposal | No
 
 
 def _propose_unix_script(user_input: str, intent: str) -> ScriptProposal | None:
-    lower = user_input.lower()
+    lower = _normalize_for_matching(user_input)
     if intent == "APP_CONTROL" and _looks_like_close_app(lower):
         app = _extract_app_name(user_input, close=True)
         if app:
@@ -273,18 +281,26 @@ def _windows_media_key_script(virtual_key: str) -> str:
 
 
 def _looks_like_open_app(lower: str) -> bool:
+    if re.search(r"\b(ac|calistir|baslat)\b", lower):
+        return True
     return any(term in lower for term in ("open ", "launch ", "start ", "aç", "ac "))
 
 
 def _looks_like_close_app(lower: str) -> bool:
+    if re.search(r"\b(kapat|sonlandir)\b", lower):
+        return True
     return any(term in lower for term in ("close ", "quit ", "kill ", "kapat", "sonlandır"))
 
 
 def _is_media_next(lower: str) -> bool:
+    if any(term in lower for term in ("diger sarki", "sonraki sarki", "sarki atla", "ileri sar")):
+        return True
     return any(term in lower for term in ("next song", "next track", "skip song", "diğer şarkı", "sonraki şarkı", "siradaki sarki"))
 
 
 def _is_media_previous(lower: str) -> bool:
+    if any(term in lower for term in ("onceki sarki", "geri sar")):
+        return True
     return any(term in lower for term in ("previous song", "previous track", "önceki şarkı", "onceki sarki"))
 
 
@@ -312,20 +328,78 @@ def _extract_app_name(text: str, close: bool) -> str | None:
     verbs = "close|quit|kill|kapat|sonlandır" if close else "open|launch|start|aç|ac|install|uninstall|yükle|kur|kaldır"
     match = re.search(rf"(?:{verbs})\s+['\"]?([A-Za-z0-9_.+ -]{{2,80}})['\"]?", text, re.IGNORECASE)
     if not match:
+        trailing_app = _extract_app_before_trailing_verb(text, close)
+        if trailing_app:
+            return _strip_turkish_object_suffix(trailing_app)
         return None
     app = match.group(1).strip(" .")
     app = re.split(r"\s+(?:then|sonra|and then|ardından)\s+", app, maxsplit=1, flags=re.IGNORECASE)[0]
-    return app.strip() or None
+    return _strip_turkish_object_suffix(app.strip()) or None
+
+
+def _extract_app_before_trailing_verb(text: str, close: bool) -> str | None:
+    """Support Turkish order such as "spotify ac" or "notepad kapat"."""
+    normalized = _normalize_for_matching(text)
+    verbs = ("kapat", "sonlandir") if close else ("ac", "calistir", "baslat", "yukle", "kur")
+    for verb in verbs:
+        match = re.search(rf"^\s*([A-Za-z0-9_.+' -]{{2,80}}?)\s+{verb}\b", normalized)
+        if match:
+            # Normalization maps Turkish characters one-for-one, so indexes can
+            # slice the original text without shifting the app name.
+            app = text[match.start(1) : match.end(1)].strip(" .")
+            return app or None
+    return None
+
+
+def _strip_turkish_object_suffix(app: str) -> str:
+    """Remove Turkish object particles from app names, e.g. "spotify'i ac"."""
+    cleaned = app.strip(" .'\"")
+    cleaned = re.sub(r"(?:['\s]+)(?:i|ı|u|ü|yi|yı|yu|yü)$", "", cleaned, flags=re.IGNORECASE)
+    return cleaned.strip(" .'\"")
 
 
 def _extract_file_name(text: str) -> str | None:
     quoted = re.search(r"['\"]([^'\"]+\.[A-Za-z0-9]{1,8})['\"]", text)
     if quoted:
         return _sanitize_file_name(quoted.group(1))
-    match = re.search(r"([A-Za-z0-9_. -]+\.[A-Za-z0-9]{1,8})", text)
+
+    # Match one filename token only. Allowing spaces here made Turkish location
+    # words such as "masaüstüne deneme.txt" leak into the filename.
+    match = re.search(r"(?<![\w.-])([A-Za-z0-9_-]+\.[A-Za-z0-9]{1,8})(?![\w.-])", text)
     if match:
         return _sanitize_file_name(match.group(1).strip())
     return None
+
+
+def _extract_write_content(text: str, file_name: str) -> str:
+    """Extract user text for file write commands, including Turkish follow-ups."""
+    quoted_content = _extract_quoted_content(text)
+    if quoted_content is not None:
+        return quoted_content
+
+    normalized = _normalize_for_matching(text)
+    for marker in ("icine", "into it", "inside it", "dosyaya"):
+        marker_index = normalized.find(marker)
+        if marker_index >= 0:
+            # Turkish follow-ups often say "write this into it" without naming
+            # the file again. Normalization preserves indexes one-for-one.
+            content = text[marker_index + len(marker) :]
+            return _clean_write_content(content)
+
+    lower = text.lower()
+    if "içine" in lower or "icine" in lower:
+        content = re.split(r"\biçine\b|\bicine\b", text, maxsplit=1, flags=re.IGNORECASE)[-1]
+        content = re.sub(r"\byaz(?:sana)?\b", "", content, flags=re.IGNORECASE)
+        return _clean_write_content(content)
+
+    content = re.sub(re.escape(file_name), "", text, flags=re.IGNORECASE)
+    content = re.sub(
+        r"\b(write|yaz|to|into|inside|file|dosya|dosyaya|içine|icine|tamam)\b",
+        "",
+        content,
+        flags=re.IGNORECASE,
+    )
+    return _clean_write_content(content)
 
 
 def _extract_quoted_content(text: str) -> str | None:
@@ -338,12 +412,75 @@ def _extract_quoted_content(text: str) -> str | None:
     return quoted[-1]
 
 
+def _looks_like_contextual_file_write(lower: str) -> bool:
+    """Detect follow-up writes that refer to the most recently mentioned file."""
+    return _looks_like_write_file(lower) and any(
+        term in lower for term in ("içine", "icine", "into it", "inside it", "dosyaya")
+    )
+
+
+def _extract_recent_file_name(context_messages: list[dict] | None) -> str | None:
+    """Find the latest filename mentioned in recent LangGraph conversation state."""
+    if not context_messages:
+        return None
+
+    for message in reversed(context_messages[-12:]):
+        content = str(message.get("content", ""))
+        matches = re.findall(r"(?<![\w.-])([A-Za-z0-9_-]+\.[A-Za-z0-9]{1,8})(?![\w.-])", content)
+        if matches:
+            return _sanitize_file_name(matches[-1])
+    return None
+
+
+def _clean_write_content(content: str) -> str:
+    """Remove command words that are not meant to become file content."""
+    cleaned = content.strip(" .")
+    for filler in ("yaz", "yazsana", "tamam", "onun", "ona", "bunun", "sunun", "\u015funun"):
+        cleaned = re.sub(rf"\b{re.escape(filler)}\b", "", cleaned, flags=re.IGNORECASE)
+    return re.sub(r"\s{2,}", " ", cleaned).strip(" .")
+
+
+def _expand_code_write_request(text: str, file_name: str, content: str) -> str:
+    """
+    Turn common "write simple code" requests into useful starter code.
+
+    This keeps the terminal practical: a user asking for FastAPI code in a .py
+    file expects runnable scaffolding, not the literal words "simple FastAPI code".
+    """
+    lower = _normalize_for_matching(text)
+    if file_name.lower().endswith(".py") and ("fastapi" in lower or "fast api" in lower):
+        return (
+            "from fastapi import FastAPI\n\n"
+            "app = FastAPI()\n\n\n"
+            '@app.get("/")\n'
+            "def read_root():\n"
+            '    return {"message": "Hello from SysAgent"}\n'
+        )
+    return content
+
+
+def _windows_set_content_script(target_dir: str, file_name: str, content: str) -> str:
+    """Build a PowerShell write script that safely handles multiline content."""
+    safe_content = content.replace("\r\n", "\n").replace("\r", "\n")
+    safe_content = safe_content.replace("\n'@\n", "\n' + '@\n")
+    return (
+        f"$targetDir = {target_dir}\n"
+        f'$path = Join-Path $targetDir "{file_name}"\n'
+        "$content = @'\n"
+        f"{safe_content}\n"
+        "'@\n"
+        "Set-Content -LiteralPath $path -Value $content -Encoding UTF8 -Force -ErrorAction Stop"
+    )
+
+
 def _windows_target_directory(text: str) -> str:
-    lower = text.lower()
+    lower = _normalize_for_matching(text)
     if "download" in lower:
         return "[Environment]::GetFolderPath('UserProfile') + '\\\\Downloads'"
     if "document" in lower:
         return "[Environment]::GetFolderPath('MyDocuments')"
+    if "desktop" in lower or "masaustu" in lower:
+        return "[Environment]::GetFolderPath('Desktop')"
     return "[Environment]::GetFolderPath('Desktop')"
 
 
@@ -362,3 +499,24 @@ def _sanitize_file_name(file_name: str) -> str:
 
 def _escape_powershell_double_quoted(value: str) -> str:
     return value.replace("`", "``").replace('"', '`"').replace("$", "`$")
+
+
+def _normalize_for_matching(text: str) -> str:
+    """Lowercase and fold Turkish characters so intent matching is stable."""
+    translation = str.maketrans(
+        {
+            "\u00e7": "c",
+            "\u011f": "g",
+            "\u0131": "i",
+            "\u00f6": "o",
+            "\u015f": "s",
+            "\u00fc": "u",
+            "\u00c7": "c",
+            "\u011e": "g",
+            "\u0130": "i",
+            "\u00d6": "o",
+            "\u015e": "s",
+            "\u00dc": "u",
+        }
+    )
+    return text.translate(translation).lower()

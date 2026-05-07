@@ -56,7 +56,6 @@ async def analyze_system(request: AnalyzeRequest):
         final_state = orchestrator_graph.invoke(initial_state, config)
         
         pending_count = len(final_state.get("task_queue", []))
-        print(f"DEBUG: sending pending_count={pending_count} to backend")
         return AnalyzeResponse(
             status="success",
             reply=final_state.get("explanation", "No explanation provided."),

@@ -56,15 +56,19 @@ def detect_intent_node(state: AgentState):
 
 def _detect_intent_deterministic(user_input: str) -> str | None:
     """Classify common terminal intents without waiting for the LLM."""
-    lower = user_input.lower().strip()
+    lower = _normalize_for_matching(user_input).strip()
     if lower in CHAT_SHORTCUTS:
         return "CHAT"
     if "exec_failed:" in lower:
         return "UNKNOWN"
 
-    write_terms = ("create", "touch", "delete", "remove", "write", "set content", "move", "rename", "oluştur", "olustur", "sil", "yaz")
-    app_terms = ("open ", "launch ", "start ", "close ", "kill ", "quit ", "next song", "next track", "previous song", "play pause", "aç", "ac ", "kapat", "şarkı", "sarki")
-    devops_write_terms = ("install", "uninstall", "npm install", "pip install", "docker restart", "git push", "winget", "yükle", "kur", "kaldır")
+    write_terms = ("create", "touch", "delete", "remove", "write", "set content", "move", "rename", "olustur", "sil", "yaz")
+    app_terms = (
+        "open ", "launch ", "start ", "close ", "kill ", "quit ",
+        "next song", "next track", "previous song", "play pause",
+        " ac", "ac ", "kapat", "sonlandir", "sarki", "calistir", "baslat",
+    )
+    devops_write_terms = ("install", "uninstall", "npm install", "pip install", "docker restart", "git push", "winget", "yukle", "kur", "kaldir")
     fs_read_terms = ("list files", "show files", "read file", "show file", "list directory", "downloads", "desktop", "documents", ".txt", ".log")
     network_terms = ("network", "connections", "ports", "ping", "dns", "socket")
     system_terms = ("cpu", "ram", "memory", "process", "processes", "slow", "suspicious", "system", "metrics")
@@ -83,3 +87,24 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
         return "SYSTEM_OPERATION"
 
     return None
+
+
+def _normalize_for_matching(text: str) -> str:
+    """Fold Turkish characters to ASCII so casual terminal text routes reliably."""
+    translation = str.maketrans(
+        {
+            "\u00e7": "c",
+            "\u011f": "g",
+            "\u0131": "i",
+            "\u00f6": "o",
+            "\u015f": "s",
+            "\u00fc": "u",
+            "\u00c7": "c",
+            "\u011e": "g",
+            "\u0130": "i",
+            "\u00d6": "o",
+            "\u015e": "s",
+            "\u00dc": "u",
+        }
+    )
+    return text.translate(translation).lower()

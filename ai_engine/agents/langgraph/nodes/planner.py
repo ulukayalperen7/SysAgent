@@ -33,6 +33,8 @@ def decompose_task_node(state: AgentState):
     deterministic_tasks = _deterministic_decompose(state["user_input"])
     if len(deterministic_tasks) > 1:
         return {"task_queue": deterministic_tasks}
+    if _looks_like_single_terminal_task(user_msg):
+        return {"task_queue": deterministic_tasks}
 
     llm = _get_langchain_llm()
     prompt = f"""
@@ -82,12 +84,52 @@ def _deterministic_decompose(user_input: str) -> list[str]:
     used casually: "open Spotify sonra next song sonra create file".
     """
     parts = re.split(
-        r"\s*(?:;|,?\s+\bthen\b\s+|,?\s+\band then\b\s+|,?\s+\bafter that\b\s+|,?\s+\bsonra\b\s+|,?\s+\bardından\b\s+)\s*",
+        r"\s*(?:;|,?\s+\bthen\b\s+|,?\s+\band then\b\s+|,?\s+\bafter that\b\s+|,?\s+\bsonra\b\s+|,?\s+\bsorna\b\s+|,?\s+\bardından\b\s+)\s*",
         user_input,
         flags=re.IGNORECASE,
     )
     tasks = [part.strip(" .") for part in parts if part and part.strip(" .")]
     return tasks if tasks else [user_input]
+
+
+def _looks_like_single_terminal_task(user_msg: str) -> bool:
+    """
+    Keep obvious one-step terminal commands away from the LLM decomposer.
+
+    The worker and intent nodes already know how to handle these requests
+    deterministically, so asking an external model just adds latency/failure
+    points before we even reach the safe script proposal layer.
+    """
+    normalized = _normalize_for_matching(user_msg)
+    markers = (
+        "open ", "launch ", "start ", "close ", "kill ", "quit ",
+        " ac", "ac ", "kapat", "sonlandir", "sarki",
+        "create", "touch", "delete", "remove", "write", "olustur", "sil", "yaz",
+        "desktop", "masaustu", ".txt", ".py", ".log",
+        "top memory", "process", "network", "connection", "cpu", "ram",
+    )
+    return any(marker in normalized for marker in markers)
+
+
+def _normalize_for_matching(text: str) -> str:
+    """Fold Turkish characters to ASCII for planner fast-path checks."""
+    translation = str.maketrans(
+        {
+            "\u00e7": "c",
+            "\u011f": "g",
+            "\u0131": "i",
+            "\u00f6": "o",
+            "\u015f": "s",
+            "\u00fc": "u",
+            "\u00c7": "c",
+            "\u011e": "g",
+            "\u0130": "i",
+            "\u00d6": "o",
+            "\u015e": "s",
+            "\u00dc": "u",
+        }
+    )
+    return text.translate(translation).lower()
 
 def pop_next_task_node(state: AgentState):
     """

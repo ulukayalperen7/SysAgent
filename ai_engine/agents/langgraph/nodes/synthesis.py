@@ -18,6 +18,14 @@ def final_synthesis_node(state: AgentState):
     Reads the accumulated messages (which include stdout from executed commands)
     and provides a final, synthesized answer to the user.
     """
+    existing_explanation = state.get("explanation", "").strip()
+    script = state.get("script", "NONE")
+    if existing_explanation and (not script or script == "NONE") and not state.get("errors"):
+        # Most terminal responses are already formatted by chat or MCP nodes.
+        # Avoiding an extra LLM call keeps simple commands fast and reduces
+        # the chance of backend DB connections idling during long AI waits.
+        return {"explanation": existing_explanation}
+
     llm = _get_langchain_llm()
     prompt = """
 You are the final response synthesizer for SysAgent Enterprise AI.

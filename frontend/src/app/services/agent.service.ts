@@ -14,10 +14,17 @@ export class AgentService {
 
     constructor(private http: HttpClient) { }
 
-    processIntent(intent: string, threadId?: string): Observable<any> {
+    processIntent(intent: string, threadId?: string): Observable<AgentIntentResponse> {
         const payload: AgentIntentRequest = { intent, threadId };
         return this.http.post<ApiResponse<AgentIntentResponse>>(`${this.apiUrl}/process`, payload).pipe(
-            map(response => response.data),
+            map(response => {
+                // The backend always wraps responses. Guard here so the terminal
+                // never crashes on a malformed/empty API payload.
+                if (response.status !== 'SUCCESS' || !response.data) {
+                    throw new Error(response.message || 'Agent response did not include usable data.');
+                }
+                return response.data;
+            }),
             catchError(error => {
                 console.error('AgentService: Error processing intent', error);
                 throw error;

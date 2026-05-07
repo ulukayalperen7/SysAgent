@@ -23,8 +23,8 @@
           {{ log.executing ? 'Executing...' : 'Approve & Run locally' }}
         </button>
       </div>
-      <div *ngIf="log.executed" class="execution-badge success">
-        ✅ Action Completed Successfully
+      <div *ngIf="log.executed" class="execution-badge" [ngClass]="log.failed ? 'error' : 'success'">
+        {{ log.failed ? 'Action failed. Corrected proposal generated.' : 'Action completed successfully.' }}
       </div>
     </div>
   </div>

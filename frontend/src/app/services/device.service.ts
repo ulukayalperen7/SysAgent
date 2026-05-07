@@ -26,7 +26,7 @@ export class DeviceService {
 
     getDevices(): Observable<Device[]> {
         return this.http.get<ApiResponse<Device[]>>(this.apiUrl).pipe(
-            map(response => response.data),
+            map(response => response.data ?? []),
             catchError(error => {
                 console.error('DeviceService: Error fetching devices', error);
                 throw error;
