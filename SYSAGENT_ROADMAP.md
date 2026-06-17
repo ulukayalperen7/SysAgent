@@ -328,6 +328,8 @@ Goal:
 
 ### Phase 6 - Agent Hub Foundation
 
+Status: In Progress.
+
 Goal:
 
 - Design deployable capabilities without rushing marketplace complexity.
@@ -439,3 +441,13 @@ Notes:
 - Preserved Angular approval and Spring Boot-only execution.
 - Added deterministic script proposals for app open/close, media next/previous/play-pause, desktop file create/write/delete, and install/uninstall proposals.
 - Added Supabase/PgBouncer-safe PostgreSQL JDBC prepared-statement configuration.
+
+### Phase 6
+
+Status: In Progress.
+
+Notes:
+
+- Approved the Agent Hub foundation direction before implementation.
+- Added an idempotent PostgreSQL/Supabase migration for agent profiles, prompt versions, MCP tool permissions, intent routes, device scopes, risk policies, and decision audit records.
+- Added seed data for the current LangGraph/CrewAI/MCP runtime roles so hardcoded routing can be replaced gradually without breaking the terminal flow.
