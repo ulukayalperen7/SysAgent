@@ -79,6 +79,7 @@ async def analyze_system(request: AnalyzeRequest):
             "messages": [{"role": "user", "content": sanitized_prompt}], # Preserved + Appended by Reducer
             "explanation": "", # Clear any previous explanation loop aggregation
             "script": "NONE",
+            "mcp_tools_used": [],
             "errors": [],
             "retry_count": 0
         }
@@ -99,6 +100,7 @@ async def analyze_system(request: AnalyzeRequest):
             thread_id=request.thread_id,
             intent_key=current_intent,
             agent_slug=_agent_slug_for_route(selected_route.target_langgraph_node if selected_route else None),
+            mcp_tools_used=final_state.get("mcp_tools_used", []),
             approval_required=approval_required,
             decision_summary=(final_state.get("explanation", "") or "")[:500],
             raw_metadata={

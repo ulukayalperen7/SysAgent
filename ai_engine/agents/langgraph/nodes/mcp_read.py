@@ -79,6 +79,7 @@ def mcp_read_only_node(state: AgentState) -> dict[str, Any]:
         "explanation": _append_explanation(state, explanation),
         "script": "NONE",
         "messages": [{"role": "ai", "content": explanation}],
+        "mcp_tools_used": [plan.tool_name],
         "errors": [] if result.get("success") else [result.get("error", "MCP read-only tool failed.")],
         "retry_count": 0,
     }

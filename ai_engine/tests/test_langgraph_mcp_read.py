@@ -30,6 +30,7 @@ class LangGraphMcpReadTests(unittest.TestCase):
 
         self.assertEqual(result["script"], "NONE")
         self.assertIn("Top memory-consuming processes", result["explanation"])
+        self.assertEqual(result["mcp_tools_used"], ["system_get_top_memory_processes"])
 
     def test_directory_listing_uses_mcp(self):
         state = _state("list files in this project", "FILE_SYSTEM_READ")
@@ -60,6 +61,7 @@ class LangGraphMcpReadTests(unittest.TestCase):
 
         self.assertEqual(result["script"], "NONE")
         self.assertIn("Filesystem search completed", result["explanation"])
+        self.assertEqual(result["mcp_tools_used"], ["filesystem_search"])
 
     def test_disk_usage_uses_mcp(self):
         state = _state("show disk usage of this project", "FILE_SYSTEM_READ")

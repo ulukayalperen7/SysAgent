@@ -22,6 +22,7 @@ class AgentState(TypedDict):
     # State tracking
     current_intent: str
     task_queue: List[str]
+    mcp_tools_used: Annotated[List[str], operator.add]
     
     # Output variables corresponding to the API contract
     explanation: str
