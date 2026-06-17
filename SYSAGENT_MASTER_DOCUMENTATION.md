@@ -1,5 +1,8 @@
 # SysAgent Master Documentation
 
+## Document Purpose
+This document is the product and architecture source of truth for SysAgent. Use it to understand the mission, system boundaries, runtime roles, core architectural decisions, and technology posture. It is intentionally not a changelog; implementation progress belongs in `SYSAGENT_ROADMAP.md`.
+
 ## 1. Mission
 SysAgent is an enterprise-grade AI control plane for operating systems. It lets users manage local or remote machines with natural language while preserving strict human approval for risky actions.
 
@@ -20,6 +23,8 @@ Core mission:
 - `Backend` (Spring Boot): orchestrates requests, stores tasks, enforces execution lifecycle.
 - `AI Engine` (FastAPI): LangGraph supervisor with CrewAI and script generation nodes.
 - `Database` (Supabase/PostgreSQL): persistence for tasks, status, scripts, and audit history.
+- `MCP Layer`: standardized capability access for safe read-only tools first.
+- `Agent Hub`: database-backed runtime configuration for agents, intent routes, MCP permissions, risk policies, prompt versions, device scopes, and decision audit.
 
 ## 4. Data Flow
 1. User sends intent from terminal UI.
@@ -46,6 +51,12 @@ Responsibilities:
 - Continue queue until all steps are complete.
 - Support retry/self-heal when execution fails.
 
+Current posture:
+- LangGraph remains the top-level workflow brain.
+- Agent Hub may influence routes, policies, and prompts, but it should not replace LangGraph.
+- MCP must stay below LangGraph as a capability layer.
+- The next core hardening target is durable PostgreSQL/Supabase checkpointing instead of in-memory-only graph state.
+
 ## 6. CrewAI: How It Works
 CrewAI is used as the diagnostics and reasoning specialist layer.
 
@@ -55,6 +66,34 @@ Responsibilities:
 - Support high-signal investigations before command execution.
 
 CrewAI is not the top-level router. LangGraph decides when CrewAI should be called.
+
+Current posture:
+- CrewAI is best used for deeper diagnostic reasoning, not for every terminal request.
+- Simple read-only inspection should stay on lightweight LangGraph + MCP paths.
+- CrewAI agents may grow, but each additional agent needs a clear diagnostic role, tool scope, and output contract.
+
+## 6.1 MCP: How It Works
+MCP is the standardized tool and context access layer.
+
+Current MCP tools are intentionally read-only:
+- `system_get_metrics_snapshot`
+- `system_list_processes`
+- `system_get_top_memory_processes`
+- `network_list_connections`
+- `filesystem_list_directory`
+- `filesystem_read_file`
+- `system_get_platform_info`
+
+MCP should grow first through safe read-only capabilities:
+- services and startup applications,
+- installed applications and package inventory,
+- disk usage by folder,
+- event log and application log readers,
+- Git and Docker read-only status tools,
+- filesystem search with bounded output,
+- DNS and network configuration inspection.
+
+MCP must not become the execution boundary. Write, delete, install, kill, firewall, or system mutation capabilities should remain script proposals that require Angular approval and Spring Boot execution.
 
 ## 7. Autonomy and Safety Model
 - Human approval is mandatory for risky or write-like operations.
@@ -91,6 +130,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
+- Auth and remote access should wait until the core orchestration, MCP scope, checkpointing, and policy model are stronger.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:
@@ -102,9 +142,27 @@ Supabase (PostgreSQL) is the source of truth for:
 This makes behavior traceable and production-ready.
 
 ## 12. Near-Term Engineering Priorities
-1. Stabilize thread-aware memory in LangGraph sessions.
-2. Fix queue auto-resume consistency after approvals.
-3. Harden self-heal trigger and recovery prompt handling.
-4. Unify approval gating across all script-producing branches.
-5. Improve intent safety boundaries for unknown/ambiguous requests.
-6. Add regression tests for queue, retry, and recovery flows.
+1. Move LangGraph checkpointing and long-term state from in-memory storage to PostgreSQL/Supabase.
+2. Expand safe read-only MCP coverage before adding more write/action behavior.
+3. Add a semantic MCP tool planner so tool selection is not limited to keyword and regex matching.
+4. Bind Agent Hub prompt versions into runtime prompt construction.
+5. Add an evaluation suite for read-only routing, risky approval gates, multi-step queues, Turkish/English commands, and self-healing.
+6. Keep Auth, remote access, and automations behind the core reliability work.
+
+## 13. Framework Posture
+Current core framework choices:
+- LangGraph: keep as the main orchestrator and state machine.
+- MCP: keep as the standard capability/tool layer.
+- CrewAI: keep as the diagnostics specialist team.
+- FastAPI: keep as the AI Engine HTTP boundary.
+- Spring Boot: keep as the only approved script execution boundary.
+- Angular: keep as the terminal and human approval surface.
+
+Technology watchlist for later, not immediate adoption:
+- LangSmith: tracing, evaluation, and LangGraph observability.
+- OpenTelemetry: vendor-neutral logs, metrics, traces, and production diagnostics.
+- LiteLLM proxy: model routing, cost controls, retries, and provider failover.
+- Google ADK: useful for future experimental agents or Google/Vertex-specific runtimes, but not a replacement for the current LangGraph brain.
+- pgvector/Postgres vector search: durable memory, knowledge, and retrieval after core state is stable.
+
+Do not add a new framework just because it is powerful. Add it only when it fills a clear gap without creating a second orchestration brain.

@@ -1,5 +1,9 @@
 # SysAgent Roadmap
 
+## Document Purpose
+
+This document is the implementation roadmap and progress log for SysAgent. Use it to decide what to build next, track completed phases, and preserve the order of work. Product scope and architectural principles live in `SYSAGENT_MASTER_DOCUMENTATION.md`.
+
 Date: May 7, 2026
 
 ## Mission
@@ -335,8 +339,24 @@ Goal:
 - Design deployable capabilities without rushing marketplace complexity.
 - Map agents to allowed MCP tools, prompts, device scope, and risk levels.
 - Propose database schema before implementation.
+- Harden the core agent runtime before Auth, automations, and remote access.
 
 No database tables should be created without explicit approval.
+
+Core hardening order:
+
+1. Move LangGraph checkpointing from in-memory `MemorySaver` to PostgreSQL/Supabase-backed persistence.
+2. Expand safe read-only MCP tools before adding more write/action behavior.
+3. Add a semantic MCP tool planner so tool selection is not limited to keyword and regex matching.
+4. Bind Agent Hub prompt versions into runtime prompt construction.
+5. Add an evaluation suite for read-only routing, risky approval gates, multi-step queues, Turkish/English commands, and self-healing.
+6. Keep Auth, remote access, and automations behind this core reliability work.
+
+Framework watchlist:
+
+- LangSmith, OpenTelemetry, LiteLLM proxy, Google ADK, and pgvector may be useful later.
+- Do not add any of them during Phase 6 unless a concrete reliability, observability, model-routing, or memory gap requires it.
+- Google ADK should be treated as a future experimental agent runtime, not a replacement for LangGraph.
 
 ### Phase 7 - Automations and Scheduled Rules
 
@@ -456,3 +476,5 @@ Notes:
 - Added Agent Hub MCP permission filtering so read-only tool execution must be enabled for the active agent policy before the MCP client is called.
 - Added Agent Hub risk policy loading for command blocking and approval gates while retaining static `SecurityGuardian` hard blocks as defense in depth.
 - Added optional Agent Hub decision audit persistence from AI Engine analysis results, linked to backend task IDs when PostgreSQL/Supabase is configured.
+- Clarified document roles: `SYSAGENT_MASTER_DOCUMENTATION.md` is the product and architecture source of truth, while this roadmap is the implementation order and progress log.
+- Re-scoped the next Phase 6 work around core hardening before Auth: PostgreSQL/Supabase LangGraph persistence, broader read-only MCP coverage, semantic tool planning, Agent Hub prompt runtime binding, and evaluation coverage.
