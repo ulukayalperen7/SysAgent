@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from core.agent_state import AgentState
+from core.agent_hub import get_agent_hub_config
 from agents.langgraph.nodes import (
     decompose_task_node,
     pop_next_task_node,
@@ -50,6 +51,16 @@ builder.add_conditional_edges(
 
 def route_after_intent(state: AgentState):
     intent = state.get("current_intent", "UNKNOWN")
+    user_input = state.get("user_input", "")
+    configured_route = get_agent_hub_config().select_route(intent, user_input)
+    if configured_route and configured_route.target_langgraph_node in {
+        "direct_chat_node",
+        "mcp_read_only_node",
+        "run_crewai_diagnostics_node",
+        "generate_action_script_node",
+    }:
+        return configured_route.target_langgraph_node
+
     if intent == "CHAT":
         return "direct_chat_node"
     elif is_mcp_read_only_supported(state):
