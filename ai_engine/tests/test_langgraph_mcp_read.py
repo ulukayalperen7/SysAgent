@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from agents.langgraph.nodes.mcp_read import is_mcp_read_only_supported, mcp_read_only_node
 
@@ -59,6 +60,19 @@ class LangGraphMcpReadTests(unittest.TestCase):
         state = _state("delete all temp files", "FILE_SYSTEM_WRITE")
 
         self.assertFalse(is_mcp_read_only_supported(state))
+
+    def test_agent_hub_permission_can_disable_selected_mcp_tool(self):
+        class DenyAllConfig:
+            def is_mcp_tool_allowed(self, agent_slug: str, tool_name: str) -> bool:
+                return False
+
+        state = _state("show top 3 memory processes", "SYSTEM_OPERATION")
+
+        with patch("agents.langgraph.nodes.mcp_read.get_agent_hub_config", return_value=DenyAllConfig()):
+            result = mcp_read_only_node(state)
+
+        self.assertEqual(result["script"], "NONE")
+        self.assertIn("not enabled", result["explanation"])
 
 
 if __name__ == "__main__":

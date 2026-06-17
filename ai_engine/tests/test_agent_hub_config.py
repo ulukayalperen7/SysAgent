@@ -50,6 +50,14 @@ class AgentHubConfigTests(unittest.TestCase):
         self.assertGreater(payload["route_count"], 0)
         self.assertIn("intent_key", payload["routes"][0])
         self.assertIn("target_langgraph_node", payload["routes"][0])
+        self.assertIn("mcp_read_agent", payload["mcp_tool_permissions"])
+        self.assertIn("filesystem_read_file", payload["mcp_tool_permissions"]["mcp_read_agent"])
+
+    def test_fallback_mcp_permissions_allow_seeded_read_tools(self):
+        config = get_agent_hub_config()
+
+        self.assertTrue(config.is_mcp_tool_allowed("mcp_read_agent", "system_get_metrics_snapshot"))
+        self.assertFalse(config.is_mcp_tool_allowed("mcp_read_agent", "unsafe_shell_exec"))
 
 
 if __name__ == "__main__":

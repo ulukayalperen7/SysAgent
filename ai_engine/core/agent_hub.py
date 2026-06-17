@@ -37,15 +37,27 @@ class AgentRoute:
 class AgentHubConfig:
     """In-memory view of Agent Hub route configuration."""
 
-    def __init__(self, routes: list[AgentRoute], source: str) -> None:
+    def __init__(
+        self,
+        routes: list[AgentRoute],
+        source: str,
+        mcp_tool_permissions: dict[str, set[str]] | None = None,
+    ) -> None:
         self.routes = sorted(routes, key=lambda route: route.priority)
         self.source = source
+        self.mcp_tool_permissions = mcp_tool_permissions or {}
 
     def select_route(self, intent_key: str, user_input: str) -> AgentRoute | None:
         for route in self.routes:
             if route.intent_key == intent_key and route.matches(user_input):
                 return route
         return None
+
+    def is_mcp_tool_allowed(self, agent_slug: str, tool_name: str) -> bool:
+        allowed_tools = self.mcp_tool_permissions.get(agent_slug)
+        if allowed_tools is None:
+            return False
+        return tool_name in allowed_tools
 
     def to_dict(self) -> dict[str, Any]:
         """Return a safe diagnostics view for API status endpoints."""
@@ -63,6 +75,10 @@ class AgentHubConfig:
                 }
                 for route in self.routes
             ],
+            "mcp_tool_permissions": {
+                agent_slug: sorted(tool_names)
+                for agent_slug, tool_names in self.mcp_tool_permissions.items()
+            },
         }
 
 
@@ -72,7 +88,11 @@ def get_agent_hub_config() -> AgentHubConfig:
     db_config = _load_from_database()
     if db_config:
         return db_config
-    return AgentHubConfig(_fallback_routes(), source="fallback")
+    return AgentHubConfig(
+        _fallback_routes(),
+        source="fallback",
+        mcp_tool_permissions=_fallback_mcp_tool_permissions(),
+    )
 
 
 def reload_agent_hub_config() -> AgentHubConfig:
@@ -112,6 +132,18 @@ def _load_from_database() -> AgentHubConfig | None:
             with conn.cursor() as cur:
                 cur.execute(sql)
                 rows = cur.fetchall()
+                cur.execute(
+                    """
+                    select a.slug as agent_slug, t.name as tool_name
+                    from agent_mcp_tool_permissions p
+                    join agent_profiles a on a.id = p.agent_id
+                    join mcp_tools t on t.id = p.mcp_tool_id
+                    where a.status = 'active'
+                      and t.enabled = true
+                      and p.permission_mode = 'allow'
+                    """
+                )
+                permission_rows = cur.fetchall()
     except Exception:
         return None
 
@@ -127,7 +159,11 @@ def _load_from_database() -> AgentHubConfig | None:
         for row in rows
         if row.get("target_langgraph_node")
     ]
-    return AgentHubConfig(routes, source="database") if routes else None
+    permissions: dict[str, set[str]] = {}
+    for row in permission_rows:
+        permissions.setdefault(str(row["agent_slug"]), set()).add(str(row["tool_name"]))
+
+    return AgentHubConfig(routes, source="database", mcp_tool_permissions=permissions) if routes else None
 
 
 def _fallback_routes() -> list[AgentRoute]:
@@ -162,3 +198,24 @@ def _fallback_routes() -> list[AgentRoute]:
         AgentRoute("DEVOPS_WRITE", 90, "script_proposal", "generate_action_script_node", "always", {}),
         AgentRoute("UNKNOWN", 90, "script_proposal", "generate_action_script_node", "always", {}),
     ]
+
+
+def _fallback_mcp_tool_permissions() -> dict[str, set[str]]:
+    return {
+        "mcp_read_agent": {
+            "system_get_metrics_snapshot",
+            "system_list_processes",
+            "system_get_top_memory_processes",
+            "network_list_connections",
+            "filesystem_list_directory",
+            "filesystem_read_file",
+            "system_get_platform_info",
+        },
+        "crewai_diagnostics_agent": {
+            "system_get_metrics_snapshot",
+            "system_list_processes",
+            "system_get_top_memory_processes",
+            "network_list_connections",
+            "system_get_platform_info",
+        },
+    }

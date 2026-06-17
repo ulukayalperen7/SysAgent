@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from core.agent_state import AgentState
+from core.agent_hub import get_agent_hub_config
 from core.mcp_client import local_system_mcp_client
 
 READ_ONLY_INTENTS = {"FILE_SYSTEM_READ", "DEVOPS_READ", "NETWORK_READ"}
@@ -60,6 +61,15 @@ def mcp_read_only_node(state: AgentState) -> dict[str, Any]:
             "I understood this as a read-only request, but I could not map it to a supported MCP inspection yet.\n\n"
             "Recommendation:\n"
             "Try asking for top memory processes, system metrics, network connections, a directory listing, or a specific file read."
+        )
+        return {"explanation": _append_explanation(state, explanation), "script": "NONE", "messages": [{"role": "ai", "content": explanation}]}
+
+    if not get_agent_hub_config().is_mcp_tool_allowed("mcp_read_agent", tool_name):
+        explanation = (
+            "Summary:\n"
+            "This read-only inspection is not enabled for the current Agent Hub policy.\n\n"
+            "Recommendation:\n"
+            "Enable the MCP tool permission for this agent if this capability should be available."
         )
         return {"explanation": _append_explanation(state, explanation), "script": "NONE", "messages": [{"role": "ai", "content": explanation}]}
 
