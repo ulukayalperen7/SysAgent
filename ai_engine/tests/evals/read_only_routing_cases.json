@@ -14,6 +14,20 @@
     "approval_required": false
   },
   {
+    "name": "network_interfaces",
+    "prompt": "show network interfaces and IP addresses",
+    "expected_intent": "NETWORK_READ",
+    "expected_tool": "network_list_interfaces",
+    "approval_required": false
+  },
+  {
+    "name": "disk_partitions",
+    "prompt": "show disk partitions and drives",
+    "expected_intent": "SYSTEM_OPERATION",
+    "expected_tool": "system_get_disk_partitions",
+    "approval_required": false
+  },
+  {
     "name": "project_file_search",
     "prompt": "find file requirements.txt in this project",
     "expected_intent": "FILE_SYSTEM_READ",

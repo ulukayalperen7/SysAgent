@@ -52,6 +52,28 @@ class LangGraphMcpReadTests(unittest.TestCase):
         self.assertEqual(result["script"], "NONE")
         self.assertIn("network connections", result["explanation"].lower())
 
+    def test_network_interfaces_use_mcp(self):
+        state = _state("show network interfaces and IP addresses", "NETWORK_READ")
+
+        self.assertTrue(is_mcp_read_only_supported(state))
+
+        result = mcp_read_only_node(state)
+
+        self.assertEqual(result["script"], "NONE")
+        self.assertIn("Network interfaces inspected", result["explanation"])
+        self.assertEqual(result["mcp_tools_used"], ["network_list_interfaces"])
+
+    def test_disk_partitions_use_mcp(self):
+        state = _state("show disk partitions and drives", "SYSTEM_OPERATION")
+
+        self.assertTrue(is_mcp_read_only_supported(state))
+
+        result = mcp_read_only_node(state)
+
+        self.assertEqual(result["script"], "NONE")
+        self.assertIn("Disk partitions inspected", result["explanation"])
+        self.assertEqual(result["mcp_tools_used"], ["system_get_disk_partitions"])
+
     def test_filesystem_search_uses_mcp(self):
         state = _state("find file requirements.txt in this project", "FILE_SYSTEM_READ")
 

@@ -13,6 +13,8 @@ from mcp_servers.local_system_tools import (
     filesystem_read_file as _filesystem_read_file,
     filesystem_search as _filesystem_search,
     network_list_connections as _network_list_connections,
+    network_list_interfaces as _network_list_interfaces,
+    system_get_disk_partitions as _system_get_disk_partitions,
     system_get_metrics_snapshot as _system_get_metrics_snapshot,
     system_get_platform_info as _system_get_platform_info,
     system_get_top_memory_processes as _system_get_top_memory_processes,
@@ -61,6 +63,16 @@ def build_server() -> Any:
     def network_list_connections(limit: int = 50) -> dict[str, Any]:
         """List active local network connections without mutation."""
         return _network_list_connections(limit=limit)
+
+    @mcp.tool()
+    def network_list_interfaces() -> dict[str, Any]:
+        """List local network interfaces, addresses, and link stats."""
+        return _network_list_interfaces()
+
+    @mcp.tool()
+    def system_get_disk_partitions() -> dict[str, Any]:
+        """List local mounted disk partitions and usage metadata."""
+        return _system_get_disk_partitions()
 
     @mcp.tool()
     def filesystem_list_directory(path: str | None = None, limit: int = 100) -> dict[str, Any]:

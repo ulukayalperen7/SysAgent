@@ -12,6 +12,8 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
         self.assertIn("system_list_processes", tools)
         self.assertIn("system_get_top_memory_processes", tools)
         self.assertIn("network_list_connections", tools)
+        self.assertIn("network_list_interfaces", tools)
+        self.assertIn("system_get_disk_partitions", tools)
         self.assertIn("filesystem_list_directory", tools)
         self.assertIn("filesystem_read_file", tools)
         self.assertIn("filesystem_search", tools)
@@ -68,6 +70,18 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertIn("total_bytes", result["data"])
         self.assertIn("file_count", result["data"])
+
+    def test_network_interfaces_are_available(self):
+        result = local_system_mcp_client.call_tool("network_list_interfaces")
+
+        self.assertTrue(result["success"])
+        self.assertIn("interfaces", result["data"])
+
+    def test_disk_partitions_are_available(self):
+        result = local_system_mcp_client.call_tool("system_get_disk_partitions")
+
+        self.assertTrue(result["success"])
+        self.assertIn("partitions", result["data"])
 
 
 if __name__ == "__main__":

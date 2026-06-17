@@ -72,12 +72,28 @@ def plan_mcp_read_tool(user_input: str, intent: str) -> McpToolPlan | None:
             "The request asks to list files or folders.",
         )
 
+    if any(term in normalized for term in ("network interface", "network interfaces", "network adapter", "network adapters", "ip address", "ip addresses", "mac address")):
+        return McpToolPlan(
+            "network_list_interfaces",
+            {},
+            0.86,
+            "The request asks for network interface or address information.",
+        )
+
     if any(term in normalized for term in ("network", "connection", "connections", "port", "ports", "socket")):
         return McpToolPlan(
             "network_list_connections",
             {"limit": _extract_limit(user_input, default=50, maximum=100)},
             0.84,
             "The request asks for network connection information.",
+        )
+
+    if any(term in normalized for term in ("disk partition", "disk partitions", "mounted disk", "mounted disks", "drives", "drive list", "volumes")):
+        return McpToolPlan(
+            "system_get_disk_partitions",
+            {},
+            0.84,
+            "The request asks for mounted disk or partition information.",
         )
 
     if "top" in normalized and any(term in normalized for term in ("memory", "ram", "process", "processes")):

@@ -24,6 +24,18 @@ class McpToolPlannerTests(unittest.TestCase):
         self.assertEqual(plan.tool_name, "system_get_top_memory_processes")
         self.assertEqual(plan.arguments["limit"], 3)
 
+    def test_plans_network_interfaces(self):
+        plan = plan_mcp_read_tool("show network interfaces and IP addresses", "NETWORK_READ")
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.tool_name, "network_list_interfaces")
+
+    def test_plans_disk_partitions(self):
+        plan = plan_mcp_read_tool("show disk partitions and drives", "SYSTEM_OPERATION")
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.tool_name, "system_get_disk_partitions")
+
     def test_does_not_plan_for_write_intents(self):
         plan = plan_mcp_read_tool("delete temp files", "FILE_SYSTEM_WRITE")
 

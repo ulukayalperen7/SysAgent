@@ -110,6 +110,14 @@ def _format_mcp_result(tool_name: str, result: dict[str, Any]) -> str:
         lines = _format_connection_rows(data.get("connections", []))
         return f"Summary:\nActive network connections inspected without changing network state.\n\nFindings:\n{lines}\n\nRecommendation:\nFlagged suspicious ports deserve deeper CrewAI diagnostics before any action."
 
+    if tool_name == "network_list_interfaces":
+        lines = _format_interface_rows(data.get("interfaces", []))
+        return f"Summary:\nNetwork interfaces inspected without changing network state.\n\nFindings:\n{lines}"
+
+    if tool_name == "system_get_disk_partitions":
+        lines = _format_partition_rows(data.get("partitions", []))
+        return f"Summary:\nDisk partitions inspected without changing disk state.\n\nFindings:\n{lines}"
+
     if tool_name == "filesystem_list_directory":
         lines = _format_directory_rows(data.get("entries", []))
         return f"Summary:\nDirectory listed successfully.\n\nFindings:\nPath: {data.get('path')}\n{lines}\n\nRecommendation:\nAsk me to read a specific file if you want details."
@@ -190,6 +198,43 @@ def _format_connection_rows(connections: list[dict[str, Any]]) -> str:
         rows.append(
             f"- {conn.get('process')} PID {conn.get('pid')} | {conn.get('local_ip')}:{conn.get('local_port')} -> "
             f"{conn.get('remote_ip')}:{conn.get('remote_port')} | {conn.get('status')}{flag}"
+        )
+    return "\n".join(rows)
+
+
+def _format_interface_rows(interfaces: list[dict[str, Any]]) -> str:
+    if not interfaces:
+        return "No network interfaces found."
+
+    rows = []
+    for interface in interfaces[:15]:
+        addresses = []
+        for address in interface.get("addresses", [])[:4]:
+            if address.get("address"):
+                addresses.append(f"{address.get('family')}={address.get('address')}")
+        address_text = ", ".join(addresses) if addresses else "no addresses"
+        rows.append(
+            f"- {interface.get('name')} | up={interface.get('is_up')} | "
+            f"speed={interface.get('speed_mbps')} Mbps | {address_text}"
+        )
+    return "\n".join(rows)
+
+
+def _format_partition_rows(partitions: list[dict[str, Any]]) -> str:
+    if not partitions:
+        return "No disk partitions found."
+
+    rows = []
+    for partition in partitions[:15]:
+        usage = partition.get("usage") or {}
+        usage_text = (
+            f" | used={usage.get('percent')}% | free={_format_bytes(int(usage.get('free_bytes') or 0))}"
+            if usage
+            else " | usage unavailable"
+        )
+        rows.append(
+            f"- {partition.get('device')} -> {partition.get('mountpoint')} | "
+            f"{partition.get('fstype')}{usage_text}"
         )
     return "\n".join(rows)
 

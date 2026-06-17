@@ -143,6 +143,8 @@ Initial safe MCP tools:
 - `system_list_processes`
 - `system_get_top_memory_processes`
 - `network_list_connections`
+- `network_list_interfaces`
+- `system_get_disk_partitions`
 - `filesystem_list_directory`
 - `filesystem_read_file`
 - `filesystem_search`
@@ -487,3 +489,4 @@ Notes:
 - Bound the terminal router intent-classifier prompt to Agent Hub prompt versions with safe fallback rendering.
 - Added the first routing evaluation dataset for read-only MCP routing and risky approval expectations.
 - Added MCP tool usage tracking in LangGraph state so decision audit can record which read-only tools were actually called.
+- Expanded MCP read-only system inventory coverage with network interface and disk partition tools.

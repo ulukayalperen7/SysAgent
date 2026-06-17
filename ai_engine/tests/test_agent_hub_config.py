@@ -64,6 +64,8 @@ class AgentHubConfigTests(unittest.TestCase):
         self.assertIn("filesystem_read_file", payload["mcp_tool_permissions"]["mcp_read_agent"])
         self.assertIn("filesystem_search", payload["mcp_tool_permissions"]["mcp_read_agent"])
         self.assertIn("filesystem_get_disk_usage", payload["mcp_tool_permissions"]["mcp_read_agent"])
+        self.assertIn("network_list_interfaces", payload["mcp_tool_permissions"]["mcp_read_agent"])
+        self.assertIn("system_get_disk_partitions", payload["mcp_tool_permissions"]["mcp_read_agent"])
         self.assertIn("terminal_router", payload["prompt_agents"])
 
     def test_fallback_mcp_permissions_allow_seeded_read_tools(self):

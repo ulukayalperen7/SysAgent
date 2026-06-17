@@ -82,8 +82,8 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
         "downloads", "desktop", "documents", ".txt", ".log",
         "disk usage", "folder size", "directory size", "size of folder", "klasor boyutu",
     )
-    network_terms = ("network", "connections", "ports", "ping", "dns", "socket")
-    system_terms = ("cpu", "ram", "memory", "process", "processes", "slow", "suspicious", "system", "metrics")
+    network_terms = ("network", "connections", "ports", "ping", "dns", "socket", "ip address", "mac address")
+    system_terms = ("cpu", "ram", "memory", "process", "processes", "slow", "suspicious", "system", "metrics", "disk partition", "disk partitions", "drives", "volumes")
 
     if any(term in lower for term in devops_write_terms):
         return "DEVOPS_WRITE"

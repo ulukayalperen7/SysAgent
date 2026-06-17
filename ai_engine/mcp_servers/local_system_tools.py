@@ -237,6 +237,75 @@ def network_list_connections(limit: int = 50) -> dict[str, Any]:
     return _result(True, {"count": len(connections), "connections": connections})
 
 
+def network_list_interfaces() -> dict[str, Any]:
+    """List local network interfaces, addresses, and link stats."""
+    try:
+        addresses = psutil.net_if_addrs()
+        stats = psutil.net_if_stats()
+    except Exception as exc:
+        return _result(False, error=f"Failed to read network interfaces: {exc}")
+
+    interfaces: list[dict[str, Any]] = []
+    for name, addr_list in sorted(addresses.items(), key=lambda item: item[0].lower()):
+        stat = stats.get(name)
+        interface_addresses = []
+        for addr in addr_list:
+            family = getattr(addr.family, "name", str(addr.family))
+            interface_addresses.append(
+                {
+                    "family": family,
+                    "address": addr.address,
+                    "netmask": addr.netmask,
+                    "broadcast": addr.broadcast,
+                }
+            )
+        interfaces.append(
+            {
+                "name": name,
+                "is_up": bool(stat.isup) if stat else None,
+                "speed_mbps": stat.speed if stat else None,
+                "mtu": stat.mtu if stat else None,
+                "addresses": interface_addresses,
+            }
+        )
+
+    return _result(True, {"count": len(interfaces), "interfaces": interfaces})
+
+
+def system_get_disk_partitions() -> dict[str, Any]:
+    """List local mounted disk partitions and usage metadata."""
+    partitions = []
+    try:
+        raw_partitions = psutil.disk_partitions(all=False)
+    except Exception as exc:
+        return _result(False, error=f"Failed to read disk partitions: {exc}")
+
+    for partition in raw_partitions:
+        usage_data: dict[str, Any] | None = None
+        try:
+            usage = psutil.disk_usage(partition.mountpoint)
+            usage_data = {
+                "total_bytes": usage.total,
+                "used_bytes": usage.used,
+                "free_bytes": usage.free,
+                "percent": usage.percent,
+            }
+        except Exception:
+            usage_data = None
+
+        partitions.append(
+            {
+                "device": partition.device,
+                "mountpoint": partition.mountpoint,
+                "fstype": partition.fstype,
+                "opts": partition.opts,
+                "usage": usage_data,
+            }
+        )
+
+    return _result(True, {"count": len(partitions), "partitions": partitions})
+
+
 def filesystem_list_directory(path: str | None = None, limit: int = 100) -> dict[str, Any]:
     """List directory entries without modifying the filesystem."""
     entry_limit = _bounded_int(limit, 100, MAX_DIRECTORY_ENTRIES)
@@ -458,6 +527,8 @@ TOOL_REGISTRY = {
     "system_list_processes": system_list_processes,
     "system_get_top_memory_processes": system_get_top_memory_processes,
     "network_list_connections": network_list_connections,
+    "network_list_interfaces": network_list_interfaces,
+    "system_get_disk_partitions": system_get_disk_partitions,
     "filesystem_list_directory": filesystem_list_directory,
     "filesystem_read_file": filesystem_read_file,
     "filesystem_search": filesystem_search,

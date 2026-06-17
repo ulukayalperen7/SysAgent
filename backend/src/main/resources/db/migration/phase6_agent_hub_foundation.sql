@@ -204,6 +204,8 @@ values
     ('system_list_processes', 'local_system', 'system', 'List local processes with bounded output.', true, 'low', '{"query":"string|null","limit":"integer"}'::jsonb),
     ('system_get_top_memory_processes', 'local_system', 'system', 'List top memory-consuming processes.', true, 'low', '{"limit":"integer"}'::jsonb),
     ('network_list_connections', 'local_system', 'network', 'List active network connections without mutating network state.', true, 'low', '{"limit":"integer"}'::jsonb),
+    ('network_list_interfaces', 'local_system', 'network', 'List local network interfaces, addresses, and link stats.', true, 'low', '{}'::jsonb),
+    ('system_get_disk_partitions', 'local_system', 'system', 'List local mounted disk partitions and usage metadata.', true, 'low', '{}'::jsonb),
     ('filesystem_list_directory', 'local_system', 'filesystem', 'List a safe local directory.', true, 'low', '{"path":"string|null"}'::jsonb),
     ('filesystem_read_file', 'local_system', 'filesystem', 'Read a bounded safe local text file.', true, 'low', '{"path":"string"}'::jsonb),
     ('filesystem_search', 'local_system', 'filesystem', 'Search a safe local directory tree with bounded output.', true, 'low', '{"path":"string|null","pattern":"string","limit":"integer","max_depth":"integer"}'::jsonb),
@@ -239,6 +241,8 @@ join mcp_tools t on t.name in (
     'system_list_processes',
     'system_get_top_memory_processes',
     'network_list_connections',
+    'network_list_interfaces',
+    'system_get_disk_partitions',
     'system_get_platform_info'
 )
 where a.slug = 'crewai_diagnostics_agent'

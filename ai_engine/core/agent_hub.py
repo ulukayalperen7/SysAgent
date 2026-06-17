@@ -429,6 +429,8 @@ def _fallback_mcp_tool_permissions() -> dict[str, set[str]]:
             "system_list_processes",
             "system_get_top_memory_processes",
             "network_list_connections",
+            "network_list_interfaces",
+            "system_get_disk_partitions",
             "filesystem_list_directory",
             "filesystem_read_file",
             "filesystem_search",
@@ -440,6 +442,8 @@ def _fallback_mcp_tool_permissions() -> dict[str, set[str]]:
             "system_list_processes",
             "system_get_top_memory_processes",
             "network_list_connections",
+            "network_list_interfaces",
+            "system_get_disk_partitions",
             "system_get_platform_info",
         },
     }
