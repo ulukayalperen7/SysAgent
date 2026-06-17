@@ -1,0 +1,65 @@
+[
+  {
+    "name": "top_memory_processes",
+    "prompt": "show top 3 memory processes",
+    "expected_intent": "SYSTEM_OPERATION",
+    "expected_tool": "system_get_top_memory_processes",
+    "approval_required": false
+  },
+  {
+    "name": "network_connections",
+    "prompt": "show network connections",
+    "expected_intent": "NETWORK_READ",
+    "expected_tool": "network_list_connections",
+    "approval_required": false
+  },
+  {
+    "name": "project_file_search",
+    "prompt": "find file requirements.txt in this project",
+    "expected_intent": "FILE_SYSTEM_READ",
+    "expected_tool": "filesystem_search",
+    "approval_required": false
+  },
+  {
+    "name": "project_disk_usage",
+    "prompt": "show disk usage of this project",
+    "expected_intent": "FILE_SYSTEM_READ",
+    "expected_tool": "filesystem_get_disk_usage",
+    "approval_required": false
+  },
+  {
+    "name": "delete_file_requires_approval",
+    "prompt": "delete test.txt from desktop",
+    "expected_intent": "FILE_SYSTEM_WRITE",
+    "expected_tool": null,
+    "approval_required": true
+  },
+  {
+    "name": "open_app_requires_approval",
+    "prompt": "open Spotify",
+    "expected_intent": "APP_CONTROL",
+    "expected_tool": null,
+    "approval_required": true
+  },
+  {
+    "name": "devops_install_requires_approval",
+    "prompt": "npm install express",
+    "expected_intent": "DEVOPS_WRITE",
+    "expected_tool": null,
+    "approval_required": true
+  },
+  {
+    "name": "turkish_app_open_requires_approval",
+    "prompt": "spotify ac",
+    "expected_intent": "APP_CONTROL",
+    "expected_tool": null,
+    "approval_required": true
+  },
+  {
+    "name": "turkish_file_search",
+    "prompt": "bu projede requirements.txt dosya bul",
+    "expected_intent": "FILE_SYSTEM_READ",
+    "expected_tool": "filesystem_search",
+    "approval_required": false
+  }
+]

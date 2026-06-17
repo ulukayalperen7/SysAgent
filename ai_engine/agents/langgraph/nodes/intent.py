@@ -77,7 +77,11 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
         " ac", "ac ", "kapat", "sonlandir", "sarki", "calistir", "baslat",
     )
     devops_write_terms = ("install", "uninstall", "npm install", "pip install", "docker restart", "git push", "winget", "yukle", "kur", "kaldir")
-    fs_read_terms = ("list files", "show files", "read file", "show file", "list directory", "downloads", "desktop", "documents", ".txt", ".log")
+    fs_read_terms = (
+        "list files", "show files", "read file", "show file", "list directory",
+        "downloads", "desktop", "documents", ".txt", ".log",
+        "disk usage", "folder size", "directory size", "size of folder", "klasor boyutu",
+    )
     network_terms = ("network", "connections", "ports", "ping", "dns", "socket")
     system_terms = ("cpu", "ram", "memory", "process", "processes", "slow", "suspicious", "system", "metrics")
 
