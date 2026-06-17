@@ -47,6 +47,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
 
         // Prepare the payload
         Map<String, Object> requestPayload = new HashMap<>();
+        requestPayload.put("task_id", taskId);
         requestPayload.put("user_prompt", intent);
         requestPayload.put("metrics", metrics);
         requestPayload.put("thread_id", threadId);

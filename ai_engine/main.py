@@ -10,10 +10,11 @@ from pydantic import BaseModel
 from typing import Dict, Any
 
 from core.config import settings
-from core.agent_hub import get_agent_hub_config, reload_agent_hub_config
+from core.agent_hub import get_agent_hub_config, record_agent_decision_audit, reload_agent_hub_config
 from core.mcp_client import local_system_mcp_client
 from core.mcp_process import ensure_local_mcp_server
 from core.security import SecurityAnalyzer
+from core.security_guardian import SecurityGuardian
 from agents.langgraph.graphs.orchestrator import orchestrator_graph
 
 app = FastAPI(
@@ -48,6 +49,7 @@ async def agent_hub_status(refresh: bool = False):
     return config.to_dict()
 
 class AnalyzeRequest(BaseModel):
+    task_id: str | None = None
     thread_id: str = "default_thread_1" # Injected by Java Backend for isolated sessions
     user_prompt: str
     metrics: Dict[str, Any]
@@ -82,6 +84,28 @@ async def analyze_system(request: AnalyzeRequest):
         
         # Invoke the robust LangGraph orchestrator
         final_state = orchestrator_graph.invoke(initial_state, config)
+        current_intent = final_state.get("current_intent", "UNKNOWN")
+        selected_route = get_agent_hub_config().select_route(
+            current_intent,
+            final_state.get("user_input") or sanitized_prompt,
+        )
+        script = final_state.get("script", "NONE")
+        approval_required = bool(script and script != "NONE" and SecurityGuardian.requires_approval(current_intent))
+        record_agent_decision_audit(
+            task_id=request.task_id,
+            thread_id=request.thread_id,
+            intent_key=current_intent,
+            agent_slug=_agent_slug_for_route(selected_route.target_langgraph_node if selected_route else None),
+            approval_required=approval_required,
+            decision_summary=(final_state.get("explanation", "") or "")[:500],
+            raw_metadata={
+                "agent_hub_source": get_agent_hub_config().source,
+                "route_type": selected_route.route_type if selected_route else None,
+                "target_langgraph_node": selected_route.target_langgraph_node if selected_route else None,
+                "script_proposed": bool(script and script != "NONE"),
+                "pending_count": len(final_state.get("task_queue", [])),
+            },
+        )
         
         pending_count = len(final_state.get("task_queue", []))
         return AnalyzeResponse(
@@ -102,6 +126,15 @@ async def analyze_system(request: AnalyzeRequest):
             script="NONE",
             original_prompt=sanitized_prompt
         )
+
+
+def _agent_slug_for_route(target_langgraph_node: str | None) -> str | None:
+    return {
+        "direct_chat_node": "direct_chat_agent",
+        "mcp_read_only_node": "mcp_read_agent",
+        "run_crewai_diagnostics_node": "crewai_diagnostics_agent",
+        "generate_action_script_node": "script_proposal_agent",
+    }.get(target_langgraph_node or "")
 
 if __name__ == "__main__":
     uvicorn.run(

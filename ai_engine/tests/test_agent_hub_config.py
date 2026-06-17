@@ -1,12 +1,15 @@
 import unittest
+from unittest.mock import patch
 
 from core.agent_hub import (
     AgentHubConfig,
     AgentRiskRule,
     AgentRoute,
     get_agent_hub_config,
+    record_agent_decision_audit,
     reload_agent_hub_config,
 )
+from core.config import settings
 
 
 class AgentHubConfigTests(unittest.TestCase):
@@ -91,6 +94,17 @@ class AgentHubConfigTests(unittest.TestCase):
 
         self.assertTrue(config.requires_approval("DEVOPS_WRITE"))
         self.assertIsNone(config.requires_approval("CHAT"))
+
+    def test_decision_audit_is_optional_without_database_url(self):
+        with patch.object(settings, "database_url", ""):
+            saved = record_agent_decision_audit(
+                task_id="task-1",
+                thread_id="thread-1",
+                intent_key="CHAT",
+                decision_summary="hello",
+            )
+
+        self.assertFalse(saved)
 
 
 if __name__ == "__main__":

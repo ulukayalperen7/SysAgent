@@ -161,6 +161,82 @@ def reload_agent_hub_config() -> AgentHubConfig:
     return get_agent_hub_config()
 
 
+def record_agent_decision_audit(
+    *,
+    task_id: str | None,
+    thread_id: str | None,
+    owner_id: str | None = None,
+    agent_slug: str | None = None,
+    intent_key: str | None,
+    mcp_tools_used: list[str] | None = None,
+    risk_level: str | None = None,
+    approval_required: bool | None = None,
+    decision_summary: str | None = None,
+    raw_metadata: dict[str, Any] | None = None,
+) -> bool:
+    """Persist a lightweight decision audit row when PostgreSQL is configured."""
+    database_url = settings.database_url.strip()
+    if not database_url or database_url.startswith("jdbc:"):
+        return False
+
+    try:
+        import psycopg
+        from psycopg.types.json import Json
+    except ImportError:
+        return False
+
+    sql = """
+        insert into agent_decision_audit
+            (
+                task_id,
+                thread_id,
+                owner_id,
+                agent_id,
+                intent_key,
+                mcp_tools_used,
+                risk_level,
+                approval_required,
+                decision_summary,
+                raw_metadata
+            )
+        values
+            (
+                %(task_id)s,
+                %(thread_id)s,
+                %(owner_id)s,
+                (select id from agent_profiles where slug = %(agent_slug)s limit 1),
+                %(intent_key)s,
+                %(mcp_tools_used)s,
+                %(risk_level)s,
+                %(approval_required)s,
+                %(decision_summary)s,
+                %(raw_metadata)s
+            )
+    """
+
+    params = {
+        "task_id": task_id,
+        "thread_id": thread_id,
+        "owner_id": owner_id,
+        "agent_slug": agent_slug,
+        "intent_key": intent_key,
+        "mcp_tools_used": Json(mcp_tools_used or []),
+        "risk_level": risk_level,
+        "approval_required": approval_required,
+        "decision_summary": decision_summary,
+        "raw_metadata": Json(raw_metadata or {}),
+    }
+
+    try:
+        with psycopg.connect(database_url, connect_timeout=3) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
 def _load_from_database() -> AgentHubConfig | None:
     database_url = settings.database_url.strip()
     if not database_url or database_url.startswith("jdbc:"):

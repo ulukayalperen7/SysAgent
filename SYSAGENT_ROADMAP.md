@@ -455,3 +455,4 @@ Notes:
 - Added `GET /agent-hub/status` so the runtime route source, route count, target LangGraph nodes, and approval policies are visible during development and debugging.
 - Added Agent Hub MCP permission filtering so read-only tool execution must be enabled for the active agent policy before the MCP client is called.
 - Added Agent Hub risk policy loading for command blocking and approval gates while retaining static `SecurityGuardian` hard blocks as defense in depth.
+- Added optional Agent Hub decision audit persistence from AI Engine analysis results, linked to backend task IDs when PostgreSQL/Supabase is configured.
