@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from typing import Dict, Any
 
 from core.config import settings
+from core.agent_hub import get_agent_hub_config, reload_agent_hub_config
 from core.mcp_client import local_system_mcp_client
 from core.mcp_process import ensure_local_mcp_server
 from core.security import SecurityAnalyzer
@@ -39,6 +40,12 @@ async def mcp_status():
         "path": settings.mcp_path,
         "tools": local_system_mcp_client.list_tools(),
     }
+
+
+@app.get("/agent-hub/status")
+async def agent_hub_status(refresh: bool = False):
+    config = reload_agent_hub_config() if refresh else get_agent_hub_config()
+    return config.to_dict()
 
 class AnalyzeRequest(BaseModel):
     thread_id: str = "default_thread_1" # Injected by Java Backend for isolated sessions

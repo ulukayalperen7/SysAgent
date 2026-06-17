@@ -47,6 +47,24 @@ class AgentHubConfig:
                 return route
         return None
 
+    def to_dict(self) -> dict[str, Any]:
+        """Return a safe diagnostics view for API status endpoints."""
+        return {
+            "source": self.source,
+            "route_count": len(self.routes),
+            "routes": [
+                {
+                    "intent_key": route.intent_key,
+                    "priority": route.priority,
+                    "route_type": route.route_type,
+                    "target_langgraph_node": route.target_langgraph_node,
+                    "approval_policy": route.approval_policy,
+                    "matcher": route.matcher,
+                }
+                for route in self.routes
+            ],
+        }
+
 
 @lru_cache(maxsize=1)
 def get_agent_hub_config() -> AgentHubConfig:

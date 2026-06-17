@@ -41,6 +41,16 @@ class AgentHubConfigTests(unittest.TestCase):
         self.assertIsNotNone(config.select_route("SYSTEM_OPERATION", "please investigate cpu"))
         self.assertIsNone(config.select_route("SYSTEM_OPERATION", "show cpu usage"))
 
+    def test_status_payload_exposes_safe_route_summary(self):
+        config = get_agent_hub_config()
+
+        payload = config.to_dict()
+
+        self.assertIn(payload["source"], {"fallback", "database"})
+        self.assertGreater(payload["route_count"], 0)
+        self.assertIn("intent_key", payload["routes"][0])
+        self.assertIn("target_langgraph_node", payload["routes"][0])
+
 
 if __name__ == "__main__":
     unittest.main()
