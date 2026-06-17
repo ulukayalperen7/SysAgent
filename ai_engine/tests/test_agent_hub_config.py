@@ -1,6 +1,12 @@
 import unittest
 
-from core.agent_hub import AgentHubConfig, AgentRoute, get_agent_hub_config, reload_agent_hub_config
+from core.agent_hub import (
+    AgentHubConfig,
+    AgentRiskRule,
+    AgentRoute,
+    get_agent_hub_config,
+    reload_agent_hub_config,
+)
 
 
 class AgentHubConfigTests(unittest.TestCase):
@@ -58,6 +64,33 @@ class AgentHubConfigTests(unittest.TestCase):
 
         self.assertTrue(config.is_mcp_tool_allowed("mcp_read_agent", "system_get_metrics_snapshot"))
         self.assertFalse(config.is_mcp_tool_allowed("mcp_read_agent", "unsafe_shell_exec"))
+
+    def test_fallback_risk_rules_block_dangerous_commands(self):
+        config = get_agent_hub_config()
+
+        reason = config.command_block_reason("rm -rf /", "Linux")
+
+        self.assertIsNotNone(reason)
+        self.assertIn("root deletion", reason)
+
+    def test_risk_rules_can_require_approval_for_intent(self):
+        config = AgentHubConfig(
+            routes=[],
+            source="test",
+            risk_rules=[
+                AgentRiskRule(
+                    rule_type="intent_key",
+                    pattern="DEVOPS_WRITE",
+                    effect="require_approval",
+                    risk_level="medium",
+                    reason="DevOps writes require approval.",
+                    priority=1,
+                )
+            ],
+        )
+
+        self.assertTrue(config.requires_approval("DEVOPS_WRITE"))
+        self.assertIsNone(config.requires_approval("CHAT"))
 
 
 if __name__ == "__main__":

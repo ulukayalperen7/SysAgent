@@ -1,5 +1,7 @@
 import re
 
+from core.agent_hub import get_agent_hub_config
+
 class SecurityGuardian:
     """
     Cross-platform protection layer.
@@ -29,8 +31,12 @@ class SecurityGuardian:
             return True, "Boş veya NONE komut."
 
         cmd_lower = command.lower()
+
+        policy_reason = get_agent_hub_config().command_block_reason(command, os_name)
+        if policy_reason:
+            return False, f"Security policy blocked this command: {policy_reason}"
         
-        # 1. Check Hard Blacklist
+        # Defense in depth: keep static hard blocks even when DB policy is edited.
         for bad_cmd in cls.BLACKLISTED_COMMANDS:
             if bad_cmd in cmd_lower:
                 return False, f"Güvenlik İhlali: Kurumsal politikalar gereği '{bad_cmd}' içeren kritik sistem komutları kesinlikle engellenmiştir."
@@ -58,6 +64,10 @@ class SecurityGuardian:
         Determines if the intent requires explicit user approval via UI.
         READ operations run autonomously inside Python without bothering the user.
         """
+        configured_approval = get_agent_hub_config().requires_approval(intent)
+        if configured_approval is not None:
+            return configured_approval
+
         SAFE_INTENTS = [
             "FILE_SYSTEM_READ", 
             "DEVOPS_READ", 

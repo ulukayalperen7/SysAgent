@@ -454,3 +454,4 @@ Notes:
 - Added an AI Engine Agent Hub runtime loader that reads intent routes from PostgreSQL/Supabase when available and falls back to the safe seeded defaults when unavailable.
 - Added `GET /agent-hub/status` so the runtime route source, route count, target LangGraph nodes, and approval policies are visible during development and debugging.
 - Added Agent Hub MCP permission filtering so read-only tool execution must be enabled for the active agent policy before the MCP client is called.
+- Added Agent Hub risk policy loading for command blocking and approval gates while retaining static `SecurityGuardian` hard blocks as defense in depth.
