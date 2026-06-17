@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import platform
 import socket
+import fnmatch
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,9 @@ MAX_DIRECTORY_ENTRIES = 200
 MAX_FILE_READ_BYTES = 200_000
 MAX_PROCESS_LIMIT = 100
 MAX_NETWORK_LIMIT = 100
+MAX_SEARCH_RESULTS = 100
+MAX_WALK_ENTRIES = 5_000
+MAX_WALK_DEPTH = 6
 
 SECRET_FILE_NAMES = {
     ".env",
@@ -311,6 +315,144 @@ def filesystem_read_file(path: str, max_bytes: int = MAX_FILE_READ_BYTES) -> dic
         return _result(False, error=f"Failed to read file: {exc}")
 
 
+def filesystem_search(path: str | None = None, pattern: str = "*", limit: int = 50, max_depth: int = 4) -> dict[str, Any]:
+    """Search a safe local directory tree with bounded depth and result count."""
+    result_limit = _bounded_int(limit, 50, MAX_SEARCH_RESULTS)
+    depth_limit = _bounded_int(max_depth, 4, MAX_WALK_DEPTH)
+
+    try:
+        root = _resolve_user_path(path)
+    except Exception as exc:
+        return _result(False, error=f"Invalid path: {exc}")
+
+    if _is_restricted_path(root):
+        return _result(False, error=f"Restricted path is not available through read-only MCP: {root}")
+    if not root.exists():
+        return _result(False, error=f"Search root does not exist: {root}")
+    if not root.is_dir():
+        return _result(False, error=f"Search root is not a directory: {root}")
+
+    matches: list[dict[str, Any]] = []
+    visited = 0
+    try:
+        for current, dirs, files in os.walk(root):
+            current_path = Path(current)
+            if _relative_depth(root, current_path) > depth_limit:
+                dirs[:] = []
+                continue
+
+            dirs[:] = [
+                directory
+                for directory in dirs
+                if not _is_restricted_path(current_path / directory) and not _is_secret_file(current_path / directory)
+            ]
+
+            for name in sorted([*dirs, *files], key=str.lower):
+                if visited >= MAX_WALK_ENTRIES or len(matches) >= result_limit:
+                    break
+                visited += 1
+                item = current_path / name
+                if _is_secret_file(item):
+                    continue
+                if fnmatch.fnmatch(name.lower(), pattern.lower()):
+                    try:
+                        stat = item.stat()
+                        matches.append(
+                            {
+                                "name": item.name,
+                                "path": str(item),
+                                "type": "directory" if item.is_dir() else "file",
+                                "size_bytes": stat.st_size if item.is_file() else None,
+                                "modified_epoch": stat.st_mtime,
+                            }
+                        )
+                    except (OSError, PermissionError):
+                        matches.append({"name": item.name, "path": str(item), "type": "unavailable"})
+            if visited >= MAX_WALK_ENTRIES or len(matches) >= result_limit:
+                break
+    except Exception as exc:
+        return _result(False, error=f"Filesystem search failed: {exc}")
+
+    return _result(
+        True,
+        {
+            "path": str(root),
+            "pattern": pattern,
+            "count": len(matches),
+            "visited_entries": visited,
+            "truncated": visited >= MAX_WALK_ENTRIES or len(matches) >= result_limit,
+            "matches": matches,
+        },
+    )
+
+
+def filesystem_get_disk_usage(path: str | None = None, max_entries: int = MAX_WALK_ENTRIES) -> dict[str, Any]:
+    """Estimate bounded disk usage for a safe local directory tree."""
+    walk_limit = _bounded_int(max_entries, MAX_WALK_ENTRIES, MAX_WALK_ENTRIES)
+
+    try:
+        root = _resolve_user_path(path)
+    except Exception as exc:
+        return _result(False, error=f"Invalid path: {exc}")
+
+    if _is_restricted_path(root):
+        return _result(False, error=f"Restricted path is not available through read-only MCP: {root}")
+    if not root.exists():
+        return _result(False, error=f"Path does not exist: {root}")
+
+    if root.is_file():
+        if _is_secret_file(root):
+            return _result(False, error=f"Secret-like files are blocked from read-only MCP: {root.name}")
+        return _result(True, {"path": str(root), "total_bytes": root.stat().st_size, "file_count": 1, "directory_count": 0, "truncated": False})
+
+    total_bytes = 0
+    file_count = 0
+    directory_count = 0
+    visited = 0
+
+    try:
+        for current, dirs, files in os.walk(root):
+            current_path = Path(current)
+            dirs[:] = [directory for directory in dirs if not _is_restricted_path(current_path / directory)]
+            directory_count += len(dirs)
+
+            for name in files:
+                if visited >= walk_limit:
+                    break
+                visited += 1
+                item = current_path / name
+                if _is_secret_file(item):
+                    continue
+                try:
+                    total_bytes += item.stat().st_size
+                    file_count += 1
+                except (OSError, PermissionError):
+                    continue
+            if visited >= walk_limit:
+                break
+    except Exception as exc:
+        return _result(False, error=f"Disk usage scan failed: {exc}")
+
+    return _result(
+        True,
+        {
+            "path": str(root),
+            "total_bytes": total_bytes,
+            "file_count": file_count,
+            "directory_count": directory_count,
+            "visited_entries": visited,
+            "truncated": visited >= walk_limit,
+        },
+    )
+
+
+def _relative_depth(root: Path, path: Path) -> int:
+    try:
+        return len(path.relative_to(root).parts)
+    except ValueError:
+        return MAX_WALK_DEPTH + 1
+
+
 TOOL_REGISTRY = {
     "system_get_metrics_snapshot": system_get_metrics_snapshot,
     "system_list_processes": system_list_processes,
@@ -318,6 +460,8 @@ TOOL_REGISTRY = {
     "network_list_connections": network_list_connections,
     "filesystem_list_directory": filesystem_list_directory,
     "filesystem_read_file": filesystem_read_file,
+    "filesystem_search": filesystem_search,
+    "filesystem_get_disk_usage": filesystem_get_disk_usage,
     "system_get_platform_info": system_get_platform_info,
 }
 
@@ -325,4 +469,3 @@ TOOL_REGISTRY = {
 def list_tool_names() -> list[str]:
     """Return supported local read-only MCP tool names."""
     return sorted(TOOL_REGISTRY.keys())
-

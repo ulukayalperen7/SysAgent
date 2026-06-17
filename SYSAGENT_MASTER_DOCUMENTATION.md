@@ -82,6 +82,8 @@ Current MCP tools are intentionally read-only:
 - `network_list_connections`
 - `filesystem_list_directory`
 - `filesystem_read_file`
+- `filesystem_search`
+- `filesystem_get_disk_usage`
 - `system_get_platform_info`
 
 MCP should grow first through safe read-only capabilities:

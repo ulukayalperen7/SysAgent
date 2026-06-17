@@ -88,11 +88,21 @@ def mcp_read_only_node(state: AgentState) -> dict[str, Any]:
 def _select_mcp_tool(user_input: str) -> tuple[str | None, dict[str, Any]]:
     lower_input = user_input.lower()
 
+    if _looks_like_filesystem_search(lower_input):
+        return "filesystem_search", {
+            "path": _extract_path(user_input),
+            "pattern": _extract_search_pattern(user_input),
+            "limit": _extract_limit(user_input, default=30, maximum=100),
+        }
+
     if _looks_like_file_read(lower_input):
         path = _extract_path(user_input)
         if path:
             return "filesystem_read_file", {"path": path}
         return None, {}
+
+    if _looks_like_disk_usage(lower_input):
+        return "filesystem_get_disk_usage", {"path": _extract_path(user_input)}
 
     if _looks_like_directory_listing(lower_input):
         return "filesystem_list_directory", {"path": _extract_path(user_input)}
@@ -123,6 +133,14 @@ def _looks_like_directory_listing(lower_input: str) -> bool:
     return any(term in lower_input for term in ("list files", "show files", "list directory", "show directory", "list folder", "show folder", "dir "))
 
 
+def _looks_like_filesystem_search(lower_input: str) -> bool:
+    return any(term in lower_input for term in ("find file", "search file", "search for", "find files", "dosya ara", "dosya bul"))
+
+
+def _looks_like_disk_usage(lower_input: str) -> bool:
+    return any(term in lower_input for term in ("disk usage", "folder size", "directory size", "how big", "size of folder", "klasor boyutu", "disk kullanimi"))
+
+
 def _extract_limit(text: str, default: int, maximum: int) -> int:
     match = re.search(r"\btop\s+(\d+)\b|\b(\d+)\s+(?:processes|files|connections|items)\b", text, re.IGNORECASE)
     if not match:
@@ -137,6 +155,24 @@ def _extract_process_query(text: str) -> str | None:
         return None
     query = match.group(1).strip(" .")
     return query or None
+
+
+def _extract_search_pattern(text: str) -> str:
+    quoted = re.search(r"['\"]([^'\"]+)['\"]", text)
+    if quoted:
+        return quoted.group(1).strip() or "*"
+
+    wildcard = re.search(r"(?<![\w.-])([A-Za-z0-9_*?.-]+\.[A-Za-z0-9_*?]{1,12})(?![\w.-])", text)
+    if wildcard:
+        return wildcard.group(1).strip()
+
+    named = re.search(r"(?:named|called|for|matching)\s+([A-Za-z0-9_*?. -]{2,80})", text, re.IGNORECASE)
+    if named:
+        candidate = named.group(1).strip(" .")
+        candidate = re.split(r"\s+(?:in|from|under|inside)\b", candidate, maxsplit=1, flags=re.IGNORECASE)[0].strip(" .")
+        return candidate or "*"
+
+    return "*"
 
 
 def _extract_path(text: str) -> str | None:
@@ -215,6 +251,30 @@ def _format_mcp_result(tool_name: str, result: dict[str, Any]) -> str:
         truncated_note = "\n\nNote: Output was truncated." if data.get("truncated") else ""
         return f"Summary:\nFile read successfully.\n\nFindings:\nPath: {data.get('path')}\nSize: {data.get('size_bytes')} bytes\n\nContent Preview:\n{preview}{truncated_note}"
 
+    if tool_name == "filesystem_search":
+        lines = _format_search_rows(data.get("matches", []))
+        truncated_note = "\n\nNote: Search output was truncated." if data.get("truncated") else ""
+        return (
+            "Summary:\nFilesystem search completed.\n\n"
+            "Findings:\n"
+            f"Path: {data.get('path')}\n"
+            f"Pattern: {data.get('pattern')}\n"
+            f"Matches: {data.get('count')}\n"
+            f"{lines}{truncated_note}"
+        )
+
+    if tool_name == "filesystem_get_disk_usage":
+        total_bytes = int(data.get("total_bytes") or 0)
+        return (
+            "Summary:\nDisk usage scan completed.\n\n"
+            "Findings:\n"
+            f"Path: {data.get('path')}\n"
+            f"Total: {_format_bytes(total_bytes)}\n"
+            f"Files: {data.get('file_count')}\n"
+            f"Directories: {data.get('directory_count')}\n"
+            f"Truncated: {data.get('truncated')}"
+        )
+
     if tool_name == "system_get_metrics_snapshot":
         return (
             "Summary:\nSystem metrics snapshot collected.\n\n"
@@ -274,3 +334,24 @@ def _format_directory_rows(entries: list[dict[str, Any]]) -> str:
         size = f" | {entry.get('size_bytes')} bytes" if entry.get("size_bytes") is not None else ""
         rows.append(f"- {entry.get('type')}: {entry.get('name')}{size}")
     return "\n".join(rows)
+
+
+def _format_search_rows(matches: list[dict[str, Any]]) -> str:
+    if not matches:
+        return "No matching files or directories found."
+
+    rows = []
+    for match in matches[:30]:
+        size = f" | {match.get('size_bytes')} bytes" if match.get("size_bytes") is not None else ""
+        rows.append(f"- {match.get('type')}: {match.get('path')}{size}")
+    return "\n".join(rows)
+
+
+def _format_bytes(value: int) -> str:
+    units = ["bytes", "KB", "MB", "GB", "TB"]
+    amount = float(value)
+    for unit in units:
+        if amount < 1024 or unit == units[-1]:
+            return f"{amount:.2f} {unit}" if unit != "bytes" else f"{int(amount)} bytes"
+        amount /= 1024
+    return f"{value} bytes"

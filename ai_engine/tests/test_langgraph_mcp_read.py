@@ -51,6 +51,26 @@ class LangGraphMcpReadTests(unittest.TestCase):
         self.assertEqual(result["script"], "NONE")
         self.assertIn("network connections", result["explanation"].lower())
 
+    def test_filesystem_search_uses_mcp(self):
+        state = _state("find file requirements.txt in this project", "FILE_SYSTEM_READ")
+
+        self.assertTrue(is_mcp_read_only_supported(state))
+
+        result = mcp_read_only_node(state)
+
+        self.assertEqual(result["script"], "NONE")
+        self.assertIn("Filesystem search completed", result["explanation"])
+
+    def test_disk_usage_uses_mcp(self):
+        state = _state("show disk usage of this project", "FILE_SYSTEM_READ")
+
+        self.assertTrue(is_mcp_read_only_supported(state))
+
+        result = mcp_read_only_node(state)
+
+        self.assertEqual(result["script"], "NONE")
+        self.assertIn("Disk usage scan completed", result["explanation"])
+
     def test_deep_diagnostic_system_operation_stays_with_crewai(self):
         state = _state("my laptop is slow, investigate why", "SYSTEM_OPERATION")
 

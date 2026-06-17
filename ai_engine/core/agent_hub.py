@@ -379,6 +379,8 @@ def _fallback_mcp_tool_permissions() -> dict[str, set[str]]:
             "network_list_connections",
             "filesystem_list_directory",
             "filesystem_read_file",
+            "filesystem_search",
+            "filesystem_get_disk_usage",
             "system_get_platform_info",
         },
         "crewai_diagnostics_agent": {

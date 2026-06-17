@@ -184,6 +184,8 @@ values
     ('network_list_connections', 'local_system', 'network', 'List active network connections without mutating network state.', true, 'low', '{"limit":"integer"}'::jsonb),
     ('filesystem_list_directory', 'local_system', 'filesystem', 'List a safe local directory.', true, 'low', '{"path":"string|null"}'::jsonb),
     ('filesystem_read_file', 'local_system', 'filesystem', 'Read a bounded safe local text file.', true, 'low', '{"path":"string"}'::jsonb),
+    ('filesystem_search', 'local_system', 'filesystem', 'Search a safe local directory tree with bounded output.', true, 'low', '{"path":"string|null","pattern":"string","limit":"integer","max_depth":"integer"}'::jsonb),
+    ('filesystem_get_disk_usage', 'local_system', 'filesystem', 'Estimate bounded disk usage for a safe local path.', true, 'low', '{"path":"string|null","max_entries":"integer"}'::jsonb),
     ('system_get_platform_info', 'local_system', 'system', 'Read OS and platform metadata.', true, 'low', '{}'::jsonb)
 on conflict (name) do update set
     server_name = excluded.server_name,

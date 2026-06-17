@@ -14,6 +14,8 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
         self.assertIn("network_list_connections", tools)
         self.assertIn("filesystem_list_directory", tools)
         self.assertIn("filesystem_read_file", tools)
+        self.assertIn("filesystem_search", tools)
+        self.assertIn("filesystem_get_disk_usage", tools)
         self.assertIn("system_get_platform_info", tools)
 
     def test_platform_info_is_available(self):
@@ -44,6 +46,28 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
 
         self.assertTrue(result["success"])
         self.assertIn("fastapi", result["data"]["content"])
+
+    def test_filesystem_search_is_bounded(self):
+        project_path = Path(__file__).resolve().parents[1]
+        result = local_system_mcp_client.call_tool(
+            "filesystem_search",
+            {"path": str(project_path), "pattern": "requirements.txt", "limit": 5, "max_depth": 2},
+        )
+
+        self.assertTrue(result["success"])
+        self.assertLessEqual(result["data"]["count"], 5)
+        self.assertTrue(any(match["name"] == "requirements.txt" for match in result["data"]["matches"]))
+
+    def test_filesystem_disk_usage_returns_size_summary(self):
+        project_path = Path(__file__).resolve().parents[1]
+        result = local_system_mcp_client.call_tool(
+            "filesystem_get_disk_usage",
+            {"path": str(project_path), "max_entries": 100},
+        )
+
+        self.assertTrue(result["success"])
+        self.assertIn("total_bytes", result["data"])
+        self.assertIn("file_count", result["data"])
 
 
 if __name__ == "__main__":

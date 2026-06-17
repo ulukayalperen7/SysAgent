@@ -9,7 +9,9 @@ from typing import Any
 from core.config import settings
 from mcp_servers.local_system_tools import (
     filesystem_list_directory as _filesystem_list_directory,
+    filesystem_get_disk_usage as _filesystem_get_disk_usage,
     filesystem_read_file as _filesystem_read_file,
+    filesystem_search as _filesystem_search,
     network_list_connections as _network_list_connections,
     system_get_metrics_snapshot as _system_get_metrics_snapshot,
     system_get_platform_info as _system_get_platform_info,
@@ -69,6 +71,16 @@ def build_server() -> Any:
     def filesystem_read_file(path: str, max_bytes: int = 200_000) -> dict[str, Any]:
         """Read a bounded non-secret local text file."""
         return _filesystem_read_file(path=path, max_bytes=max_bytes)
+
+    @mcp.tool()
+    def filesystem_search(path: str | None = None, pattern: str = "*", limit: int = 50, max_depth: int = 4) -> dict[str, Any]:
+        """Search a non-restricted local directory tree with bounded output."""
+        return _filesystem_search(path=path, pattern=pattern, limit=limit, max_depth=max_depth)
+
+    @mcp.tool()
+    def filesystem_get_disk_usage(path: str | None = None, max_entries: int = 5_000) -> dict[str, Any]:
+        """Estimate disk usage for a non-restricted local path with bounded traversal."""
+        return _filesystem_get_disk_usage(path=path, max_entries=max_entries)
 
     @mcp.tool()
     def system_get_platform_info() -> dict[str, Any]:

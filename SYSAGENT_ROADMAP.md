@@ -145,6 +145,8 @@ Initial safe MCP tools:
 - `network_list_connections`
 - `filesystem_list_directory`
 - `filesystem_read_file`
+- `filesystem_search`
+- `filesystem_get_disk_usage`
 - `system_get_platform_info`
 
 MCP must not initially expose direct shell execution, file deletion, package installation, process killing, firewall mutation, or persistent system configuration changes.
@@ -480,3 +482,4 @@ Notes:
 - Re-scoped the next Phase 6 work around core hardening before Auth: PostgreSQL/Supabase LangGraph persistence, broader read-only MCP coverage, semantic tool planning, Agent Hub prompt runtime binding, and evaluation coverage.
 - Added an optional LangGraph checkpoint factory that keeps memory checkpointing as the local default and can switch to PostgreSQL/Supabase when `LANGGRAPH_CHECKPOINT_BACKEND=postgres` and `LANGGRAPH_DATABASE_URL` are configured.
 - Added checkpoint backend visibility to `GET /agent-hub/status`.
+- Expanded MCP read-only filesystem coverage with bounded search and disk usage tools, including Agent Hub seed permissions and LangGraph read-node formatting.
