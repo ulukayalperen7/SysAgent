@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     # DB Settings (Supabase)
     database_url: str = Field(default="", env="DATABASE_URL")
 
+    # LangGraph checkpointing. Keep memory as the default local mode; set
+    # LANGGRAPH_CHECKPOINT_BACKEND=postgres and LANGGRAPH_DATABASE_URL to enable
+    # durable checkpoints.
+    langgraph_checkpoint_backend: str = Field(default="memory", env="LANGGRAPH_CHECKPOINT_BACKEND")
+    langgraph_database_url: str = Field(default="", env="LANGGRAPH_DATABASE_URL")
+    langgraph_checkpoint_setup: bool = Field(default=True, env="LANGGRAPH_CHECKPOINT_SETUP")
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

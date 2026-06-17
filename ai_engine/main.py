@@ -11,6 +11,7 @@ from typing import Dict, Any
 
 from core.config import settings
 from core.agent_hub import get_agent_hub_config, record_agent_decision_audit, reload_agent_hub_config
+from core.langgraph_checkpoint import checkpoint_status
 from core.mcp_client import local_system_mcp_client
 from core.mcp_process import ensure_local_mcp_server
 from core.security import SecurityAnalyzer
@@ -46,7 +47,9 @@ async def mcp_status():
 @app.get("/agent-hub/status")
 async def agent_hub_status(refresh: bool = False):
     config = reload_agent_hub_config() if refresh else get_agent_hub_config()
-    return config.to_dict()
+    payload = config.to_dict()
+    payload["checkpoint"] = checkpoint_status()
+    return payload
 
 class AnalyzeRequest(BaseModel):
     task_id: str | None = None

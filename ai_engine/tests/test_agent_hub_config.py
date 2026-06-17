@@ -10,6 +10,7 @@ from core.agent_hub import (
     reload_agent_hub_config,
 )
 from core.config import settings
+from core.langgraph_checkpoint import checkpoint_status
 
 
 class AgentHubConfigTests(unittest.TestCase):
@@ -105,6 +106,25 @@ class AgentHubConfigTests(unittest.TestCase):
             )
 
         self.assertFalse(saved)
+
+    def test_checkpoint_status_uses_memory_without_database_url(self):
+        with patch.object(settings, "langgraph_checkpoint_backend", "postgres"), patch.object(
+            settings, "langgraph_database_url", ""
+        ), patch.object(settings, "database_url", ""):
+            status = checkpoint_status()
+
+        self.assertEqual(status["configured_backend"], "postgres")
+        self.assertEqual(status["active_backend"], "memory")
+        self.assertEqual(status["database_url_configured"], "False")
+
+    def test_checkpoint_status_reports_postgres_when_configured(self):
+        with patch.object(settings, "langgraph_checkpoint_backend", "postgres"), patch.object(
+            settings, "langgraph_database_url", "postgresql://example"
+        ):
+            status = checkpoint_status()
+
+        self.assertEqual(status["active_backend"], "postgres")
+        self.assertEqual(status["database_url_configured"], "True")
 
 
 if __name__ == "__main__":

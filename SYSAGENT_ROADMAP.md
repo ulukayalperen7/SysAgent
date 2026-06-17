@@ -478,3 +478,5 @@ Notes:
 - Added optional Agent Hub decision audit persistence from AI Engine analysis results, linked to backend task IDs when PostgreSQL/Supabase is configured.
 - Clarified document roles: `SYSAGENT_MASTER_DOCUMENTATION.md` is the product and architecture source of truth, while this roadmap is the implementation order and progress log.
 - Re-scoped the next Phase 6 work around core hardening before Auth: PostgreSQL/Supabase LangGraph persistence, broader read-only MCP coverage, semantic tool planning, Agent Hub prompt runtime binding, and evaluation coverage.
+- Added an optional LangGraph checkpoint factory that keeps memory checkpointing as the local default and can switch to PostgreSQL/Supabase when `LANGGRAPH_CHECKPOINT_BACKEND=postgres` and `LANGGRAPH_DATABASE_URL` are configured.
+- Added checkpoint backend visibility to `GET /agent-hub/status`.

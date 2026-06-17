@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, START, END
 from core.agent_state import AgentState
 from core.agent_hub import get_agent_hub_config
+from core.langgraph_checkpoint import build_checkpointer
 from agents.langgraph.nodes import (
     decompose_task_node,
     pop_next_task_node,
@@ -138,13 +139,7 @@ builder.add_edge("direct_chat_node", "pop_next_task_node")
 builder.add_edge("mcp_read_only_node", "pop_next_task_node")
 builder.add_edge("final_synthesis_node", END)
 
-from langgraph.checkpoint.memory import MemorySaver
-
-# we can change memory to postgresql PostgreSaver
-# from langgraph.checkpoint.postgres import PostgresSaver
-# memory = PostgresSaver(conn_string="postgresql://postgres:password@localhost:5432/langgraph")
-
 # 3.6. Memory/Persistence (Checkpointing)
-memory = MemorySaver()
+memory = build_checkpointer()
 # 4. Compile Graph into Runnable Application with persistence
 orchestrator_graph = builder.compile(checkpointer=memory)
