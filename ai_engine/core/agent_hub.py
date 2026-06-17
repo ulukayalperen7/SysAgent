@@ -78,6 +78,23 @@ class AgentRiskRule:
         )
 
 
+@dataclass(frozen=True)
+class AgentPrompt:
+    """A DB-configurable prompt template for an agent."""
+
+    agent_slug: str
+    version: int
+    system_prompt: str
+    developer_prompt: str | None = None
+
+    def render(self, **variables: Any) -> str | None:
+        template = "\n\n".join(part for part in [self.system_prompt, self.developer_prompt] if part)
+        try:
+            return template.format(**variables)
+        except (KeyError, ValueError):
+            return None
+
+
 class AgentHubConfig:
     """In-memory view of Agent Hub route configuration."""
 
@@ -87,11 +104,13 @@ class AgentHubConfig:
         source: str,
         mcp_tool_permissions: dict[str, set[str]] | None = None,
         risk_rules: list[AgentRiskRule] | None = None,
+        prompts: dict[str, AgentPrompt] | None = None,
     ) -> None:
         self.routes = sorted(routes, key=lambda route: route.priority)
         self.source = source
         self.mcp_tool_permissions = mcp_tool_permissions or {}
         self.risk_rules = sorted(risk_rules or [], key=lambda rule: rule.priority)
+        self.prompts = prompts or {}
 
     def select_route(self, intent_key: str, user_input: str) -> AgentRoute | None:
         for route in self.routes:
@@ -117,6 +136,12 @@ class AgentHubConfig:
                 return True
         return None
 
+    def render_prompt(self, agent_slug: str, **variables: Any) -> str | None:
+        prompt = self.prompts.get(agent_slug)
+        if not prompt:
+            return None
+        return prompt.render(**variables)
+
     def to_dict(self) -> dict[str, Any]:
         """Return a safe diagnostics view for API status endpoints."""
         return {
@@ -138,6 +163,7 @@ class AgentHubConfig:
                 for agent_slug, tool_names in self.mcp_tool_permissions.items()
             },
             "risk_rule_count": len(self.risk_rules),
+            "prompt_agents": sorted(self.prompts.keys()),
         }
 
 
@@ -152,6 +178,7 @@ def get_agent_hub_config() -> AgentHubConfig:
         source="fallback",
         mcp_tool_permissions=_fallback_mcp_tool_permissions(),
         risk_rules=_fallback_risk_rules(),
+        prompts=_fallback_prompts(),
     )
 
 
@@ -297,6 +324,20 @@ def _load_from_database() -> AgentHubConfig | None:
                     """
                 )
                 risk_rows = cur.fetchall()
+                cur.execute(
+                    """
+                    select
+                        a.slug as agent_slug,
+                        p.version,
+                        p.system_prompt,
+                        p.developer_prompt
+                    from agent_prompt_versions p
+                    join agent_profiles a on a.id = p.agent_id
+                    where a.status = 'active'
+                      and p.is_active = true
+                    """
+                )
+                prompt_rows = cur.fetchall()
     except Exception:
         return None
 
@@ -328,11 +369,22 @@ def _load_from_database() -> AgentHubConfig | None:
         for row in risk_rows
     ]
 
+    prompts = {
+        str(row["agent_slug"]): AgentPrompt(
+            agent_slug=str(row["agent_slug"]),
+            version=int(row["version"]),
+            system_prompt=str(row["system_prompt"]),
+            developer_prompt=str(row["developer_prompt"]) if row.get("developer_prompt") else None,
+        )
+        for row in prompt_rows
+    }
+
     return AgentHubConfig(
         routes,
         source="database",
         mcp_tool_permissions=permissions,
         risk_rules=risk_rules,
+        prompts={**_fallback_prompts(), **prompts},
     ) if routes else None
 
 
@@ -390,6 +442,34 @@ def _fallback_mcp_tool_permissions() -> dict[str, set[str]]:
             "network_list_connections",
             "system_get_platform_info",
         },
+    }
+
+
+def _fallback_prompts() -> dict[str, AgentPrompt]:
+    terminal_router_prompt = """
+You are an intent classifier for an Enterprise AI Agent.
+Classify the incoming user input into EXACTLY ONE of these categories:
+- FILE_SYSTEM_READ (Listing files, viewing text files, searching for files)
+- FILE_SYSTEM_WRITE (Creating, deleting, modifying, moving files or folders)
+- APP_CONTROL (Opening, closing, managing desktop applications)
+- DEVOPS_READ (Checking git status, docker ps, reading code)
+- DEVOPS_WRITE (git push, npm install, docker restart)
+- SYSTEM_OPERATION (Queries about OS stats, RAM, CPU, killing OS processes)
+- NETWORK_READ (Ping, port scanning)
+- CHAT (Greetings, casual talk)
+- UNKNOWN (If it doesn't clearly fit)
+
+User Input: {current_input}
+
+Output ONLY THE EXACT CATEGORY STRING.
+""".strip()
+
+    return {
+        "terminal_router": AgentPrompt(
+            agent_slug="terminal_router",
+            version=0,
+            system_prompt=terminal_router_prompt,
+        )
     }
 
 

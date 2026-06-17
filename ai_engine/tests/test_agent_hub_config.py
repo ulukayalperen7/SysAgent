@@ -64,12 +64,22 @@ class AgentHubConfigTests(unittest.TestCase):
         self.assertIn("filesystem_read_file", payload["mcp_tool_permissions"]["mcp_read_agent"])
         self.assertIn("filesystem_search", payload["mcp_tool_permissions"]["mcp_read_agent"])
         self.assertIn("filesystem_get_disk_usage", payload["mcp_tool_permissions"]["mcp_read_agent"])
+        self.assertIn("terminal_router", payload["prompt_agents"])
 
     def test_fallback_mcp_permissions_allow_seeded_read_tools(self):
         config = get_agent_hub_config()
 
         self.assertTrue(config.is_mcp_tool_allowed("mcp_read_agent", "system_get_metrics_snapshot"))
         self.assertFalse(config.is_mcp_tool_allowed("mcp_read_agent", "unsafe_shell_exec"))
+
+    def test_fallback_prompt_renders_terminal_router_prompt(self):
+        config = get_agent_hub_config()
+
+        prompt = config.render_prompt("terminal_router", current_input="show cpu")
+
+        self.assertIsNotNone(prompt)
+        self.assertIn("FILE_SYSTEM_READ", prompt)
+        self.assertIn("show cpu", prompt)
 
     def test_fallback_risk_rules_block_dangerous_commands(self):
         config = get_agent_hub_config()

@@ -1,5 +1,6 @@
 from langchain_core.messages import HumanMessage
 from core.agent_state import AgentState
+from core.agent_hub import get_agent_hub_config
 from .base import _get_langchain_llm
 
 CHAT_SHORTCUTS = {"hi", "hello", "hey", "selam", "merhaba", "sa", "slm", "thanks", "thank you"}
@@ -16,23 +17,7 @@ def detect_intent_node(state: AgentState):
 
     llm = _get_langchain_llm()
     
-    prompt = f"""
-    You are an intent classifier for an Enterprise AI Agent. 
-    Classify the incoming user input into EXACTLY ONE of these categories:
-    - FILE_SYSTEM_READ (Listing files, viewing text files, searching for files)
-    - FILE_SYSTEM_WRITE (Creating, deleting, modifying, moving files or folders) 
-    - APP_CONTROL (Opening, closing, managing desktop applications)
-    - DEVOPS_READ (Checking git status, docker ps, reading code)
-    - DEVOPS_WRITE (git push, npm install, docker restart)
-    - SYSTEM_OPERATION (Queries about OS stats, RAM, CPU, killing OS processes)
-    - NETWORK_READ (Ping, port scanning)
-    - CHAT (Greetings, casual talk)
-    - UNKNOWN (If it doesn't clearly fit)
-    
-    User Input: {current_input}
-    
-    Output ONLY THE EXACT CATEGORY STRING.
-    """
+    prompt = get_agent_hub_config().render_prompt("terminal_router", current_input=current_input) or _default_intent_prompt(current_input)
     
     try:
         response = llm.invoke([HumanMessage(content=prompt)])
@@ -55,6 +40,26 @@ def detect_intent_node(state: AgentState):
         intent = "UNKNOWN"
         
     return {"current_intent": intent}
+
+
+def _default_intent_prompt(current_input: str) -> str:
+    return f"""
+    You are an intent classifier for an Enterprise AI Agent.
+    Classify the incoming user input into EXACTLY ONE of these categories:
+    - FILE_SYSTEM_READ (Listing files, viewing text files, searching for files)
+    - FILE_SYSTEM_WRITE (Creating, deleting, modifying, moving files or folders)
+    - APP_CONTROL (Opening, closing, managing desktop applications)
+    - DEVOPS_READ (Checking git status, docker ps, reading code)
+    - DEVOPS_WRITE (git push, npm install, docker restart)
+    - SYSTEM_OPERATION (Queries about OS stats, RAM, CPU, killing OS processes)
+    - NETWORK_READ (Ping, port scanning)
+    - CHAT (Greetings, casual talk)
+    - UNKNOWN (If it doesn't clearly fit)
+
+    User Input: {current_input}
+
+    Output ONLY THE EXACT CATEGORY STRING.
+    """
 
 
 def _detect_intent_deterministic(user_input: str) -> str | None:

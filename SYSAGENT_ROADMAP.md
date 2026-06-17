@@ -484,3 +484,4 @@ Notes:
 - Added checkpoint backend visibility to `GET /agent-hub/status`.
 - Expanded MCP read-only filesystem coverage with bounded search and disk usage tools, including Agent Hub seed permissions and LangGraph read-node formatting.
 - Added the first MCP tool planner module so read-only tool selection is separated from LangGraph node code and can later evolve into a DB/catalog/evaluation-backed semantic planner.
+- Bound the terminal router intent-classifier prompt to Agent Hub prompt versions with safe fallback rendering.

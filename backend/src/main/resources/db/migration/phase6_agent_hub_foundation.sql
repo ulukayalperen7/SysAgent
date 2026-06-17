@@ -175,6 +175,28 @@ from agent_profiles
 where slug in ('terminal_router', 'direct_chat_agent', 'mcp_read_agent', 'crewai_diagnostics_agent', 'script_proposal_agent')
 on conflict (agent_id, version) do nothing;
 
+update agent_prompt_versions
+set
+    system_prompt = $$You are an intent classifier for an Enterprise AI Agent.
+Classify the incoming user input into EXACTLY ONE of these categories:
+- FILE_SYSTEM_READ (Listing files, viewing text files, searching for files)
+- FILE_SYSTEM_WRITE (Creating, deleting, modifying, moving files or folders)
+- APP_CONTROL (Opening, closing, managing desktop applications)
+- DEVOPS_READ (Checking git status, docker ps, reading code)
+- DEVOPS_WRITE (git push, npm install, docker restart)
+- SYSTEM_OPERATION (Queries about OS stats, RAM, CPU, killing OS processes)
+- NETWORK_READ (Ping, port scanning)
+- CHAT (Greetings, casual talk)
+- UNKNOWN (If it doesn't clearly fit)
+
+User Input: {current_input}
+
+Output ONLY THE EXACT CATEGORY STRING.$$,
+    variables_schema = '{"current_input":"string"}'::jsonb
+where agent_id = (select id from agent_profiles where slug = 'terminal_router')
+  and version = 1
+  and created_by = 'phase6_seed';
+
 insert into mcp_tools
     (name, server_name, category, description, is_read_only, default_risk_level, input_schema)
 values
