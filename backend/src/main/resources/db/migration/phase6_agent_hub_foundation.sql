@@ -143,12 +143,36 @@ create table if not exists agent_decision_audit (
     created_at timestamptz not null default now()
 );
 
+create table if not exists automation_rules (
+    id uuid primary key default gen_random_uuid(),
+    owner_id text not null,
+    name text not null,
+    description text,
+    trigger_type text not null check (trigger_type in ('schedule', 'condition', 'event', 'manual')),
+    trigger_summary text not null,
+    action_type text not null check (action_type in ('agent', 'script_proposal', 'notification')),
+    action_summary text not null,
+    target_agent_id uuid references agent_profiles(id) on delete set null,
+    target_device_scope text not null default 'local',
+    status text not null default 'draft' check (status in ('draft', 'active', 'paused', 'disabled')),
+    requires_approval boolean not null default true,
+    risk_level text not null default 'medium' check (risk_level in ('low', 'medium', 'high')),
+    schedule_expression text,
+    config jsonb not null default '{}'::jsonb,
+    last_run_at timestamptz,
+    next_run_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
 create index if not exists idx_agent_profiles_owner_status on agent_profiles(owner_id, status);
 create index if not exists idx_agent_intent_routes_key_enabled on agent_intent_routes(intent_key, enabled, priority);
 create index if not exists idx_agent_decision_audit_task on agent_decision_audit(task_id);
 create index if not exists idx_agent_decision_audit_thread on agent_decision_audit(thread_id);
 create unique index if not exists idx_agent_intent_routes_seed_unique on agent_intent_routes(intent_key, target_langgraph_node, route_type);
 create unique index if not exists idx_agent_risk_policy_rules_seed_unique on agent_risk_policy_rules(policy_id, rule_type, pattern, effect);
+create index if not exists idx_automation_rules_owner_status on automation_rules(owner_id, status);
+create index if not exists idx_automation_rules_target_agent on automation_rules(target_agent_id);
 
 insert into agent_profiles
     (slug, name, description, agent_type, status, risk_ceiling, requires_approval, config)

@@ -4,47 +4,55 @@
             <h1 class="page-title">Automations</h1>
             <p class="page-subtitle">Connect triggers to agents and create autonomous workflows</p>
         </div>
-        <button class="btn-primary">+ Create Rule</button>
+        <button class="btn-primary" disabled title="Rule creation will be enabled after core policy and auth hardening">
+            Create Rule
+        </button>
+    </div>
+
+    <div class="state-panel" *ngIf="loading">Loading automation rules...</div>
+    <div class="state-panel error" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="state-panel" *ngIf="!loading && !errorMessage && rules.length === 0">
+        No automation rules are configured yet.
     </div>
 
     <div class="rules-list">
-        <div class="rule-card" *ngFor="let rule of activeRules" [class.paused]="rule.status === 'paused'">
+        <div class="rule-card" *ngFor="let rule of rules" [class.paused]="rule.status === 'paused'">
             <div class="rule-header">
                 <h3 class="rule-name">{{ rule.name }}</h3>
-                <label class="toggle-switch">
-                    <input type="checkbox" [checked]="rule.status === 'active'" (change)="toggleRule(rule)">
-                    <span class="slider"></span>
-                </label>
+                <span class="status-pill" [class.active]="rule.status === 'active'">{{ rule.status }}</span>
             </div>
 
             <div class="pipeline">
-                <!-- Trigger Node -->
                 <div class="node trigger-node">
                     <div class="node-icon">
-                        <lucide-icon [name]="rule.trigger.icon" size="24"></lucide-icon>
+                        <lucide-icon [name]="triggerIcon(rule)" size="24"></lucide-icon>
                     </div>
                     <div class="node-content">
-                        <span class="node-label">TRIGGER ({{ rule.trigger.type | uppercase }})</span>
-                        <span class="node-text">{{ rule.trigger.text }}</span>
+                        <span class="node-label">TRIGGER ({{ rule.triggerType | uppercase }})</span>
+                        <span class="node-text">{{ rule.triggerSummary }}</span>
                     </div>
                 </div>
 
-                <!-- Connection Arrow -->
                 <div class="connection">
                     <div class="line"></div>
-                    <div class="arrow">▶</div>
+                    <div class="arrow">&gt;</div>
                 </div>
 
-                <!-- Action Node -->
                 <div class="node action-node">
                     <div class="node-icon">
-                        <lucide-icon [name]="rule.action.icon" size="24"></lucide-icon>
+                        <lucide-icon [name]="actionIcon(rule)" size="24"></lucide-icon>
                     </div>
                     <div class="node-content">
-                        <span class="node-label">ACTION ({{ rule.action.type | uppercase }})</span>
-                        <span class="node-text">{{ rule.action.text }}</span>
+                        <span class="node-label">ACTION ({{ rule.actionType | uppercase }})</span>
+                        <span class="node-text">{{ rule.actionSummary }}</span>
                     </div>
                 </div>
+            </div>
+
+            <div class="rule-meta">
+                <span>Risk: {{ rule.riskLevel }}</span>
+                <span>{{ rule.requiresApproval ? 'Approval required' : 'Read-only autonomous' }}</span>
+                <span>Device scope: {{ rule.targetDeviceScope }}</span>
             </div>
         </div>
     </div>

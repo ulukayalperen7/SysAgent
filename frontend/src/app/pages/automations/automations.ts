@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
-
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, FolderOpen, Clock, Zap, FolderSearch, ShieldCheck, Blocks } from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
+
+import { AutomationRule } from '../../models/automation.model';
+import { AutomationService } from '../../services/automation.service';
 
 @Component({
   selector: 'app-automations',
@@ -10,32 +12,47 @@ import { LucideAngularModule, FolderOpen, Clock, Zap, FolderSearch, ShieldCheck,
   templateUrl: './automations.html',
   styleUrl: './automations.scss',
 })
-export class Automations {
-  activeRules = [
-    {
-      id: 'rule_1',
-      name: 'Clean Big Downloads',
-      trigger: { type: 'condition', icon: 'folder-open', text: "Folder 'Downloads' > 1GB" },
-      action: { type: 'agent', icon: 'folder-search', text: "Run 'File Sorcerer' on 'Main Rig (Windows 11)'" },
-      status: 'active'
-    },
-    {
-      id: 'rule_2',
-      name: 'Weekly Privacy Sweep',
-      trigger: { type: 'schedule', icon: 'clock', text: "Every Friday at 18:00" },
-      action: { type: 'agent', icon: 'shield-check', text: "Run 'Privacy Guardian' on 'Work MacBook'" },
-      status: 'active'
-    },
-    {
-      id: 'rule_3',
-      name: 'Auto-Docker Setup',
-      trigger: { type: 'event', icon: 'zap', text: "When 'docker-compose.yml' is downloaded" },
-      action: { type: 'agent', icon: 'blocks', text: "Run 'Dev-Env Builder' on 'Main Rig'" },
-      status: 'paused'
-    }
-  ];
+export class Automations implements OnInit {
+  rules: AutomationRule[] = [];
+  loading = false;
+  errorMessage = '';
 
-  toggleRule(rule: any) {
-    rule.status = rule.status === 'active' ? 'paused' : 'active';
+  constructor(
+    private automationService: AutomationService,
+    private cdr: ChangeDetectorRef
+  ) { }
+
+  ngOnInit() {
+    this.loadRules();
+  }
+
+  loadRules() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.automationService.getRules().subscribe({
+      next: (rules) => {
+        this.rules = rules;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.errorMessage = error?.message || 'Automation rules could not be loaded.';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  triggerIcon(rule: AutomationRule): string {
+    return {
+      schedule: 'clock',
+      condition: 'folder-open',
+      event: 'zap',
+      manual: 'mouse-pointer-click'
+    }[rule.triggerType] || 'workflow';
+  }
+
+  actionIcon(rule: AutomationRule): string {
+    return rule.actionType === 'agent' ? 'bot' : 'shield-check';
   }
 }
