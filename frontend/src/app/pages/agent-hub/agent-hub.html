@@ -82,6 +82,34 @@
         </div>
 
         <div class="ops-grid">
+            <section class="ops-panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <div>
+                        <h2>Agent Profiles</h2>
+                        <p>{{ visibleAgentProfiles.length }} database-backed agents</p>
+                    </div>
+                    <lucide-icon name="boxes" size="20"></lucide-icon>
+                </div>
+
+                <div class="dependency-table">
+                    <div class="table-row table-head">
+                        <span>Agent</span>
+                        <span>Policy</span>
+                        <span>Status</span>
+                    </div>
+                    <div class="table-row" *ngFor="let agent of visibleAgentProfiles">
+                        <span class="name-cell">{{ agent.name }}</span>
+                        <span class="purpose-cell">
+                            {{ agent.agentType }} - risk {{ agent.riskCeiling }} - {{ agent.activePromptVersions }} prompts - {{ agent.allowedMcpTools }} tools
+                        </span>
+                        <span class="state-pill" [class.good]="agent.status === 'active'">{{ agent.status }}</span>
+                    </div>
+                    <div class="empty-state" *ngIf="visibleAgentProfiles.length === 0">
+                        No agent profiles match the current filter.
+                    </div>
+                </div>
+            </section>
+
             <section class="ops-panel dependencies-panel">
                 <div class="panel-header">
                     <div>

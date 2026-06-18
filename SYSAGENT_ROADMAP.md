@@ -493,3 +493,4 @@ Notes:
 - Added AI Engine runtime health reporting and lazy LangGraph loading so status endpoints can surface missing dependencies instead of failing during application startup.
 - Added a Spring Boot `/api/agent/runtime-status` proxy so UI and future operators can inspect AI Engine, Agent Hub, checkpoint, and MCP health without calling Python directly.
 - Typed the runtime-status backend contract and connected the Angular Agent Hub page to live runtime, dependency, checkpoint, prompt-agent, and MCP tool data instead of demo marketplace cards.
+- Added a database-backed Agent Hub profile catalog endpoint and connected the Angular Agent Hub page to the seeded `agent_profiles` records with prompt and MCP permission counts.

@@ -1,11 +1,11 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { AgentService } from '../../services/agent.service';
-import { AiRuntimeStatus, RuntimeDependencyStatus } from '../../models/agent.model';
+import { AgentProfile, AiRuntimeStatus, RuntimeDependencyStatus } from '../../models/agent.model';
 
 interface DependencyRow extends RuntimeDependencyStatus {
   name: string;
@@ -20,6 +20,7 @@ interface DependencyRow extends RuntimeDependencyStatus {
 })
 export class AgentHub implements OnInit, OnDestroy {
   runtimeStatus: AiRuntimeStatus | null = null;
+  agentProfiles: AgentProfile[] = [];
   loading = false;
   errorMessage = '';
   searchTerm = '';
@@ -44,9 +45,13 @@ export class AgentHub implements OnInit, OnDestroy {
     this.loading = true;
     this.errorMessage = '';
     this.statusSub?.unsubscribe();
-    this.statusSub = this.agentService.getRuntimeStatus().subscribe({
-      next: (status) => {
+    this.statusSub = forkJoin({
+      status: this.agentService.getRuntimeStatus(),
+      profiles: this.agentService.getAgentProfiles()
+    }).subscribe({
+      next: ({ status, profiles }) => {
         this.runtimeStatus = status;
+        this.agentProfiles = profiles;
         this.lastUpdated = new Date();
         this.loading = false;
         this.cdr.detectChanges();
@@ -74,6 +79,18 @@ export class AgentHub implements OnInit, OnDestroy {
 
   get visiblePromptAgents(): string[] {
     return this.filterStrings(this.runtimeStatus?.agentHub?.promptAgents || []);
+  }
+
+  get visibleAgentProfiles(): AgentProfile[] {
+    const query = this.searchTerm.trim().toLowerCase();
+    return this.agentProfiles
+      .filter(agent => this.matchesQuery([
+        agent.slug,
+        agent.name,
+        agent.description || '',
+        agent.agentType,
+        agent.riskCeiling
+      ], query));
   }
 
   get missingCount(): number {

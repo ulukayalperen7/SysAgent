@@ -52,3 +52,21 @@ export interface McpSummary {
     detail?: string | null;
     tools: string[];
 }
+
+export interface AgentProfile {
+    id: string;
+    slug: string;
+    name: string;
+    description?: string | null;
+    agentType: string;
+    status: string;
+    ownerId?: string | null;
+    defaultModelProvider?: string | null;
+    defaultModelName?: string | null;
+    riskCeiling: string;
+    requiresApproval: boolean;
+    activePromptVersions: number;
+    allowedMcpTools: number;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+}
