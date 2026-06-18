@@ -14,15 +14,17 @@ from core.agent_hub import get_agent_hub_config, record_agent_decision_audit, re
 from core.langgraph_checkpoint import checkpoint_status
 from core.mcp_client import local_system_mcp_client
 from core.mcp_process import ensure_local_mcp_server
+from core.runtime_health import runtime_health_status
 from core.security import SecurityAnalyzer
 from core.security_guardian import SecurityGuardian
-from agents.langgraph.graphs.orchestrator import orchestrator_graph
 
 app = FastAPI(
     title="SysAgent AI Engine",
     description="Multi-Agent AI Endpoint with LangGraph Orchestrator",
     version="2.0.0"
 )
+
+_orchestrator_graph = None
 
 
 @app.on_event("startup")
@@ -50,6 +52,27 @@ async def agent_hub_status(refresh: bool = False):
     payload = config.to_dict()
     payload["checkpoint"] = checkpoint_status()
     return payload
+
+
+@app.get("/runtime/status")
+async def runtime_status(refresh_agent_hub: bool = False):
+    config = reload_agent_hub_config() if refresh_agent_hub else get_agent_hub_config()
+    mcp = local_system_mcp_client.status()
+    return {
+        "runtime": runtime_health_status(),
+        "agent_hub": {
+            "source": config.source,
+            "route_count": len(config.routes),
+            "prompt_agents": sorted(config.prompts.keys()),
+        },
+        "checkpoint": checkpoint_status(),
+        "mcp": {
+            "available": mcp.available,
+            "mode": mcp.mode,
+            "detail": mcp.detail,
+            "tools": local_system_mcp_client.list_tools(),
+        },
+    }
 
 class AnalyzeRequest(BaseModel):
     task_id: str | None = None
@@ -87,7 +110,7 @@ async def analyze_system(request: AnalyzeRequest):
         config = {"configurable": {"thread_id": request.thread_id}}
         
         # Invoke the robust LangGraph orchestrator
-        final_state = orchestrator_graph.invoke(initial_state, config)
+        final_state = get_orchestrator_graph().invoke(initial_state, config)
         current_intent = final_state.get("current_intent", "UNKNOWN")
         selected_route = get_agent_hub_config().select_route(
             current_intent,
@@ -140,6 +163,16 @@ def _agent_slug_for_route(target_langgraph_node: str | None) -> str | None:
         "run_crewai_diagnostics_node": "crewai_diagnostics_agent",
         "generate_action_script_node": "script_proposal_agent",
     }.get(target_langgraph_node or "")
+
+
+def get_orchestrator_graph():
+    """Load the LangGraph app lazily so status endpoints survive missing deps."""
+    global _orchestrator_graph
+    if _orchestrator_graph is None:
+        from agents.langgraph.graphs.orchestrator import orchestrator_graph
+
+        _orchestrator_graph = orchestrator_graph
+    return _orchestrator_graph
 
 if __name__ == "__main__":
     uvicorn.run(

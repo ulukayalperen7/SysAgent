@@ -490,3 +490,4 @@ Notes:
 - Added the first routing evaluation dataset for read-only MCP routing and risky approval expectations.
 - Added MCP tool usage tracking in LangGraph state so decision audit can record which read-only tools were actually called.
 - Expanded MCP read-only system inventory coverage with network interface and disk partition tools.
+- Added AI Engine runtime health reporting and lazy LangGraph loading so status endpoints can surface missing dependencies instead of failing during application startup.
