@@ -51,6 +51,26 @@ $border-color: #30363d;
         border-color: #8b949e;
         transform: translateY(-2px);
     }
+
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.state-panel {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    color: #8b949e;
+    padding: 1rem;
+    margin-bottom: 1rem;
+
+    &.error {
+        color: #ff7b72;
+        border-color: rgba(248, 81, 73, 0.5);
+    }
 }
 
 .device-grid {
@@ -212,161 +232,3 @@ $border-color: #30363d;
     }
 }
 
-/* Modal Styles */
-.modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(1, 4, 9, 0.8);
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.2rem 1.5rem;
-        border-bottom: 1px solid #21262d;
-
-        h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            color: #e6edf3;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: #8b949e;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: color 0.2s;
-
-            &:hover {
-                color: #f85149;
-            }
-        }
-    }
-
-    .modal-body {
-        padding: 1.5rem;
-
-        p {
-            color: #8b949e;
-            font-size: 0.95rem;
-            margin: 0 0 1.5rem 0;
-        }
-    }
-}
-
-.download-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
-
-    .download-btn {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        color: #e6edf3;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-
-        .icon {
-            font-size: 1.4rem;
-        }
-
-        &:hover {
-            background: #21262d;
-            border-color: #8b949e;
-            transform: translateX(4px);
-        }
-    }
-}
-
-.token-container {
-    background: #161b22;
-    border: 1px dashed #30363d;
-    border-radius: 8px;
-    padding: 1.2rem;
-
-    label {
-        display: block;
-        color: #e6edf3;
-        font-weight: 600;
-        font-size: 0.9rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .helper-text {
-        font-size: 0.8rem;
-        margin-bottom: 1rem;
-    }
-
-    .token-box {
-        display: flex;
-        background: #010409;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        padding: 0.4rem;
-        align-items: center;
-
-        code {
-            flex: 1;
-            font-family: 'Courier New', Courier, monospace;
-            color: #58a6ff;
-            font-size: 1.2rem;
-            font-weight: 700;
-            text-align: center;
-            letter-spacing: 0.1em;
-        }
-
-        .copy-btn {
-            background: #21262d;
-            border: 1px solid #30363d;
-            color: #e6edf3;
-            padding: 0.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-
-            &:hover {
-                background: #30363d;
-            }
-        }
-    }
-}
-
-@keyframes modalIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.95);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}

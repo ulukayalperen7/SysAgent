@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Monitor, Laptop, Server, Copy } from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
 import { DeviceService, Device } from '../../services/device.service';
 
 @Component({
@@ -11,9 +11,9 @@ import { DeviceService, Device } from '../../services/device.service';
   styleUrl: './devices.scss',
 })
 export class Devices implements OnInit {
-  showAddModal = false;
   devices: Device[] = [];
-  generatedToken = '';
+  loading = false;
+  errorMessage = '';
 
   constructor(
     private deviceService: DeviceService,
@@ -25,23 +25,20 @@ export class Devices implements OnInit {
   }
 
   private fetchDevices() {
+    this.loading = true;
+    this.errorMessage = '';
     this.deviceService.getDevices().subscribe({
       next: (data) => {
         this.devices = data;
-        this.cdr.detectChanges(); // Force UI update
+        this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to fetch devices:', err);
+        this.errorMessage = err?.message || 'Devices could not be loaded.';
+        this.loading = false;
+        this.cdr.detectChanges();
       }
     });
-  }
-
-  openAddDevice() {
-    this.generatedToken = 'SYSA-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-44';
-    this.showAddModal = true;
-  }
-
-  closeModal() {
-    this.showAddModal = false;
   }
 }

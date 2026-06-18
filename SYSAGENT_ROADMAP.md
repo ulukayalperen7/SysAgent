@@ -496,3 +496,4 @@ Notes:
 - Added a database-backed Agent Hub profile catalog endpoint and connected the Angular Agent Hub page to the seeded `agent_profiles` records with prompt and MCP permission counts.
 - Replaced the static Angular History page with a tenant-scoped task history DTO backed by the real task table, avoiding raw script exposure in list views.
 - Added a database-backed automation rule catalog and connected the Angular Automations page to real persisted rules, while keeping creation/execution disabled until core policy and Auth are ready.
+- Removed remaining fake device seed behavior and disabled synthetic pairing-token UI until Auth-backed remote device registration is implemented.

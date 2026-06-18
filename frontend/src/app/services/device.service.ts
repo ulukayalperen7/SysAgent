@@ -10,8 +10,8 @@ export interface Device {
     name: string;
     ipAddress: string; // added to match backend
     status: string;
-    cpuUsage: number; // changed from cpu
-    ramUsage: number; // changed from ram
+    cpuUsage: number | null; // changed from cpu
+    ramUsage: number | null; // changed from ram
     type: string;
     lastSeen?: string; // Added to match backend
 }
