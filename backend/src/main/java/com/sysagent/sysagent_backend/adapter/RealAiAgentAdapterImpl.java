@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.sysagent.sysagent_backend.config.AiEngineProperties;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
 import lombok.RequiredArgsConstructor;
@@ -105,26 +106,22 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
     }
 
     @Override
-    public Map<String, Object> getRuntimeStatus() {
+    public AiRuntimeStatusDto getRuntimeStatus() {
         String statusEndpoint = aiEngine.getUrl().replaceAll("/$", "") + "/runtime/status";
 
         try {
             ResponseEntity<Map> response = restTemplate.getForEntity(statusEndpoint, Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return response.getBody();
+                return AiRuntimeStatusDto.fromPayload(response.getBody());
             }
-            return Map.of(
-                    "runtime", Map.of(
-                            "status", "unavailable",
-                            "detail", "AI Engine status returned " + response.getStatusCode()),
-                    "mcp", Map.of("available", false));
+            return AiRuntimeStatusDto.unavailable(
+                    "unavailable",
+                    "AI Engine status returned " + response.getStatusCode());
         } catch (Exception e) {
             log.error("AI Engine runtime status failed: {}", e.getMessage());
-            return Map.of(
-                    "runtime", Map.of(
-                            "status", "unreachable",
-                            "detail", "AI Engine unreachable on " + aiEngine.getUrl()),
-                    "mcp", Map.of("available", false));
+            return AiRuntimeStatusDto.unavailable(
+                    "unreachable",
+                    "AI Engine unreachable on " + aiEngine.getUrl());
         }
     }
 

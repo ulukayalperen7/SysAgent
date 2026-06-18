@@ -1,7 +1,5 @@
 package com.sysagent.sysagent_backend.controller;
 
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -14,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sysagent.sysagent_backend.adapter.AiAgentAdapter;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentRequestDto;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
@@ -38,8 +37,8 @@ public class AgentController {
     private final SystemMetricsService systemMetricsService;
 
     @GetMapping("/runtime-status")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getRuntimeStatus() {
-        Map<String, Object> status = aiAgentAdapter.getRuntimeStatus();
+    public ResponseEntity<ApiResponse<AiRuntimeStatusDto>> getRuntimeStatus() {
+        AiRuntimeStatusDto status = aiAgentAdapter.getRuntimeStatus();
         return ResponseEntity.ok(ApiResponse.success(status, "AI Engine runtime status loaded"));
     }
 

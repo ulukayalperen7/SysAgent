@@ -1,9 +1,7 @@
 package com.sysagent.sysagent_backend.adapter;
 
-import java.util.List;
-import java.util.Map;
-
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -35,22 +33,8 @@ public class MockAiAgentAdapterImpl implements AiAgentAdapter {
     }
 
     @Override
-    public Map<String, Object> getRuntimeStatus() {
-        return Map.of(
-                "runtime", Map.of(
-                        "status", "mock",
-                        "required_missing", List.of(),
-                        "optional_missing", List.of()),
-                "agent_hub", Map.of(
-                        "source", "mock",
-                        "route_count", 0,
-                        "prompt_agents", List.of()),
-                "checkpoint", Map.of(
-                        "active_backend", "memory"),
-                "mcp", Map.of(
-                        "available", true,
-                        "mode", "mock_read_only",
-                        "tools", List.of()));
+    public AiRuntimeStatusDto getRuntimeStatus() {
+        return AiRuntimeStatusDto.unavailable("mock", "Mock AI adapter is active.");
     }
     
     private String generateSimulatedScript(String intent) {

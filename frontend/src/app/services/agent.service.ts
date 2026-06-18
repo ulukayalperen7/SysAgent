@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiResponse } from '../models/api-response.model';
 import { environment } from '../../environments/environment';
-import { AgentIntentRequest, AgentIntentResponse } from '../models/agent.model';
+import { AgentIntentRequest, AgentIntentResponse, AiRuntimeStatus } from '../models/agent.model';
 
 @Injectable({
     providedIn: 'root'
@@ -27,6 +27,21 @@ export class AgentService {
             }),
             catchError(error => {
                 console.error('AgentService: Error processing intent', error);
+                throw error;
+            })
+        );
+    }
+
+    getRuntimeStatus(): Observable<AiRuntimeStatus> {
+        return this.http.get<ApiResponse<AiRuntimeStatus>>(`${this.apiUrl}/runtime-status`).pipe(
+            map(response => {
+                if (response.status !== 'SUCCESS' || !response.data) {
+                    throw new Error(response.message || 'Runtime status response did not include usable data.');
+                }
+                return response.data;
+            }),
+            catchError(error => {
+                console.error('AgentService: Error loading runtime status', error);
                 throw error;
             })
         );

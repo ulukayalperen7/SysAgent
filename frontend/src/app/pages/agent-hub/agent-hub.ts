@@ -1,59 +1,97 @@
-import { Component } from '@angular/core';
-
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, FolderSearch, Blocks, ScanSearch, ShieldCheck, Download, Search } from 'lucide-angular';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { LucideAngularModule } from 'lucide-angular';
+
+import { AgentService } from '../../services/agent.service';
+import { AiRuntimeStatus, RuntimeDependencyStatus } from '../../models/agent.model';
+
+interface DependencyRow extends RuntimeDependencyStatus {
+  name: string;
+}
 
 @Component({
   selector: 'app-agent-hub',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './agent-hub.html',
   styleUrl: './agent-hub.scss',
 })
-export class AgentHub {
-  agents = [
-    {
-      id: 'agent_1',
-      name: 'File Sorcerer',
-      description: 'Autonomously organizes cluttered folders using NLP content analysis.',
-      icon: 'folder-search',
-      downloads: '12.4k',
-      version: 'v2.1.0'
-    },
-    {
-      id: 'agent_2',
-      name: 'Dev-Env Builder',
-      description: 'Installs and configures Docker, Node, and Git based on your project files instantly.',
-      icon: 'blocks',
-      downloads: '8.9k',
-      version: 'v1.4.2'
-    },
-    {
-      id: 'agent_3',
-      name: 'Log Detective',
-      description: 'Scans local crash reports locally and suggests automated code fixes.',
-      icon: 'scan-search',
-      downloads: '4.2k',
-      version: 'v0.9.1-beta'
-    },
-    {
-      id: 'agent_4',
-      name: 'Privacy Guardian',
-      description: 'Wipes tracking caches and sanitizes local data to protect your anonymity.',
-      icon: 'shield-check',
-      downloads: '22.1k',
-      version: 'v3.0.0'
+export class AgentHub implements OnInit, OnDestroy {
+  runtimeStatus: AiRuntimeStatus | null = null;
+  loading = false;
+  errorMessage = '';
+  searchTerm = '';
+  lastUpdated: Date | null = null;
+
+  private statusSub?: Subscription;
+
+  constructor(
+    private agentService: AgentService,
+    private cdr: ChangeDetectorRef
+  ) { }
+
+  ngOnInit() {
+    this.loadRuntimeStatus();
+  }
+
+  ngOnDestroy() {
+    this.statusSub?.unsubscribe();
+  }
+
+  loadRuntimeStatus() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.statusSub?.unsubscribe();
+    this.statusSub = this.agentService.getRuntimeStatus().subscribe({
+      next: (status) => {
+        this.runtimeStatus = status;
+        this.lastUpdated = new Date();
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.errorMessage = error?.message || 'Runtime status could not be loaded.';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  get dependencyRows(): DependencyRow[] {
+    const dependencies = this.runtimeStatus?.runtime?.dependencies || {};
+    const query = this.searchTerm.trim().toLowerCase();
+    return Object.entries(dependencies)
+      .map(([name, dependency]) => ({ name, ...dependency }))
+      .filter(row => this.matchesQuery([row.name, row.module, row.purpose], query))
+      .sort((a, b) => Number(b.required) - Number(a.required) || a.name.localeCompare(b.name));
+  }
+
+  get visibleTools(): string[] {
+    return this.filterStrings(this.runtimeStatus?.mcp?.tools || []);
+  }
+
+  get visiblePromptAgents(): string[] {
+    return this.filterStrings(this.runtimeStatus?.agentHub?.promptAgents || []);
+  }
+
+  get missingCount(): number {
+    return (this.runtimeStatus?.runtime?.requiredMissing?.length || 0)
+      + (this.runtimeStatus?.runtime?.optionalMissing?.length || 0);
+  }
+
+  private filterStrings(values: string[]): string[] {
+    const query = this.searchTerm.trim().toLowerCase();
+    return values
+      .filter(value => this.matchesQuery([value], query))
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  private matchesQuery(values: string[], query: string): boolean {
+    if (!query) {
+      return true;
     }
-  ];
-
-  deployingAgent: string | null = null;
-
-  deployAgent(agentId: string) {
-    // Simulate deployment process visually
-    this.deployingAgent = agentId;
-    setTimeout(() => {
-      this.deployingAgent = null;
-      alert('Simulation: Agent deployed to node successfully!');
-    }, 1500);
+    return values.some(value => value.toLowerCase().includes(query));
   }
 }

@@ -2,49 +2,154 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">Agent Hub</h1>
-            <p class="page-subtitle">Discover and deploy specialized AI capabilities to your nodes</p>
+            <p class="page-subtitle">Runtime, Agent Hub, checkpoint, and MCP health</p>
         </div>
 
-        <div class="search-bar">
-            <lucide-icon name="search" class="icon" size="18"></lucide-icon>
-            <input type="text" placeholder="Search agents by name or capability...">
+        <div class="header-actions">
+            <div class="search-bar">
+                <lucide-icon name="search" class="icon" size="18"></lucide-icon>
+                <input type="text" placeholder="Filter dependencies, agents, tools..." [(ngModel)]="searchTerm">
+            </div>
+            <button class="refresh-btn" type="button" (click)="loadRuntimeStatus()" [disabled]="loading"
+                title="Refresh runtime status">
+                <lucide-icon name="refresh-cw" size="17"></lucide-icon>
+            </button>
         </div>
     </div>
 
-    <div class="agents-grid">
-        <div class="agent-card" *ngFor="let agent of agents">
-            <div class="card-header">
-                <div class="agent-icon-wrapper">
-                    <lucide-icon [name]="agent.icon" class="agent-icon" size="28"></lucide-icon>
-                </div>
-                <div class="agent-meta">
-                    <span class="version">{{ agent.version }}</span>
-                    <span class="downloads">
-                        <lucide-icon name="download" size="12" class="static-icon"></lucide-icon>
-                        {{ agent.downloads }}
+    <div class="loading-panel" *ngIf="loading && !runtimeStatus">
+        Loading runtime status...
+    </div>
+
+    <div class="error-panel" *ngIf="errorMessage">
+        <lucide-icon name="alert-triangle" size="18"></lucide-icon>
+        <span>{{ errorMessage }}</span>
+    </div>
+
+    <ng-container *ngIf="runtimeStatus as status">
+        <div class="status-grid">
+            <section class="status-card" [class.bad]="status.runtime.status !== 'ready'">
+                <div class="status-card-header">
+                    <div class="status-icon">
+                        <lucide-icon name="activity" size="22"></lucide-icon>
+                    </div>
+                    <span class="state-pill" [class.good]="status.runtime.status === 'ready'">
+                        {{ status.runtime.status }}
                     </span>
                 </div>
-            </div>
+                <h2>Runtime</h2>
+                <p>{{ status.runtime.requiredMissing.length }} required missing</p>
+                <span class="meta-line" *ngIf="status.runtime.detail">{{ status.runtime.detail }}</span>
+            </section>
 
-            <div class="card-body">
-                <h3 class="agent-title">{{ agent.name }}</h3>
-                <p class="agent-desc">{{ agent.description }}</p>
-            </div>
-
-            <div class="card-footer">
-                <div class="deploy-container">
-                    <select class="device-select" [disabled]="deployingAgent === agent.id">
-                        <option value="" disabled selected>Select Node...</option>
-                        <option value="main">Main Rig (Windows 11)</option>
-                        <option value="mac" disabled>Work MacBook (Offline)</option>
-                    </select>
-                    <button class="btn-primary deploy-btn" (click)="deployAgent(agent.id)"
-                        [disabled]="deployingAgent === agent.id">
-                        <span *ngIf="deployingAgent !== agent.id">Deploy</span>
-                        <span *ngIf="deployingAgent === agent.id" class="loader"></span>
-                    </button>
+            <section class="status-card">
+                <div class="status-card-header">
+                    <div class="status-icon">
+                        <lucide-icon name="database" size="22"></lucide-icon>
+                    </div>
+                    <span class="state-pill">{{ status.agentHub.source }}</span>
                 </div>
-            </div>
+                <h2>Agent Hub</h2>
+                <p>{{ status.agentHub.routeCount }} active routes</p>
+                <span class="meta-line">{{ status.agentHub.promptAgents.length }} prompt agents</span>
+            </section>
+
+            <section class="status-card">
+                <div class="status-card-header">
+                    <div class="status-icon">
+                        <lucide-icon name="git-branch" size="22"></lucide-icon>
+                    </div>
+                    <span class="state-pill">{{ status.checkpoint.activeBackend }}</span>
+                </div>
+                <h2>Checkpoint</h2>
+                <p>{{ status.checkpoint.configuredBackend }}</p>
+                <span class="meta-line">DB URL {{ status.checkpoint.databaseUrlConfigured ? 'configured' : 'not configured' }}</span>
+            </section>
+
+            <section class="status-card" [class.bad]="!status.mcp.available">
+                <div class="status-card-header">
+                    <div class="status-icon">
+                        <lucide-icon name="network" size="22"></lucide-icon>
+                    </div>
+                    <span class="state-pill" [class.good]="status.mcp.available">
+                        {{ status.mcp.available ? 'available' : 'offline' }}
+                    </span>
+                </div>
+                <h2>MCP</h2>
+                <p>{{ status.mcp.mode }}</p>
+                <span class="meta-line">{{ status.mcp.tools.length }} read-only tools</span>
+            </section>
         </div>
-    </div>
+
+        <div class="ops-grid">
+            <section class="ops-panel dependencies-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Dependencies</h2>
+                        <p>{{ dependencyRows.length }} shown, {{ missingCount }} missing</p>
+                    </div>
+                    <span class="state-pill" [class.good]="missingCount === 0">{{ missingCount === 0 ? 'clean' : 'needs attention' }}</span>
+                </div>
+
+                <div class="dependency-table">
+                    <div class="table-row table-head">
+                        <span>Package</span>
+                        <span>Role</span>
+                        <span>Status</span>
+                    </div>
+                    <div class="table-row" *ngFor="let dependency of dependencyRows">
+                        <span class="name-cell">
+                            <lucide-icon [name]="dependency.available ? 'check-circle-2' : 'x-circle'" size="16"></lucide-icon>
+                            {{ dependency.name }}
+                        </span>
+                        <span class="purpose-cell">{{ dependency.purpose }}</span>
+                        <span class="state-pill" [class.good]="dependency.available" [class.required]="dependency.required">
+                            {{ dependency.available ? 'installed' : 'missing' }}
+                        </span>
+                    </div>
+                    <div class="empty-state" *ngIf="dependencyRows.length === 0">
+                        No dependencies match the current filter.
+                    </div>
+                </div>
+            </section>
+
+            <section class="ops-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>MCP Tools</h2>
+                        <p>{{ visibleTools.length }} read-only capabilities</p>
+                    </div>
+                    <lucide-icon name="shield-check" size="20"></lucide-icon>
+                </div>
+
+                <div class="token-list">
+                    <span class="token" *ngFor="let tool of visibleTools">{{ tool }}</span>
+                    <div class="empty-state" *ngIf="visibleTools.length === 0">
+                        No MCP tools match the current filter.
+                    </div>
+                </div>
+            </section>
+
+            <section class="ops-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Prompt Agents</h2>
+                        <p>{{ visiblePromptAgents.length }} active prompt profiles</p>
+                    </div>
+                    <lucide-icon name="bot" size="20"></lucide-icon>
+                </div>
+
+                <div class="token-list">
+                    <span class="token" *ngFor="let agent of visiblePromptAgents">{{ agent }}</span>
+                    <div class="empty-state" *ngIf="visiblePromptAgents.length === 0">
+                        No prompt agents match the current filter.
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="last-updated" *ngIf="lastUpdated">
+            Last updated {{ lastUpdated | date:'mediumTime' }}
+        </div>
+    </ng-container>
 </div>

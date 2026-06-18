@@ -1,13 +1,12 @@
 package com.sysagent.sysagent_backend.adapter;
 
-import java.util.Map;
-
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
 public interface AiAgentAdapter {
     AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics, String threadId);
 
-    Map<String, Object> getRuntimeStatus();
+    AiRuntimeStatusDto getRuntimeStatus();
 }
 
