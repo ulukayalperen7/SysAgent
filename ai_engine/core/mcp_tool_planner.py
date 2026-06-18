@@ -33,6 +33,14 @@ def plan_mcp_read_tool(user_input: str, intent: str) -> McpToolPlan | None:
 
     normalized = _normalize_for_matching(user_input)
 
+    if _looks_like_installed_apps(normalized):
+        return McpToolPlan(
+            "system_list_installed_apps",
+            {"query": _extract_app_query(user_input), "limit": _extract_limit(user_input, default=50, maximum=200)},
+            0.87,
+            "The request asks to inspect installed or launchable applications.",
+        )
+
     if _looks_like_filesystem_search(normalized):
         return McpToolPlan(
             "filesystem_search",
@@ -147,6 +155,26 @@ def _looks_like_disk_usage(normalized: str) -> bool:
     return any(term in normalized for term in ("disk usage", "folder size", "directory size", "how big", "size of folder", "klasor boyutu", "disk kullanimi"))
 
 
+def _looks_like_installed_apps(normalized: str) -> bool:
+    return any(
+        term in normalized
+        for term in (
+            "installed app",
+            "installed apps",
+            "installed application",
+            "installed applications",
+            "launchable app",
+            "launchable apps",
+            "available apps",
+            "app list",
+            "application list",
+            "uygulama listesi",
+            "kurulu uygulama",
+            "kurulu uygulamalar",
+        )
+    )
+
+
 def _extract_limit(text: str, default: int, maximum: int) -> int:
     match = re.search(r"\btop\s+(\d+)\b|\b(\d+)\s+(?:processes|files|connections|items)\b", text, re.IGNORECASE)
     if not match:
@@ -160,6 +188,19 @@ def _extract_process_query(text: str) -> str | None:
     if not match:
         return None
     query = match.group(1).strip(" .")
+    return query or None
+
+
+def _extract_app_query(text: str) -> str | None:
+    quoted = re.search(r"['\"]([^'\"]+)['\"]", text)
+    if quoted:
+        return quoted.group(1).strip() or None
+
+    match = re.search(r"(?:named|called|for|matching|app|application|uygulama)\s+([A-Za-z0-9_.+ -]{2,60})", text, re.IGNORECASE)
+    if not match:
+        return None
+    query = match.group(1).strip(" .")
+    query = re.split(r"\s+(?:installed|available|kurulu|var|list|listele)\b", query, maxsplit=1, flags=re.IGNORECASE)[0].strip(" .")
     return query or None
 
 

@@ -128,7 +128,7 @@ def generate_action_script_node(state: AgentState):
     - For media controls on Windows, use a User32 virtual-key PowerShell script for next/previous/play-pause.
     - For file writes/deletes, use -LiteralPath where possible and target user folders such as Desktop/Downloads/Documents.
     - Include only the current step; the LangGraph queue handles future steps.
-    - If you are targeting a specific application (e.g., Spotify, Chrome, Code), ALWAYS prioritize commands that find, focus, and target that application's Window or Process directly.
+    - If you are targeting a specific application, ALWAYS prioritize commands that find, focus, and target that application's Window or Process directly.
     - AVOID using ambiguous global hotkeys (like MediaPlayPause or Spacebar) unless you have first ensured the correct window is in focus.
     - If the user had a failure previously, analyze the Context History and do not repeat the same failed strategy.
     - GENERATE COMMANDS ONLY FOR THE CURRENT "User Input" STEP. Do not include actions from previous or future tasks.

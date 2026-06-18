@@ -1,3 +1,5 @@
+import re
+
 from langchain_core.messages import HumanMessage
 from core.agent_state import AgentState
 from core.agent_hub import get_agent_hub_config
@@ -76,16 +78,20 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
         "next song", "next track", "previous song", "play pause",
         " ac", "ac ", "kapat", "sonlandir", "sarki", "calistir", "baslat",
     )
-    devops_write_terms = ("install", "uninstall", "npm install", "pip install", "docker restart", "git push", "winget", "yukle", "kur", "kaldir")
+    devops_write_terms = ("uninstall", "npm install", "pip install", "docker restart", "git push", "winget", "yukle", "kur", "kaldir")
     fs_read_terms = (
         "list files", "show files", "read file", "show file", "list directory",
         "downloads", "desktop", "documents", ".txt", ".log",
         "disk usage", "folder size", "directory size", "size of folder", "klasor boyutu",
     )
     network_terms = ("network", "connections", "ports", "ping", "dns", "socket", "ip address", "mac address")
-    system_terms = ("cpu", "ram", "memory", "process", "processes", "slow", "suspicious", "system", "metrics", "disk partition", "disk partitions", "drives", "volumes")
+    system_terms = (
+        "cpu", "ram", "memory", "process", "processes", "slow", "suspicious", "system", "metrics",
+        "disk partition", "disk partitions", "drives", "volumes", "installed apps", "installed applications",
+        "available apps", "application list", "app list", "kurulu uygulama", "kurulu uygulamalar", "uygulama listesi",
+    )
 
-    if any(term in lower for term in devops_write_terms):
+    if _contains_devops_write_term(lower, devops_write_terms):
         return "DEVOPS_WRITE"
     if any(term in lower for term in write_terms):
         return "FILE_SYSTEM_WRITE"
@@ -99,6 +105,12 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
         return "SYSTEM_OPERATION"
 
     return None
+
+
+def _contains_devops_write_term(lower: str, terms: tuple[str, ...]) -> bool:
+    if any(term in lower for term in terms):
+        return True
+    return bool(re.search(r"\binstall\b", lower))
 
 
 def _normalize_for_matching(text: str) -> str:

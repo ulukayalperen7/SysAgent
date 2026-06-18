@@ -497,3 +497,7 @@ Notes:
 - Replaced the static Angular History page with a tenant-scoped task history DTO backed by the real task table, avoiding raw script exposure in list views.
 - Added a database-backed automation rule catalog and connected the Angular Automations page to real persisted rules, while keeping creation/execution disabled until core policy and Auth are ready.
 - Removed remaining fake device seed behavior and disabled synthetic pairing-token UI until Auth-backed remote device registration is implemented.
+- Removed the remaining mock AI adapter, stale backend log artifacts, and old debug state artifact from the source tree.
+- Centralized the pre-auth owner placeholder behind `CurrentUserProvider` so JWT/Supabase Auth can replace it from one boundary later.
+- Replaced app-specific CrewAI prompt examples with generic app discovery guidance.
+- Added a read-only installed-app inventory MCP tool, planner coverage, Agent Hub seed registration, and routing eval coverage for dynamic app discovery.

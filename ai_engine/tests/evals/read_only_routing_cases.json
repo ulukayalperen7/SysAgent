@@ -50,7 +50,7 @@
   },
   {
     "name": "open_app_requires_approval",
-    "prompt": "open Spotify",
+    "prompt": "open notepad",
     "expected_intent": "APP_CONTROL",
     "expected_tool": null,
     "approval_required": true
@@ -64,10 +64,17 @@
   },
   {
     "name": "turkish_app_open_requires_approval",
-    "prompt": "spotify ac",
+    "prompt": "notepad ac",
     "expected_intent": "APP_CONTROL",
     "expected_tool": null,
     "approval_required": true
+  },
+  {
+    "name": "installed_apps_read_only",
+    "prompt": "show installed apps matching code",
+    "expected_intent": "SYSTEM_OPERATION",
+    "expected_tool": "system_list_installed_apps",
+    "approval_required": false
   },
   {
     "name": "turkish_file_search",

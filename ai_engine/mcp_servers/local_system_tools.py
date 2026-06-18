@@ -16,6 +16,7 @@ MAX_FILE_READ_BYTES = 200_000
 MAX_PROCESS_LIMIT = 100
 MAX_NETWORK_LIMIT = 100
 MAX_SEARCH_RESULTS = 100
+MAX_APP_LIMIT = 200
 MAX_WALK_ENTRIES = 5_000
 MAX_WALK_DEPTH = 6
 
@@ -110,6 +111,41 @@ def system_get_platform_info() -> dict[str, Any]:
     )
 
 
+def system_list_installed_apps(query: str | None = None, limit: int = 100) -> dict[str, Any]:
+    """Discover launchable local applications from read-only OS locations."""
+    app_limit = _bounded_int(limit, 100, MAX_APP_LIMIT)
+    query_text = _normalize_app_query(query)
+    apps_by_key: dict[str, dict[str, Any]] = {}
+
+    for app in _iter_start_menu_apps():
+        _add_app(apps_by_key, app, query_text, app_limit)
+        if len(apps_by_key) >= app_limit:
+            break
+
+    if len(apps_by_key) < app_limit and os.name == "nt":
+        for app in _iter_windows_app_paths():
+            _add_app(apps_by_key, app, query_text, app_limit)
+            if len(apps_by_key) >= app_limit:
+                break
+
+    if len(apps_by_key) < app_limit:
+        for app in _iter_path_executables():
+            _add_app(apps_by_key, app, query_text, app_limit)
+            if len(apps_by_key) >= app_limit:
+                break
+
+    apps = sorted(apps_by_key.values(), key=lambda item: item["name"].lower())
+    return _result(
+        True,
+        {
+            "count": len(apps),
+            "query": query,
+            "truncated": len(apps) >= app_limit,
+            "apps": apps,
+        },
+    )
+
+
 def system_get_metrics_snapshot() -> dict[str, Any]:
     """Return a safe snapshot of local CPU, memory, disk, and boot metrics."""
     try:
@@ -166,6 +202,139 @@ def system_list_processes(query: str | None = None, limit: int = 50) -> dict[str
             break
 
     return _result(True, {"count": len(processes), "processes": processes})
+
+
+def _iter_start_menu_apps() -> list[dict[str, Any]]:
+    if os.name != "nt":
+        return []
+
+    start_roots = [
+        Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs",
+        Path(os.environ.get("PROGRAMDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs",
+    ]
+    apps: list[dict[str, Any]] = []
+    for root in start_roots:
+        if not root.exists():
+            continue
+        try:
+            for shortcut in root.rglob("*.lnk"):
+                apps.append(
+                    {
+                        "name": shortcut.stem,
+                        "source": "start_menu",
+                        "launch_target": str(shortcut),
+                        "launch_kind": "shortcut",
+                    }
+                )
+        except (OSError, PermissionError):
+            continue
+    return apps
+
+
+def _iter_windows_app_paths() -> list[dict[str, Any]]:
+    if os.name != "nt":
+        return []
+
+    try:
+        import winreg
+    except ImportError:
+        return []
+
+    roots = [
+        (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\App Paths"),
+        (winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\App Paths"),
+        (winreg.HKEY_LOCAL_MACHINE, r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths"),
+    ]
+    apps: list[dict[str, Any]] = []
+    for hive, subkey in roots:
+        try:
+            with winreg.OpenKey(hive, subkey) as root_key:
+                for index in range(winreg.QueryInfoKey(root_key)[0]):
+                    child_name = winreg.EnumKey(root_key, index)
+                    try:
+                        with winreg.OpenKey(root_key, child_name) as child_key:
+                            target, _ = winreg.QueryValueEx(child_key, "")
+                    except OSError:
+                        target = child_name
+                    apps.append(
+                        {
+                            "name": Path(child_name).stem,
+                            "source": "app_paths",
+                            "launch_target": target,
+                            "launch_kind": "executable",
+                        }
+                    )
+        except OSError:
+            continue
+    return apps
+
+
+def _iter_path_executables() -> list[dict[str, Any]]:
+    extensions = [".exe", ".cmd", ".bat"] if os.name == "nt" else [""]
+    apps: list[dict[str, Any]] = []
+    seen_dirs: set[str] = set()
+    for raw_dir in os.environ.get("PATH", "").split(os.pathsep):
+        if not raw_dir:
+            continue
+        directory = Path(os.path.expandvars(os.path.expanduser(raw_dir)))
+        key = str(directory).lower()
+        if key in seen_dirs or not directory.exists() or not directory.is_dir():
+            continue
+        seen_dirs.add(key)
+        try:
+            for entry in directory.iterdir():
+                if entry.is_dir():
+                    continue
+                if os.name == "nt" and entry.suffix.lower() not in extensions:
+                    continue
+                if os.name != "nt" and not os.access(entry, os.X_OK):
+                    continue
+                apps.append(
+                    {
+                        "name": entry.stem if os.name == "nt" else entry.name,
+                        "source": "path",
+                        "launch_target": str(entry),
+                        "launch_kind": "executable",
+                    }
+                )
+        except (OSError, PermissionError):
+            continue
+    return apps
+
+
+def _add_app(apps_by_key: dict[str, dict[str, Any]], app: dict[str, Any], query_text: str, limit: int) -> None:
+    name = str(app.get("name", "")).strip()
+    target = str(app.get("launch_target", "")).strip()
+    if not name or not target:
+        return
+    if query_text and query_text not in _normalize_app_query(name) and query_text not in _normalize_app_query(target):
+        return
+    key = _normalize_app_query(f"{name}|{target}")
+    if key in apps_by_key or len(apps_by_key) >= limit:
+        return
+    apps_by_key[key] = app
+
+
+def _normalize_app_query(value: str | None) -> str:
+    if not value:
+        return ""
+    translation = str.maketrans(
+        {
+            "\u00e7": "c",
+            "\u011f": "g",
+            "\u0131": "i",
+            "\u00f6": "o",
+            "\u015f": "s",
+            "\u00fc": "u",
+            "\u00c7": "c",
+            "\u011e": "g",
+            "\u0130": "i",
+            "\u00d6": "o",
+            "\u015e": "s",
+            "\u00dc": "u",
+        }
+    )
+    return value.translate(translation).lower().strip()
 
 
 def system_get_top_memory_processes(limit: int = 10) -> dict[str, Any]:
@@ -524,6 +693,7 @@ def _relative_depth(root: Path, path: Path) -> int:
 
 TOOL_REGISTRY = {
     "system_get_metrics_snapshot": system_get_metrics_snapshot,
+    "system_list_installed_apps": system_list_installed_apps,
     "system_list_processes": system_list_processes,
     "system_get_top_memory_processes": system_get_top_memory_processes,
     "network_list_connections": network_list_connections,

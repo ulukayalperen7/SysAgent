@@ -225,6 +225,7 @@ insert into mcp_tools
     (name, server_name, category, description, is_read_only, default_risk_level, input_schema)
 values
     ('system_get_metrics_snapshot', 'local_system', 'system', 'Read CPU, memory, disk, and machine metrics.', true, 'low', '{}'::jsonb),
+    ('system_list_installed_apps', 'local_system', 'system', 'Discover launchable local applications from read-only OS locations.', true, 'low', '{"query":"string|null","limit":"integer"}'::jsonb),
     ('system_list_processes', 'local_system', 'system', 'List local processes with bounded output.', true, 'low', '{"query":"string|null","limit":"integer"}'::jsonb),
     ('system_get_top_memory_processes', 'local_system', 'system', 'List top memory-consuming processes.', true, 'low', '{"limit":"integer"}'::jsonb),
     ('network_list_connections', 'local_system', 'network', 'List active network connections without mutating network state.', true, 'low', '{"limit":"integer"}'::jsonb),
@@ -262,6 +263,7 @@ select a.id, t.id, 'allow', 'low', false, '{}'::jsonb
 from agent_profiles a
 join mcp_tools t on t.name in (
     'system_get_metrics_snapshot',
+    'system_list_installed_apps',
     'system_list_processes',
     'system_get_top_memory_processes',
     'network_list_connections',

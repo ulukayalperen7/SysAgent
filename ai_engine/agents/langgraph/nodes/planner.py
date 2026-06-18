@@ -84,7 +84,7 @@ def _deterministic_decompose(user_input: str) -> list[str]:
     Split obvious sequential commands before asking the LLM.
 
     Turkish and English connectors are supported because the terminal is often
-    used casually: "open Spotify sonra next song sonra create file".
+    used casually: "open editor sonra next song sonra create file".
     """
     parts = re.split(
         r"\s*(?:;|,?\s+\bthen\b\s+|,?\s+\band then\b\s+|,?\s+\bafter that\b\s+|,?\s+\bsonra\b\s+|,?\s+\bsorna\b\s+|,?\s+\bardından\b\s+)\s*",

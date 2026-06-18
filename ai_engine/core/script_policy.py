@@ -452,7 +452,7 @@ def _is_app_pronoun(app: str) -> bool:
 
 
 def _extract_app_mentioned_before_reference(text: str) -> str | None:
-    """Handle prompts like "I closed spotify, can you open it again"."""
+    """Handle prompts like "I closed the editor, can you open it again"."""
     patterns = [
         r"\b(?:closed|close|kapat(?:tim|tım)?|kapattim)\s+['\"]?([A-Za-z0-9_.+ -]{2,80})['\"]?",
         r"\b(?:opened|open|actim|açtım)\s+['\"]?([A-Za-z0-9_.+ -]{2,80})['\"]?",
@@ -495,7 +495,7 @@ def _extract_recent_app_name(context_messages: list[dict] | None) -> str | None:
 
 
 def _extract_app_before_trailing_verb(text: str, close: bool) -> str | None:
-    """Support Turkish order such as "spotify ac" or "notepad kapat"."""
+    """Support Turkish order such as "notepad ac" or "editor kapat"."""
     normalized = _normalize_for_matching(text)
     verbs = ("kapat", "sonlandir") if close else ("ac", "calistir", "baslat", "yukle", "kur")
     for verb in verbs:
@@ -509,7 +509,7 @@ def _extract_app_before_trailing_verb(text: str, close: bool) -> str | None:
 
 
 def _strip_turkish_object_suffix(app: str) -> str:
-    """Remove Turkish object particles from app names, e.g. "spotify'i ac"."""
+    """Remove Turkish object particles from app names, e.g. "notepad'i ac"."""
     cleaned = app.strip(" .'\"")
     cleaned = re.sub(r"(?:['\s]+)(?:i|ı|u|ü|yi|yı|yu|yü)$", "", cleaned, flags=re.IGNORECASE)
     return cleaned.strip(" .'\"")

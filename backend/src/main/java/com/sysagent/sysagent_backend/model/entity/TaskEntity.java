@@ -35,7 +35,7 @@ public class TaskEntity {
     private String id;
 
     /**
-     * The ID of the user who owns this task (e.g., test-user-1).
+     * The ID of the user who owns this task.
      * Prevents users from viewing or managing other users' agent tasks.
      */
     @Column(nullable = false)

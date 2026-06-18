@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
+import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.service.TaskService;
 import com.sysagent.sysagent_backend.service.ScriptExecutionService;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
@@ -29,11 +30,11 @@ public class TaskController {
 
     private final TaskService taskService;
     private final ScriptExecutionService scriptExecutionService;
-    private static final String CURRENT_LOGGED_IN_USER_ID = "test-user-1";
+    private final CurrentUserProvider currentUserProvider;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskHistoryDto>>> getTaskHistory() {
-        List<TaskHistoryDto> tasks = taskService.getTaskHistoryByOwner(CURRENT_LOGGED_IN_USER_ID);
+        List<TaskHistoryDto> tasks = taskService.getTaskHistoryByOwner(currentUserProvider.getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.<List<TaskHistoryDto>>builder()
                 .status("SUCCESS")
                 .message("Tasks fetched successfully")
@@ -44,6 +45,12 @@ public class TaskController {
     @PostMapping("/{id}/execute")
     public ResponseEntity<ApiResponse<String>> executeTask(@PathVariable("id") String taskId) {
         TaskEntity task = taskService.getTaskById(taskId);
+        if (!currentUserProvider.getCurrentUserId().equals(task.getOwnerId())) {
+            return ResponseEntity.status(403).body(ApiResponse.<String>builder()
+                    .status("ERROR")
+                    .message("Task does not belong to the current user.")
+                    .build());
+        }
         
         if (task.getScript() == null || task.getScript().isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.<String>builder()

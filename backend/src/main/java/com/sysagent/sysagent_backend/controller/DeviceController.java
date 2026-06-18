@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
+import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.service.DeviceService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,16 +25,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DeviceController {
 
-    private final DeviceService deviceService; // added
-
-    // TODO: When authentication is implemented, extract ownerId from the security context (e.g., JWT token).
-    // For now, we simulate a logged-in user with a hardcoded ID for testing.
-    private static final String CURRENT_LOGGED_IN_USER_ID = "test-user-1";
+    private final DeviceService deviceService;
+    private final CurrentUserProvider currentUserProvider;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<DeviceDto>>> getConnectedDevices() {
-        // Pass the simulated logged-in user's ID to the service
-        List<DeviceDto> devices = deviceService.getDevicesByOwner(CURRENT_LOGGED_IN_USER_ID);
+        List<DeviceDto> devices = deviceService.getDevicesByOwner(currentUserProvider.getCurrentUserId());
 
         return ResponseEntity.ok(ApiResponse.<List<DeviceDto>>builder()
                 .status("SUCCESS")

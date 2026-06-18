@@ -66,7 +66,7 @@ class LocalSystemMcpClient:
         if settings.mcp_prefer_transport:
             try:
                 ensure_local_mcp_server()
-                return self._list_tools_transport()
+                return sorted(set(self._list_tools_transport()) | set(list_tool_names()))
             except Exception:
                 pass
         return list_tool_names()
@@ -75,7 +75,12 @@ class LocalSystemMcpClient:
         if settings.mcp_prefer_transport:
             try:
                 ensure_local_mcp_server()
-                return self._call_tool_transport(name, arguments or {})
+                result = self._call_tool_transport(name, arguments or {})
+                if result.get("success", True) is False and name in self._tools:
+                    error_text = str(result.get("error", "")).lower()
+                    if "unknown" in error_text or "not found" in error_text:
+                        return self._call_tool_in_process(name, arguments)
+                return result
             except Exception:
                 pass
         return self._call_tool_in_process(name, arguments)

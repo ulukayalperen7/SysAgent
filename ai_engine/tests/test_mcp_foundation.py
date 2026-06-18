@@ -19,6 +19,7 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
         self.assertIn("filesystem_search", tools)
         self.assertIn("filesystem_get_disk_usage", tools)
         self.assertIn("system_get_platform_info", tools)
+        self.assertIn("system_list_installed_apps", tools)
 
     def test_platform_info_is_available(self):
         result = local_system_mcp_client.call_tool("system_get_platform_info")
@@ -31,6 +32,13 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
 
         self.assertTrue(result["success"])
         self.assertLessEqual(result["data"]["count"], 3)
+
+    def test_installed_apps_listing_is_bounded(self):
+        result = local_system_mcp_client.call_tool("system_list_installed_apps", {"limit": 5})
+
+        self.assertTrue(result["success"])
+        self.assertLessEqual(result["data"]["count"], 5)
+        self.assertIn("apps", result["data"])
 
     def test_filesystem_read_blocks_secret_like_files(self):
         env_path = Path(__file__).resolve().parents[1] / ".env"

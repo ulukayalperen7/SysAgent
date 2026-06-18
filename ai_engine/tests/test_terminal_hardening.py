@@ -11,15 +11,15 @@ from core.script_policy import propose_deterministic_script, validate_command_ri
 class TerminalHardeningTests(unittest.TestCase):
     def test_decompose_mixed_queue_steps(self):
         tasks = _deterministic_decompose(
-            "open Spotify sonra next song sonra create test.txt on desktop"
+            "open notepad sonra next song sonra create test.txt on desktop"
         )
 
-        self.assertEqual(tasks, ["open Spotify", "next song", "create test.txt on desktop"])
+        self.assertEqual(tasks, ["open notepad", "next song", "create test.txt on desktop"])
 
     def test_decompose_accepts_common_turkish_typo(self):
-        tasks = _deterministic_decompose("spotify a\u00e7 sorna sonraki \u015fark\u0131")
+        tasks = _deterministic_decompose("notepad a\u00e7 sorna sonraki \u015fark\u0131")
 
-        self.assertEqual(tasks, ["spotify a\u00e7", "sonraki \u015fark\u0131"])
+        self.assertEqual(tasks, ["notepad a\u00e7", "sonraki \u015fark\u0131"])
 
     def test_planner_keeps_single_terminal_task_deterministic(self):
         result = decompose_task_node({"user_input": "deneme2.py ad\u0131nda dosya olu\u015ftur", "task_queue": []})
@@ -57,11 +57,11 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertEqual(result["explanation"], "Summary:\nAlready formatted.")
 
     def test_deterministic_intent_detects_app_and_file_write(self):
-        self.assertEqual(_detect_intent_deterministic("open Spotify"), "APP_CONTROL")
+        self.assertEqual(_detect_intent_deterministic("open notepad"), "APP_CONTROL")
         self.assertEqual(_detect_intent_deterministic("delete test.txt from desktop"), "FILE_SYSTEM_WRITE")
 
     def test_windows_open_app_proposal_is_review_only(self):
-        proposal = propose_deterministic_script("open Spotify", "APP_CONTROL", "Windows")
+        proposal = propose_deterministic_script("open notepad", "APP_CONTROL", "Windows")
 
         self.assertIsNotNone(proposal)
         self.assertIn("Start-Process", proposal.script)
@@ -153,27 +153,27 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertNotIn("onun", proposal.script)
 
     def test_real_turkish_app_open_trailing_verb(self):
-        proposal = propose_deterministic_script("spotify a\u00e7", "APP_CONTROL", "Windows")
+        proposal = propose_deterministic_script("notepad a\u00e7", "APP_CONTROL", "Windows")
 
         self.assertIsNotNone(proposal)
-        self.assertIn('$app = "spotify"', proposal.script)
+        self.assertIn('$app = "notepad"', proposal.script)
 
     def test_real_turkish_app_open_strips_object_suffix(self):
-        proposal = propose_deterministic_script("spotify'\u0131 a\u00e7", "APP_CONTROL", "Windows")
+        proposal = propose_deterministic_script("notepad'\u0131 a\u00e7", "APP_CONTROL", "Windows")
 
         self.assertIsNotNone(proposal)
-        self.assertIn('$app = "spotify"', proposal.script)
-        self.assertNotIn("spotify'\u0131", proposal.script)
+        self.assertIn('$app = "notepad"', proposal.script)
+        self.assertNotIn("notepad'\u0131", proposal.script)
 
     def test_contextual_app_open_resolves_it_from_current_prompt(self):
         proposal = propose_deterministic_script(
-            "I closed spotify can u open it again",
+            "I closed notepad can u open it again",
             "APP_CONTROL",
             "Windows",
         )
 
         self.assertIsNotNone(proposal)
-        self.assertIn('$app = "spotify"', proposal.script)
+        self.assertIn('$app = "notepad"', proposal.script)
         self.assertNotIn('$app = "it again"', proposal.script)
 
     def test_contextual_app_open_resolves_it_from_history(self):
@@ -182,15 +182,15 @@ class TerminalHardeningTests(unittest.TestCase):
             "APP_CONTROL",
             "Windows",
             context_messages=[
-                {"role": "ai", "content": "You want to open the local application 'spotify'."},
+                {"role": "ai", "content": "You want to open the local application 'notepad'."},
             ],
         )
 
         self.assertIsNotNone(proposal)
-        self.assertIn('$app = "spotify"', proposal.script)
+        self.assertIn('$app = "notepad"', proposal.script)
 
     def test_real_turkish_intent_detects_trailing_app_open(self):
-        self.assertEqual(_detect_intent_deterministic("spotify'\u0131 a\u00e7"), "APP_CONTROL")
+        self.assertEqual(_detect_intent_deterministic("notepad'\u0131 a\u00e7"), "APP_CONTROL")
 
     def test_real_turkish_next_song_uses_media_key(self):
         proposal = propose_deterministic_script("sonraki \u015fark\u0131ya ge\u00e7", "APP_CONTROL", "Windows")

@@ -15,6 +15,7 @@ from mcp_servers.local_system_tools import (
     network_list_connections as _network_list_connections,
     network_list_interfaces as _network_list_interfaces,
     system_get_disk_partitions as _system_get_disk_partitions,
+    system_list_installed_apps as _system_list_installed_apps,
     system_get_metrics_snapshot as _system_get_metrics_snapshot,
     system_get_platform_info as _system_get_platform_info,
     system_get_top_memory_processes as _system_get_top_memory_processes,
@@ -48,6 +49,11 @@ def build_server() -> Any:
     def system_get_metrics_snapshot() -> dict[str, Any]:
         """Return a read-only local CPU, memory, disk, and boot metrics snapshot."""
         return _system_get_metrics_snapshot()
+
+    @mcp.tool()
+    def system_list_installed_apps(query: str | None = None, limit: int = 100) -> dict[str, Any]:
+        """Discover launchable local applications from read-only OS locations."""
+        return _system_list_installed_apps(query=query, limit=limit)
 
     @mcp.tool()
     def system_list_processes(query: str | None = None, limit: int = 50) -> dict[str, Any]:

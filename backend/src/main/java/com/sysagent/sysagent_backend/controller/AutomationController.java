@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sysagent.sysagent_backend.model.dto.AutomationRuleDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
+import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.service.AutomationService;
 
 import lombok.RequiredArgsConstructor;
@@ -20,13 +21,12 @@ import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = "*")
 public class AutomationController {
 
-    private static final String CURRENT_LOGGED_IN_USER_ID = "test-user-1";
-
     private final AutomationService automationService;
+    private final CurrentUserProvider currentUserProvider;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<AutomationRuleDto>>> getAutomationRules() {
-        List<AutomationRuleDto> rules = automationService.listRulesByOwner(CURRENT_LOGGED_IN_USER_ID);
+        List<AutomationRuleDto> rules = automationService.listRulesByOwner(currentUserProvider.getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(rules, "Automation rules loaded"));
     }
 }

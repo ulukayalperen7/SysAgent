@@ -36,6 +36,13 @@ class McpToolPlannerTests(unittest.TestCase):
         self.assertIsNotNone(plan)
         self.assertEqual(plan.tool_name, "system_get_disk_partitions")
 
+    def test_plans_installed_apps(self):
+        plan = plan_mcp_read_tool("show installed apps matching code", "SYSTEM_OPERATION")
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.tool_name, "system_list_installed_apps")
+        self.assertEqual(plan.arguments["query"], "code")
+
     def test_does_not_plan_for_write_intents(self):
         plan = plan_mcp_read_tool("delete temp files", "FILE_SYSTEM_WRITE")
 

@@ -20,6 +20,7 @@ import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
+import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.security.PromptSanitizer;
 import com.sysagent.sysagent_backend.service.AgentHubService;
 import com.sysagent.sysagent_backend.service.SystemMetricsService;
@@ -40,6 +41,7 @@ public class AgentController {
     private final AiAgentAdapter aiAgentAdapter;
     private final SystemMetricsService systemMetricsService;
     private final AgentHubService agentHubService;
+    private final CurrentUserProvider currentUserProvider;
 
     @GetMapping("/runtime-status")
     public ResponseEntity<ApiResponse<AiRuntimeStatusDto>> getRuntimeStatus() {
@@ -73,7 +75,7 @@ public class AgentController {
         // on retrieving the approved script by task ID.
         TaskEntity task;
         try {
-            task = taskService.createTask(sanitizedIntent, "test-user-1");
+            task = taskService.createTask(sanitizedIntent, currentUserProvider.getCurrentUserId());
         } catch (Exception e) {
             log.error("Could not create task before AI analysis", e);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
