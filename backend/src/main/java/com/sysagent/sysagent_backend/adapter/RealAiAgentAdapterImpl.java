@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-@Primary // Use this real implementation instead of the mock
+@Primary
 @RequiredArgsConstructor
 public class RealAiAgentAdapterImpl implements AiAgentAdapter {
 

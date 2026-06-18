@@ -30,9 +30,6 @@ public class DeviceService {
     }
 
     private DeviceDto mapToDto(DeviceEntity entity) {
-        // Remove mock CPU/RAM logic as we will eventually wire up real per-device stats.
-        // For now, if it's the current device and online, we can just leave it as 0 or null 
-        // to avoid fake "16%" values showing up on the Devices page.
         return DeviceDto.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -40,8 +37,8 @@ public class DeviceService {
                 .ipAddress(entity.getIpAddress())
                 .lastSeen(entity.getLastSeen())
                 .ownerId(entity.getOwnerId())
-                .cpuUsage(null) // Set to null instead of random mock
-                .ramUsage(null) // Set to null instead of random mock
+                .cpuUsage(null)
+                .ramUsage(null)
                 .type(entity.getType()) 
                 .build();
     }
