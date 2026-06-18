@@ -1,8 +1,11 @@
 package com.sysagent.sysagent_backend.controller;
 
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,14 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sysagent.sysagent_backend.adapter.AiAgentAdapter;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentRequestDto;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
-import com.sysagent.sysagent_backend.service.TaskService;
-
-import com.sysagent.sysagent_backend.service.SystemMetricsService;
-import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 import com.sysagent.sysagent_backend.security.PromptSanitizer;
+import com.sysagent.sysagent_backend.service.SystemMetricsService;
+import com.sysagent.sysagent_backend.service.TaskService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,12 @@ public class AgentController {
     private final TaskService taskService;
     private final AiAgentAdapter aiAgentAdapter;
     private final SystemMetricsService systemMetricsService;
+
+    @GetMapping("/runtime-status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getRuntimeStatus() {
+        Map<String, Object> status = aiAgentAdapter.getRuntimeStatus();
+        return ResponseEntity.ok(ApiResponse.success(status, "AI Engine runtime status loaded"));
+    }
 
     @PostMapping("/process")
     public ResponseEntity<ApiResponse<AgentIntentResponseDto>> processUserIntent(@RequestBody AgentIntentRequestDto request) {

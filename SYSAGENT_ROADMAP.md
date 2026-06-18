@@ -491,3 +491,4 @@ Notes:
 - Added MCP tool usage tracking in LangGraph state so decision audit can record which read-only tools were actually called.
 - Expanded MCP read-only system inventory coverage with network interface and disk partition tools.
 - Added AI Engine runtime health reporting and lazy LangGraph loading so status endpoints can surface missing dependencies instead of failing during application startup.
+- Added a Spring Boot `/api/agent/runtime-status` proxy so UI and future operators can inspect AI Engine, Agent Hub, checkpoint, and MCP health without calling Python directly.

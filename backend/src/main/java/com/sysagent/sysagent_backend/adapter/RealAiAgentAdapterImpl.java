@@ -104,6 +104,30 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         }
     }
 
+    @Override
+    public Map<String, Object> getRuntimeStatus() {
+        String statusEndpoint = aiEngine.getUrl().replaceAll("/$", "") + "/runtime/status";
+
+        try {
+            ResponseEntity<Map> response = restTemplate.getForEntity(statusEndpoint, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+            return Map.of(
+                    "runtime", Map.of(
+                            "status", "unavailable",
+                            "detail", "AI Engine status returned " + response.getStatusCode()),
+                    "mcp", Map.of("available", false));
+        } catch (Exception e) {
+            log.error("AI Engine runtime status failed: {}", e.getMessage());
+            return Map.of(
+                    "runtime", Map.of(
+                            "status", "unreachable",
+                            "detail", "AI Engine unreachable on " + aiEngine.getUrl()),
+                    "mcp", Map.of("available", false));
+        }
+    }
+
     /**
      * Accepts JSON null or NONE; strips markdown fences from script text.
      */
