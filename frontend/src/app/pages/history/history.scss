@@ -44,9 +44,25 @@ h2 {
     border-radius: 50%;
 
     &.completed { background-color: #3fb950; }
+    &.analyzed { background-color: #79c0ff; }
+    &.in_progress { background-color: #d2a8ff; }
     &.rolled_back { background-color: #58a6ff; }
     &.pending { background-color: #d29922; }
     &.failed { background-color: #ff7b72; }
+  }
+}
+
+.state-panel {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  color: #8b949e;
+  padding: 1rem;
+  margin-bottom: 1rem;
+
+  &.error {
+    color: #ff7b72;
+    border-color: rgba(248, 81, 73, 0.5);
   }
 }
 
@@ -98,6 +114,17 @@ td {
   font-family: 'Courier New', Courier, monospace;
   color: #58a6ff;
   font-weight: 600;
+}
+
+.action-state,
+.empty-state {
+  color: #8b949e;
+  font-size: 0.82rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 1.5rem;
 }
 
 @media (max-width: 900px) {

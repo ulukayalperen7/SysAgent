@@ -9,13 +9,18 @@
     </div>
     <div class="status-legend">
       <span class="legend-item"><span class="dot completed"></span>Completed</span>
+      <span class="legend-item"><span class="dot analyzed"></span>Analyzed</span>
+      <span class="legend-item"><span class="dot in_progress"></span>In Progress</span>
       <span class="legend-item"><span class="dot rolled_back"></span>Rolled Back</span>
       <span class="legend-item"><span class="dot pending"></span>Pending</span>
       <span class="legend-item"><span class="dot failed"></span>Failed</span>
     </div>
   </header>
+
+  <div class="state-panel" *ngIf="loading">Loading task history...</div>
+  <div class="state-panel error" *ngIf="errorMessage">{{ errorMessage }}</div>
   
-  <div class="table-wrapper">
+  <div class="table-wrapper" *ngIf="!loading && !errorMessage">
     <table>
       <thead>
         <tr>
@@ -29,19 +34,17 @@
       <tbody>
         <tr *ngFor="let task of tasks">
           <td class="font-mono">{{ task.id }}</td>
-          <td>{{ task.date }}</td>
+          <td>{{ task.timestamp | date:'medium' }}</td>
           <td>{{ task.intent }}</td>
           <td>
             <app-status-badge [status]="task.status"></app-status-badge>
           </td>
           <td>
-            <app-action-btn 
-              *ngIf="task.canUndo" 
-              label="Undo" 
-              type="danger" 
-              (onClick)="handleUndo(task.id)">
-            </app-action-btn>
+            <span class="action-state">{{ task.canUndo ? 'Rollback available' : 'No action' }}</span>
           </td>
+        </tr>
+        <tr *ngIf="tasks.length === 0">
+          <td colspan="5" class="empty-state">No tasks have been created yet.</td>
         </tr>
       </tbody>
     </table>

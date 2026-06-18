@@ -1,27 +1,44 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StatusBadge } from '../../components/status-badge/status-badge';
-import { ActionBtn } from '../../components/action-btn/action-btn';
+import { TaskService } from '../../services/task.service';
+import { TaskHistoryItem } from '../../models/task.model';
 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, StatusBadge, ActionBtn],
+  imports: [CommonModule, StatusBadge],
   templateUrl: './history.html',
   styleUrl: './history.scss',
 })
-export class History {
-  tasks = [
-    { id: 'TSK-402', date: '2026-03-06 23:15', intent: 'Clean temp files', status: 'completed', canUndo: true },
-    { id: 'TSK-403', date: '2026-03-06 23:45', intent: 'Kill port 8080 process', status: 'rolled_back', canUndo: false },
-    { id: 'TSK-404', date: '2026-03-07 00:10', intent: 'Docker system prune', status: 'pending', canUndo: false }
-  ] as any[];
+export class History implements OnInit {
+  tasks: TaskHistoryItem[] = [];
+  loading = false;
+  errorMessage = '';
 
-  handleUndo(taskId: string) {
-    const task = this.tasks.find(t => t.id === taskId);
-    if (task) {
-      task.status = 'rolled_back';
-      task.canUndo = false;
-    }
+  constructor(
+    private taskService: TaskService,
+    private cdr: ChangeDetectorRef
+  ) { }
+
+  ngOnInit() {
+    this.loadHistory();
+  }
+
+  loadHistory() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.taskService.getTaskHistory().subscribe({
+      next: (tasks) => {
+        this.tasks = tasks;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.errorMessage = error?.message || 'Task history could not be loaded.';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

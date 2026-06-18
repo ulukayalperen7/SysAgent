@@ -1,6 +1,7 @@
 package com.sysagent.sysagent_backend.service;
 
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
+import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
 import com.sysagent.sysagent_backend.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,13 @@ public class TaskService {
     @Transactional(readOnly = true)
     public List<TaskEntity> getAllTasks() {
         return taskRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskHistoryDto> getTaskHistoryByOwner(String ownerId) {
+        return taskRepository.findByOwnerIdOrderByTimestampDesc(ownerId).stream()
+                .map(TaskHistoryDto::fromEntity)
+                .toList();
     }
     
     @Transactional(readOnly = true)

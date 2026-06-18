@@ -18,4 +18,6 @@ public interface TaskRepository extends JpaRepository<TaskEntity, String> {
      * @return List of tasks for this owner.
      */
     List<TaskEntity> findByOwnerId(String ownerId);
+
+    List<TaskEntity> findByOwnerIdOrderByTimestampDesc(String ownerId);
 }

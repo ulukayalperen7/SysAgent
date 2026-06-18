@@ -9,5 +9,5 @@ import { CommonModule, UpperCasePipe } from '@angular/common';
   styleUrl: './status-badge.scss',
 })
 export class StatusBadge {
-  @Input() status: 'completed' | 'pending' | 'rolled_back' | 'failed' = 'pending';
+  @Input() status: 'completed' | 'pending' | 'analyzed' | 'in_progress' | 'rolled_back' | 'failed' | 'unknown' = 'pending';
 }

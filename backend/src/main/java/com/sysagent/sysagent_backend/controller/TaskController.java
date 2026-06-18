@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
+import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.service.TaskService;
 import com.sysagent.sysagent_backend.service.ScriptExecutionService;
@@ -28,11 +29,12 @@ public class TaskController {
 
     private final TaskService taskService;
     private final ScriptExecutionService scriptExecutionService;
+    private static final String CURRENT_LOGGED_IN_USER_ID = "test-user-1";
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TaskEntity>>> getAllTasks() {
-        List<TaskEntity> tasks = taskService.getAllTasks();
-        return ResponseEntity.ok(ApiResponse.<List<TaskEntity>>builder()
+    public ResponseEntity<ApiResponse<List<TaskHistoryDto>>> getTaskHistory() {
+        List<TaskHistoryDto> tasks = taskService.getTaskHistoryByOwner(CURRENT_LOGGED_IN_USER_ID);
+        return ResponseEntity.ok(ApiResponse.<List<TaskHistoryDto>>builder()
                 .status("SUCCESS")
                 .message("Tasks fetched successfully")
                 .data(tasks)
