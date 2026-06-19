@@ -512,3 +512,4 @@ Notes:
 - Added owner/device context propagation from Spring to the AI Engine so LangGraph prompts and Agent Hub audit metadata can reason about the selected execution target.
 - Added the first secure remote-node transport foundation: node token hash storage, heartbeat, command polling, result callback, remote command queue persistence, and frontend queued-state handling.
 - Hardened Auth/CORS for the June 20, 2026 remote-access path: configurable CORS whitelist, login/register rate limiting, and production startup checks for JWT secret/CORS wildcard safety.
+- Added the first installable `sysagent-node` Python CLI runtime with device registration, local token config, heartbeat, command polling, local execution, result callback, and focused config/executor tests.

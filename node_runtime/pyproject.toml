@@ -1,0 +1,15 @@
+[project]
+name = "sysagent-node"
+version = "0.1.0"
+description = "SysAgent remote node runtime"
+requires-python = ">=3.11"
+
+[project.scripts]
+sysagent-node = "sysagent_node.cli:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["sysagent_node*"]

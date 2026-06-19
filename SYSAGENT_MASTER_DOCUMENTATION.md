@@ -26,6 +26,7 @@ Core mission:
 - `MCP Layer`: standardized capability access for safe read-only tools first.
 - `Agent Hub`: database-backed runtime configuration for agents, intent routes, MCP permissions, risk policies, prompt versions, device scopes, and decision audit.
 - `Auth Layer`: JWT login/register with PBKDF2 password hashing and server-side owner scoping.
+- `Node Runtime` (Python CLI): installable machine agent that registers a user device, heartbeats, polls approved remote commands, executes them locally, and posts structured results.
 
 ## 4. Data Flow
 1. User sends intent from terminal UI.
@@ -125,6 +126,7 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Spring forwards authenticated owner/device context to the AI Engine so LangGraph prompts and Agent Hub decision audit rows stay tied to the same user/device boundary.
 - Node registration now returns a one-time node runtime token; only its hash is stored.
 - Remote command transport uses node-token authenticated heartbeat, command polling, and result callback endpoints.
+- The first installable `sysagent-node` CLI package exists under `node_runtime`; packaging/service installation is the next runtime delivery step.
 
 ## 8. Self-Healing Model
 When an approved script fails:
@@ -152,7 +154,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth, owner scoping, device ownership, and the backend node command queue are now in place; the next remote-access step is the actual installable node runtime.
+- Auth, owner scoping, device ownership, backend node command queue, and the first installable node runtime CLI are now in place; the next remote-access step is packaging it as a user-friendly background service.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:
