@@ -23,6 +23,11 @@ public class TaskHistoryDto {
     private boolean hasScript;
     private boolean hasRollbackScript;
     private boolean canUndo;
+    private String remoteCommandId;
+    private String remoteCommandStatus;
+    private LocalDateTime remoteCommandUpdatedAt;
+    private boolean remoteCommandHasOutput;
+    private boolean remoteCommandHasError;
 
     public static TaskHistoryDto fromEntity(TaskEntity task) {
         boolean hasRollback = task.getRollbackScript() != null && !task.getRollbackScript().isBlank();
@@ -37,5 +42,18 @@ public class TaskHistoryDto {
                 .hasRollbackScript(hasRollback)
                 .canUndo(hasRollback)
                 .build();
+    }
+
+    public void attachRemoteCommand(NodeCommandStatusDto command) {
+        if (command == null) {
+            return;
+        }
+        this.remoteCommandId = command.getId() == null ? null : command.getId().toString();
+        this.remoteCommandStatus = command.getStatus();
+        this.remoteCommandUpdatedAt = command.getCompletedAt() != null
+                ? command.getCompletedAt()
+                : command.getClaimedAt() != null ? command.getClaimedAt() : command.getCreatedAt();
+        this.remoteCommandHasOutput = command.getOutput() != null && !command.getOutput().isBlank();
+        this.remoteCommandHasError = command.getError() != null && !command.getError().isBlank();
     }
 }

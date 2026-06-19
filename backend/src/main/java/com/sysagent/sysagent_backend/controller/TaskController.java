@@ -1,6 +1,9 @@
 package com.sysagent.sysagent_backend.controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +14,7 @@ import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.dto.TaskExecutionResponseDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
+import com.sysagent.sysagent_backend.model.dto.NodeCommandStatusDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.security.ScriptPolicyValidator;
@@ -40,12 +44,28 @@ public class TaskController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskHistoryDto>>> getTaskHistory() {
-        List<TaskHistoryDto> tasks = taskService.getTaskHistoryByOwner(currentUserProvider.getCurrentUserId());
+        String ownerId = currentUserProvider.getCurrentUserId();
+        List<TaskHistoryDto> tasks = taskService.getTaskHistoryByOwner(ownerId);
+        attachRemoteCommandStatuses(tasks, ownerId);
         return ResponseEntity.ok(ApiResponse.<List<TaskHistoryDto>>builder()
                 .status("SUCCESS")
                 .message("Tasks fetched successfully")
                 .data(tasks)
                 .build());
+    }
+
+    @GetMapping("/{id}/node-command")
+    public ResponseEntity<ApiResponse<NodeCommandStatusDto>> getTaskNodeCommand(@PathVariable("id") String taskId) {
+        TaskEntity task = taskService.getTaskById(taskId);
+        String ownerId = currentUserProvider.getCurrentUserId();
+        if (!ownerId.equals(task.getOwnerId())) {
+            return ResponseEntity.status(403).body(ApiResponse.<NodeCommandStatusDto>builder()
+                    .status("ERROR")
+                    .message("Task does not belong to the current user.")
+                    .build());
+        }
+        NodeCommandStatusDto status = nodeCommandService.getLatestStatusForTask(taskId, ownerId).orElse(null);
+        return ResponseEntity.ok(ApiResponse.success(status, "Remote command status loaded"));
     }
 
     @PostMapping("/{id}/execute")
@@ -179,5 +199,14 @@ public class TaskController {
             log.error("Could not update task {} to {}", taskId, status, e);
             return false;
         }
+    }
+
+    private void attachRemoteCommandStatuses(List<TaskHistoryDto> tasks, String ownerId) {
+        Map<String, NodeCommandStatusDto> latestByTask = nodeCommandService.getStatusesForOwner(ownerId).stream()
+                .collect(Collectors.toMap(
+                        NodeCommandStatusDto::getTaskId,
+                        Function.identity(),
+                        (first, ignored) -> first));
+        tasks.forEach(task -> task.attachRemoteCommand(latestByTask.get(task.getId())));
     }
 }

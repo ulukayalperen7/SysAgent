@@ -1,5 +1,6 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription, timer } from 'rxjs';
 import { StatusBadge } from '../../components/status-badge/status-badge';
 import { TaskService } from '../../services/task.service';
 import { TaskHistoryItem } from '../../models/task.model';
@@ -11,10 +12,11 @@ import { TaskHistoryItem } from '../../models/task.model';
   templateUrl: './history.html',
   styleUrl: './history.scss',
 })
-export class History implements OnInit {
+export class History implements OnInit, OnDestroy {
   tasks: TaskHistoryItem[] = [];
   loading = false;
   errorMessage = '';
+  private refreshSub?: Subscription;
 
   constructor(
     private taskService: TaskService,
@@ -22,11 +24,15 @@ export class History implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.loadHistory();
+    this.refreshSub = timer(0, 5000).subscribe(() => this.loadHistory());
+  }
+
+  ngOnDestroy() {
+    this.refreshSub?.unsubscribe();
   }
 
   loadHistory() {
-    this.loading = true;
+    this.loading = this.tasks.length === 0;
     this.errorMessage = '';
     this.taskService.getTaskHistory().subscribe({
       next: (tasks) => {

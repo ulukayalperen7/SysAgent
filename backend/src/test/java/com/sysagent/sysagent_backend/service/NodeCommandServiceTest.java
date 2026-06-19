@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sysagent.sysagent_backend.model.dto.NodeCommandDto;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandResultRequestDto;
+import com.sysagent.sysagent_backend.model.dto.NodeCommandStatusDto;
 import com.sysagent.sysagent_backend.model.entity.DeviceEntity;
 import com.sysagent.sysagent_backend.model.entity.NodeCommandEntity;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
@@ -114,6 +116,33 @@ class NodeCommandServiceTest {
         assertThatThrownBy(() -> nodeCommandService.enqueue(task))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Target device does not belong to the task owner.");
+    }
+
+    @Test
+    void returnsOwnerScopedCommandStatusesWithoutScriptBody() {
+        nodeCommandService = new NodeCommandService(deviceRepository, nodeCommandRepository, tokenHashingService, taskService);
+        NodeCommandEntity command = NodeCommandEntity.builder()
+                .id(UUID.randomUUID())
+                .taskId("task-3")
+                .deviceId(10L)
+                .ownerId("user-1")
+                .script("Write-Output secret")
+                .status(NodeCommandStatus.COMPLETED)
+                .output("ok")
+                .createdAt(LocalDateTime.now())
+                .completedAt(LocalDateTime.now())
+                .build();
+        when(nodeCommandRepository.findByOwnerIdOrderByCreatedAtDesc("user-1")).thenReturn(List.of(command));
+        when(nodeCommandRepository.findFirstByTaskIdAndOwnerIdOrderByCreatedAtDesc("task-3", "user-1"))
+                .thenReturn(Optional.of(command));
+
+        List<NodeCommandStatusDto> statuses = nodeCommandService.getStatusesForOwner("user-1");
+        NodeCommandStatusDto latest = nodeCommandService.getLatestStatusForTask("task-3", "user-1").orElseThrow();
+
+        assertThat(statuses).hasSize(1);
+        assertThat(statuses.get(0).getStatus()).isEqualTo("COMPLETED");
+        assertThat(statuses.get(0).getOutput()).isEqualTo("ok");
+        assertThat(latest.getTaskId()).isEqualTo("task-3");
     }
 
     private DeviceEntity device(String plainToken) {

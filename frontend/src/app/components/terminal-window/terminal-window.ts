@@ -4,11 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../services/agent.service';
 import { TerminalService, TerminalLog } from '../../services/terminal.service';
 import { Device, DeviceService } from '../../services/device.service';
+import { TaskService } from '../../services/task.service';
 import { AgentIntentResponse, TaskExecutionResponse } from '../../models/agent.model';
 import { ApiResponse } from '../../models/api-response.model';
 
 // Maximum number of characters a user can send in one message
 const MAX_PROMPT_LENGTH = 4000;
+const REMOTE_STATUS_POLL_MS = 3000;
+const REMOTE_STATUS_MAX_ATTEMPTS = 120;
 
 @Component({
   selector: 'app-terminal-window',
@@ -38,6 +41,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
   constructor(
     private agentService: AgentService,
     private deviceService: DeviceService,
+    private taskService: TaskService,
     private terminalService: TerminalService,
     private cdr: ChangeDetectorRef
   ) { }
@@ -153,11 +157,13 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
             && response.data?.output === 'REMOTE_COMMAND_QUEUED';
           if (remoteQueued) {
             logEntry.queued = true;
+            logEntry.remoteCommandStatus = 'QUEUED';
             this.terminalService.addLog({
               sender: 'system',
               text: 'Remote command queued. The node will poll, execute, and report the result.',
               type: 'success'
             });
+            this.pollRemoteCommandStatus(logEntry);
             return;
           }
 
@@ -238,6 +244,82 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         });
       }
     });
+  }
+
+  private pollRemoteCommandStatus(logEntry: TerminalLog, attempt = 0): void {
+    if (!logEntry.taskId || !logEntry.queued) {
+      return;
+    }
+    if (attempt >= REMOTE_STATUS_MAX_ATTEMPTS) {
+      this.terminalService.addLog({
+        sender: 'system',
+        text: 'Remote command is still pending. Open History to keep tracking it.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    this.taskService.getRemoteCommandStatus(logEntry.taskId).subscribe({
+      next: status => {
+        if (!status) {
+          this.scheduleRemoteStatusPoll(logEntry, attempt);
+          return;
+        }
+
+        const previousStatus = logEntry.remoteCommandStatus;
+        logEntry.remoteCommandStatus = status.status;
+        if (status.status !== previousStatus && status.status !== 'COMPLETED' && status.status !== 'FAILED') {
+          this.terminalService.addLog({
+            sender: 'system',
+            text: `Remote command status: ${status.status}.`,
+            type: 'info'
+          });
+        }
+
+        if (status.status === 'QUEUED' || status.status === 'CLAIMED') {
+          this.scheduleRemoteStatusPoll(logEntry, attempt);
+          return;
+        }
+
+        logEntry.executed = true;
+        logEntry.queued = false;
+        if (status.status === 'COMPLETED') {
+          const output = this.truncateForTerminal(status.output || '', 6000);
+          this.terminalService.addLog({
+            sender: 'system',
+            text: output ? `Remote command completed:\n${output}` : 'Remote command completed.',
+            type: 'success'
+          });
+          if ((logEntry.pendingCount ?? 0) > 0) {
+            this.autoResumeQueue();
+          }
+          return;
+        }
+
+        logEntry.failed = true;
+        const errorOutput = this.truncateForTerminal(
+          status.error || status.output || 'Remote command failed without output.',
+          6000
+        );
+        this.terminalService.addLog({
+          sender: 'system',
+          text: `Remote command failed:\n${errorOutput}`,
+          type: 'error'
+        });
+        this.selfHealScript(errorOutput, logEntry);
+      },
+      error: err => {
+        this.terminalService.addLog({
+          sender: 'system',
+          text: this.extractApiErrorMessage(err, 'Remote command status refresh failed. Open History to retry.'),
+          type: 'error'
+        });
+      }
+    });
+  }
+
+  private scheduleRemoteStatusPoll(logEntry: TerminalLog, attempt: number): void {
+    window.setTimeout(() => this.pollRemoteCommandStatus(logEntry, attempt + 1), REMOTE_STATUS_POLL_MS);
   }
 
   /**
@@ -349,6 +431,13 @@ Please analyze the exact error, generate a corrected minimal script for the same
       return value;
     }
     return `${value.slice(0, maxChars)}\n...[truncated]`;
+  }
+
+  private truncateForTerminal(value: string, maxChars: number): string {
+    if (!value || value.length <= maxChars) {
+      return value;
+    }
+    return `${value.slice(0, maxChars)}\n...[output truncated]`;
   }
 
   private getOrCreateThreadId(): string {

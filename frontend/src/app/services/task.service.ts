@@ -5,7 +5,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { TaskHistoryItem } from '../models/task.model';
+import { NodeCommandStatus, TaskHistoryItem } from '../models/task.model';
 
 @Injectable({
     providedIn: 'root'
@@ -25,6 +25,21 @@ export class TaskService {
             }),
             catchError(error => {
                 console.error('TaskService: Error loading task history', error);
+                throw error;
+            })
+        );
+    }
+
+    getRemoteCommandStatus(taskId: string): Observable<NodeCommandStatus | null> {
+        return this.http.get<ApiResponse<NodeCommandStatus>>(`${this.apiUrl}/${taskId}/node-command`).pipe(
+            map(response => {
+                if (response.status !== 'SUCCESS') {
+                    throw new Error(response.message || 'Remote command status response was not successful.');
+                }
+                return response.data ?? null;
+            }),
+            catchError(error => {
+                console.error('TaskService: Error loading remote command status', error);
                 throw error;
             })
         );

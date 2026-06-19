@@ -122,6 +122,45 @@ td {
   font-size: 0.82rem;
 }
 
+.remote-state {
+  display: inline-flex;
+  align-items: center;
+  min-width: 78px;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid rgba(139, 148, 158, 0.35);
+
+  &.queued {
+    color: #d29922;
+    background: rgba(210, 153, 34, 0.14);
+  }
+
+  &.claimed {
+    color: #d2a8ff;
+    background: rgba(163, 113, 247, 0.14);
+  }
+
+  &.completed {
+    color: #3fb950;
+    background: rgba(63, 185, 80, 0.16);
+  }
+
+  &.failed {
+    color: #ff7b72;
+    background: rgba(255, 123, 114, 0.16);
+  }
+}
+
+.remote-time {
+  display: block;
+  margin-top: 0.35rem;
+  color: #6e7681;
+  font-size: 0.72rem;
+}
+
 .empty-state {
   text-align: center;
   padding: 1.5rem;

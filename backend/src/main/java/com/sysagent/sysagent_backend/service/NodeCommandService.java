@@ -1,6 +1,7 @@
 package com.sysagent.sysagent_backend.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sysagent.sysagent_backend.model.dto.NodeCommandDto;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandResultRequestDto;
+import com.sysagent.sysagent_backend.model.dto.NodeCommandStatusDto;
 import com.sysagent.sysagent_backend.model.dto.NodeHeartbeatRequestDto;
 import com.sysagent.sysagent_backend.model.entity.DeviceEntity;
 import com.sysagent.sysagent_backend.model.entity.NodeCommandEntity;
@@ -84,6 +86,19 @@ public class NodeCommandService {
         command.setStatus(NodeCommandStatus.CLAIMED);
         command.setClaimedAt(LocalDateTime.now());
         return Optional.of(NodeCommandDto.fromEntity(nodeCommandRepository.save(command)));
+    }
+
+    @Transactional(readOnly = true)
+    public List<NodeCommandStatusDto> getStatusesForOwner(String ownerId) {
+        return nodeCommandRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId).stream()
+                .map(NodeCommandStatusDto::fromEntity)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<NodeCommandStatusDto> getLatestStatusForTask(String taskId, String ownerId) {
+        return nodeCommandRepository.findFirstByTaskIdAndOwnerIdOrderByCreatedAtDesc(taskId, ownerId)
+                .map(NodeCommandStatusDto::fromEntity);
     }
 
     @Transactional

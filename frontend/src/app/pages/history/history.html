@@ -28,6 +28,7 @@
           <th>Date</th>
           <th>Intent</th>
           <th>Status</th>
+          <th>Remote Command</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -40,11 +41,24 @@
             <app-status-badge [status]="task.status"></app-status-badge>
           </td>
           <td>
-            <span class="action-state">{{ task.canUndo ? 'Rollback available' : 'No action' }}</span>
+            <span *ngIf="task.remoteCommandStatus; else noRemote" class="remote-state" [ngClass]="task.remoteCommandStatus.toLowerCase()">
+              {{ task.remoteCommandStatus }}
+            </span>
+            <small *ngIf="task.remoteCommandUpdatedAt" class="remote-time">
+              {{ task.remoteCommandUpdatedAt | date:'shortTime' }}
+            </small>
+            <ng-template #noRemote>
+              <span class="action-state">Local / not queued</span>
+            </ng-template>
+          </td>
+          <td>
+            <span class="action-state">
+              {{ task.remoteCommandHasError ? 'Remote error captured' : (task.canUndo ? 'Rollback available' : 'No action') }}
+            </span>
           </td>
         </tr>
         <tr *ngIf="tasks.length === 0">
-          <td colspan="5" class="empty-state">No tasks have been created yet.</td>
+          <td colspan="6" class="empty-state">No tasks have been created yet.</td>
         </tr>
       </tbody>
     </table>

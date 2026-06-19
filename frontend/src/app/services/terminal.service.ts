@@ -12,6 +12,7 @@ export interface TerminalLog {
     executing?: boolean;
     executed?: boolean; // Track if the action was successfully performed
     queued?: boolean;
+    remoteCommandStatus?: string;
     failed?: boolean;   // Track if the execution failed (for self-healing UI State)
     pendingCount?: number; // Number of tasks remaining in the queue
 }
