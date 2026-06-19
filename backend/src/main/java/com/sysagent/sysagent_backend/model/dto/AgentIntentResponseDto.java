@@ -29,6 +29,12 @@ public class AgentIntentResponseDto {
      * A human-readable explanation of what the script does (e.g., "This command removes all log files larger than 10MB").
      */
     private String explanation;
+
+    /**
+     * The concrete queue step analyzed by LangGraph. This can differ from the
+     * original frontend prompt during auto-resume requests such as "continue".
+     */
+    private String activeStep;
     
     /**
      * Confidence score of the AI model for this generation (0.0 to 1.0).

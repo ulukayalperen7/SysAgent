@@ -77,6 +77,20 @@
     "approval_required": false
   },
   {
+    "name": "git_status_read_only",
+    "prompt": "git status in this project",
+    "expected_intent": "DEVOPS_READ",
+    "expected_tool": "devops_git_status",
+    "approval_required": false
+  },
+  {
+    "name": "docker_ps_read_only",
+    "prompt": "docker ps",
+    "expected_intent": "DEVOPS_READ",
+    "expected_tool": "devops_docker_ps",
+    "approval_required": false
+  },
+  {
     "name": "turkish_file_search",
     "prompt": "bu projede requirements.txt dosya bul",
     "expected_intent": "FILE_SYSTEM_READ",

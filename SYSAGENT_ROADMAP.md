@@ -501,3 +501,6 @@ Notes:
 - Centralized the pre-auth owner placeholder behind `CurrentUserProvider` so JWT/Supabase Auth can replace it from one boundary later.
 - Replaced app-specific CrewAI prompt examples with generic app discovery guidance.
 - Added a read-only installed-app inventory MCP tool, planner coverage, Agent Hub seed registration, and routing eval coverage for dynamic app discovery.
+- Added read-only DevOps MCP tools for git status, Docker container listing, and package.json script inspection.
+- Added `active_step` propagation so resumed LangGraph queue steps are persisted against the concrete task instead of the literal `continue` prompt.
+- Added structured task execution responses and backend execution-policy revalidation before approved scripts can run.

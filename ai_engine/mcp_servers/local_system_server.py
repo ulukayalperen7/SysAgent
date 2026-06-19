@@ -8,6 +8,9 @@ from typing import Any
 
 from core.config import settings
 from mcp_servers.local_system_tools import (
+    devops_docker_ps as _devops_docker_ps,
+    devops_git_status as _devops_git_status,
+    devops_list_npm_scripts as _devops_list_npm_scripts,
     filesystem_list_directory as _filesystem_list_directory,
     filesystem_get_disk_usage as _filesystem_get_disk_usage,
     filesystem_read_file as _filesystem_read_file,
@@ -44,6 +47,21 @@ def build_server() -> Any:
         init_kwargs["port"] = settings.mcp_port
 
     mcp = FastMCP("SysAgent Local System", **init_kwargs)
+
+    @mcp.tool()
+    def devops_git_status(path: str | None = None) -> dict[str, Any]:
+        """Read git branch/status for a safe local repository path."""
+        return _devops_git_status(path=path)
+
+    @mcp.tool()
+    def devops_docker_ps(limit: int = 50) -> dict[str, Any]:
+        """Read running Docker containers without mutating Docker state."""
+        return _devops_docker_ps(limit=limit)
+
+    @mcp.tool()
+    def devops_list_npm_scripts(path: str | None = None) -> dict[str, Any]:
+        """Read package.json scripts from a safe local project path."""
+        return _devops_list_npm_scripts(path=path)
 
     @mcp.tool()
     def system_get_metrics_snapshot() -> dict[str, Any]:

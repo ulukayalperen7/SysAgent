@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
+import com.sysagent.sysagent_backend.model.dto.TaskExecutionResponseDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.security.CurrentUserProvider;
+import com.sysagent.sysagent_backend.security.ScriptPolicyValidator;
 import com.sysagent.sysagent_backend.service.TaskService;
 import com.sysagent.sysagent_backend.service.ScriptExecutionService;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
@@ -31,6 +33,7 @@ public class TaskController {
     private final TaskService taskService;
     private final ScriptExecutionService scriptExecutionService;
     private final CurrentUserProvider currentUserProvider;
+    private final ScriptPolicyValidator scriptPolicyValidator;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskHistoryDto>>> getTaskHistory() {
@@ -43,17 +46,17 @@ public class TaskController {
     }
 
     @PostMapping("/{id}/execute")
-    public ResponseEntity<ApiResponse<String>> executeTask(@PathVariable("id") String taskId) {
+    public ResponseEntity<ApiResponse<TaskExecutionResponseDto>> executeTask(@PathVariable("id") String taskId) {
         TaskEntity task = taskService.getTaskById(taskId);
         if (!currentUserProvider.getCurrentUserId().equals(task.getOwnerId())) {
-            return ResponseEntity.status(403).body(ApiResponse.<String>builder()
+            return ResponseEntity.status(403).body(ApiResponse.<TaskExecutionResponseDto>builder()
                     .status("ERROR")
                     .message("Task does not belong to the current user.")
                     .build());
         }
         
         if (task.getScript() == null || task.getScript().isBlank()) {
-            return ResponseEntity.badRequest().body(ApiResponse.<String>builder()
+            return ResponseEntity.badRequest().body(ApiResponse.<TaskExecutionResponseDto>builder()
                     .status("ERROR")
                     .message("No script is associated with this task.")
                     .build());
@@ -61,16 +64,31 @@ public class TaskController {
 
         // Guard: prevent re-executing a task that already ran
         if (task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.FAILED) {
-            return ResponseEntity.badRequest().body(ApiResponse.<String>builder()
+            return ResponseEntity.badRequest().body(ApiResponse.<TaskExecutionResponseDto>builder()
                     .status("ERROR")
                     .message("Task has already been executed with status: " + task.getStatus())
+                    .build());
+        }
+
+        String osName = System.getProperty("os.name", "unknown");
+        ScriptPolicyValidator.PolicyDecision policy = scriptPolicyValidator.validate(task.getScript(), osName);
+        if (!policy.allowed()) {
+            tryUpdateStatus(taskId, TaskStatus.FAILED);
+            return ResponseEntity.badRequest().body(ApiResponse.<TaskExecutionResponseDto>builder()
+                    .status("ERROR")
+                    .message("Script blocked by execution policy")
+                    .data(TaskExecutionResponseDto.builder()
+                            .taskId(taskId)
+                            .status(TaskStatus.FAILED.name())
+                            .error(policy.reason())
+                            .build())
                     .build());
         }
 
         // Mark the task before execution. If this fails, do not execute because
         // Spring Boot would lose the audit trail for a risky local action.
         if (!tryUpdateStatus(taskId, TaskStatus.IN_PROGRESS)) {
-            return ResponseEntity.status(503).body(ApiResponse.<String>builder()
+            return ResponseEntity.status(503).body(ApiResponse.<TaskExecutionResponseDto>builder()
                     .status("ERROR")
                     .message("Task database is unavailable. Script was not executed.")
                     .build());
@@ -81,26 +99,39 @@ public class TaskController {
 
             if (output != null && output.startsWith("EXEC_FAILED:")) {
                 tryUpdateStatus(taskId, TaskStatus.FAILED);
-                return ResponseEntity.ok(ApiResponse.<String>builder()
+                return ResponseEntity.ok(ApiResponse.<TaskExecutionResponseDto>builder()
                         .status("ERROR")
                         .message("Script execution failed")
-                        .data(output)
+                        .data(TaskExecutionResponseDto.builder()
+                                .taskId(taskId)
+                                .status(TaskStatus.FAILED.name())
+                                .error(output)
+                                .build())
                     .build());
             }
 
             boolean statusSaved = tryUpdateStatus(taskId, TaskStatus.COMPLETED);
-            return ResponseEntity.ok(ApiResponse.<String>builder()
+            return ResponseEntity.ok(ApiResponse.<TaskExecutionResponseDto>builder()
                     .status("SUCCESS")
                     .message(statusSaved
                             ? "Script executed successfully"
                             : "Script executed successfully, but task status could not be saved.")
-                    .data(output)
+                    .data(TaskExecutionResponseDto.builder()
+                            .taskId(taskId)
+                            .status(TaskStatus.COMPLETED.name())
+                            .output(output)
+                            .build())
                     .build());
         } catch (Exception e) {
             tryUpdateStatus(taskId, TaskStatus.FAILED);
-            return ResponseEntity.internalServerError().body(ApiResponse.<String>builder()
+            return ResponseEntity.internalServerError().body(ApiResponse.<TaskExecutionResponseDto>builder()
                     .status("ERROR")
                     .message("Failed to execute script: " + e.getMessage())
+                    .data(TaskExecutionResponseDto.builder()
+                            .taskId(taskId)
+                            .status(TaskStatus.FAILED.name())
+                            .error(e.getMessage())
+                            .build())
                     .build());
         }
     }

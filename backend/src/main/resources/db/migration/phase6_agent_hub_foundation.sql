@@ -224,6 +224,9 @@ where agent_id = (select id from agent_profiles where slug = 'terminal_router')
 insert into mcp_tools
     (name, server_name, category, description, is_read_only, default_risk_level, input_schema)
 values
+    ('devops_docker_ps', 'local_system', 'devops', 'List running Docker containers without mutating Docker state.', true, 'low', '{"limit":"integer"}'::jsonb),
+    ('devops_git_status', 'local_system', 'devops', 'Read git branch and working tree status for a safe repository path.', true, 'low', '{"path":"string|null"}'::jsonb),
+    ('devops_list_npm_scripts', 'local_system', 'devops', 'Read package.json scripts from a safe local project path.', true, 'low', '{"path":"string|null"}'::jsonb),
     ('system_get_metrics_snapshot', 'local_system', 'system', 'Read CPU, memory, disk, and machine metrics.', true, 'low', '{}'::jsonb),
     ('system_list_installed_apps', 'local_system', 'system', 'Discover launchable local applications from read-only OS locations.', true, 'low', '{"query":"string|null","limit":"integer"}'::jsonb),
     ('system_list_processes', 'local_system', 'system', 'List local processes with bounded output.', true, 'low', '{"query":"string|null","limit":"integer"}'::jsonb),

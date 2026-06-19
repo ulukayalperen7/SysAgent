@@ -43,6 +43,24 @@ class McpToolPlannerTests(unittest.TestCase):
         self.assertEqual(plan.tool_name, "system_list_installed_apps")
         self.assertEqual(plan.arguments["query"], "code")
 
+    def test_plans_git_status(self):
+        plan = plan_mcp_read_tool("git status in this project", "DEVOPS_READ")
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.tool_name, "devops_git_status")
+
+    def test_plans_docker_ps(self):
+        plan = plan_mcp_read_tool("docker ps", "DEVOPS_READ")
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.tool_name, "devops_docker_ps")
+
+    def test_plans_npm_scripts(self):
+        plan = plan_mcp_read_tool("show npm scripts in this project", "DEVOPS_READ")
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.tool_name, "devops_list_npm_scripts")
+
     def test_does_not_plan_for_write_intents(self):
         plan = plan_mcp_read_tool("delete temp files", "FILE_SYSTEM_WRITE")
 

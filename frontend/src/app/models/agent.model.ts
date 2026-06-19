@@ -8,6 +8,7 @@ export interface AgentIntentResponse {
     taskId: string;
     script?: string | null;
     explanation: string;
+    activeStep?: string | null;
     confidenceScore?: number;
     pendingCount?: number; // Number of tasks still queued after this response
 }
@@ -69,4 +70,11 @@ export interface AgentProfile {
     allowedMcpTools: number;
     createdAt?: string | null;
     updatedAt?: string | null;
+}
+
+export interface TaskExecutionResponse {
+    taskId: string;
+    status: string;
+    output?: string | null;
+    error?: string | null;
 }

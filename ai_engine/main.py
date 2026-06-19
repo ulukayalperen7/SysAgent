@@ -86,6 +86,7 @@ class AnalyzeResponse(BaseModel):
     explanation: str
     script: str
     original_prompt: str
+    active_step: str | None = None
     pending_count: int = 0  # Number of tasks remaining in the execution queue
 
 @app.post("/analyze", response_model=AnalyzeResponse)
@@ -142,6 +143,7 @@ async def analyze_system(request: AnalyzeRequest):
             explanation=final_state.get("explanation", "No explanation provided."),
             script=final_state.get("script", "NONE"),
             original_prompt=sanitized_prompt,
+            active_step=final_state.get("user_input") or sanitized_prompt,
             pending_count=pending_count
         )
 

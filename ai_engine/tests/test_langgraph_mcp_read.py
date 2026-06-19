@@ -85,6 +85,28 @@ class LangGraphMcpReadTests(unittest.TestCase):
         self.assertIn("Filesystem search completed", result["explanation"])
         self.assertEqual(result["mcp_tools_used"], ["filesystem_search"])
 
+    def test_git_status_uses_mcp(self):
+        state = _state("git status in this project", "DEVOPS_READ")
+
+        self.assertTrue(is_mcp_read_only_supported(state))
+
+        result = mcp_read_only_node(state)
+
+        self.assertEqual(result["script"], "NONE")
+        self.assertIn("Git status inspected", result["explanation"])
+        self.assertEqual(result["mcp_tools_used"], ["devops_git_status"])
+
+    def test_npm_scripts_use_mcp(self):
+        state = _state("show npm scripts in ../frontend", "DEVOPS_READ")
+
+        self.assertTrue(is_mcp_read_only_supported(state))
+
+        result = mcp_read_only_node(state)
+
+        self.assertEqual(result["script"], "NONE")
+        self.assertIn("package.json scripts", result["explanation"])
+        self.assertEqual(result["mcp_tools_used"], ["devops_list_npm_scripts"])
+
     def test_disk_usage_uses_mcp(self):
         state = _state("show disk usage of this project", "FILE_SYSTEM_READ")
 

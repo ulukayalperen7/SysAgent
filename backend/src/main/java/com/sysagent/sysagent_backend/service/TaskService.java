@@ -74,4 +74,13 @@ public class TaskService {
         log.info("Saved generated script to task {}", taskId);
         return taskRepository.save(task);
     }
+
+    @Transactional
+    public TaskEntity updateTaskIntent(String taskId, String intent) {
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with ID: " + taskId));
+        task.setIntent(intent);
+        log.info("Updated active intent for task {}", taskId);
+        return taskRepository.save(task);
+    }
 }

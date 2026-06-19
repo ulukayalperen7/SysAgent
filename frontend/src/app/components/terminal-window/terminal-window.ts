@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../services/agent.service';
 import { TerminalService, TerminalLog } from '../../services/terminal.service';
-import { AgentIntentResponse } from '../../models/agent.model';
+import { AgentIntentResponse, TaskExecutionResponse } from '../../models/agent.model';
 import { ApiResponse } from '../../models/api-response.model';
 
 // Maximum number of characters a user can send in one message
@@ -135,7 +135,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
     this.isExecuting = true;
 
     this.agentService.executeTask(logEntry.taskId).subscribe({
-      next: (response: ApiResponse<string>) => {
+      next: (response: ApiResponse<TaskExecutionResponse>) => {
         logEntry.executing = false;
         this.isExecuting = false;
 
@@ -163,7 +163,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
           }
         } else {
           // WRITE/DELETE task failed — do NOT stop. Feed the error back to the AI for self-healing.
-          const execError = response.data || response.message || 'Unknown execution error';
+          const execError = response.data?.error || response.data?.output || response.message || 'Unknown execution error';
           this.terminalService.addLog({
             sender: 'system',
             text: `Script failed. Asking AI to self-correct...`,

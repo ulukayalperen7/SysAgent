@@ -20,6 +20,9 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
         self.assertIn("filesystem_get_disk_usage", tools)
         self.assertIn("system_get_platform_info", tools)
         self.assertIn("system_list_installed_apps", tools)
+        self.assertIn("devops_git_status", tools)
+        self.assertIn("devops_docker_ps", tools)
+        self.assertIn("devops_list_npm_scripts", tools)
 
     def test_platform_info_is_available(self):
         result = local_system_mcp_client.call_tool("system_get_platform_info")
@@ -39,6 +42,20 @@ class LocalSystemMcpFoundationTests(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertLessEqual(result["data"]["count"], 5)
         self.assertIn("apps", result["data"])
+
+    def test_git_status_reads_current_repo(self):
+        project_path = Path(__file__).resolve().parents[2]
+        result = local_system_mcp_client.call_tool("devops_git_status", {"path": str(project_path)})
+
+        self.assertTrue(result["success"])
+        self.assertIn("branch", result["data"])
+
+    def test_npm_scripts_reads_package_json(self):
+        package_path = Path(__file__).resolve().parents[2] / "frontend"
+        result = local_system_mcp_client.call_tool("devops_list_npm_scripts", {"path": str(package_path)})
+
+        self.assertTrue(result["success"])
+        self.assertIn("build", result["data"]["scripts"])
 
     def test_filesystem_read_blocks_secret_like_files(self):
         env_path = Path(__file__).resolve().parents[1] / ".env"

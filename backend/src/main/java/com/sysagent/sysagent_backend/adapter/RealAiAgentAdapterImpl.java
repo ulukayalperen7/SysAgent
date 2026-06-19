@@ -67,6 +67,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
                 // --- STRUCTURED JSON PATTERN (Preferred) ---
                 String explanation = (String) responseBody.get("explanation");
                 String script = normalizeScript(responseBody.get("script"));
+                String activeStep = normalizeText(responseBody.get("active_step"));
 
                 // --- LEGACY STRING-SPLIT PATTERN (Fallback) ---
                 if (explanation == null || explanation.isBlank()) {
@@ -93,6 +94,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
                         .taskId(taskId)
                         .explanation(explanation)
                         .script(script)
+                        .activeStep(activeStep)
                         .confidenceScore(0.95)
                         .pendingCount(pendingCount)
                         .build();
@@ -140,6 +142,14 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             return null;
         }
         return stripCodeFences(raw);
+    }
+
+    private static String normalizeText(Object textObj) {
+        if (!(textObj instanceof String)) {
+            return null;
+        }
+        String value = ((String) textObj).trim();
+        return value.isEmpty() ? null : value;
     }
 
     private static String stripCodeFences(String raw) {

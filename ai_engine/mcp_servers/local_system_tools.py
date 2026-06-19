@@ -6,6 +6,8 @@ import os
 import platform
 import socket
 import fnmatch
+import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +21,7 @@ MAX_SEARCH_RESULTS = 100
 MAX_APP_LIMIT = 200
 MAX_WALK_ENTRIES = 5_000
 MAX_WALK_DEPTH = 6
+COMMAND_TIMEOUT_SECONDS = 5
 
 SECRET_FILE_NAMES = {
     ".env",
@@ -142,6 +145,79 @@ def system_list_installed_apps(query: str | None = None, limit: int = 100) -> di
             "query": query,
             "truncated": len(apps) >= app_limit,
             "apps": apps,
+        },
+    )
+
+
+def devops_git_status(path: str | None = None) -> dict[str, Any]:
+    """Read git branch/status for a safe local repository path."""
+    try:
+        target = _resolve_user_path(path)
+    except Exception as exc:
+        return _result(False, error=f"Invalid path: {exc}")
+
+    if _is_restricted_path(target):
+        return _result(False, error=f"Restricted path is not available through read-only MCP: {target}")
+    if target.is_file():
+        target = target.parent
+    if not target.exists() or not target.is_dir():
+        return _result(False, error=f"Repository path does not exist: {target}")
+
+    result = _run_read_only_command([_resolve_command_binary("git"), "-C", str(target), "status", "--short", "--branch"])
+    if not result["success"]:
+        return result
+
+    lines = str(result["data"].get("stdout", "")).splitlines()
+    branch = lines[0] if lines else ""
+    changes = lines[1:]
+    return _result(True, {"path": str(target), "branch": branch, "changes": changes, "clean": len(changes) == 0})
+
+
+def devops_docker_ps(limit: int = 50) -> dict[str, Any]:
+    """Read running Docker containers without mutating Docker state."""
+    container_limit = _bounded_int(limit, 50, 100)
+    result = _run_read_only_command([_resolve_command_binary("docker"), "ps", "--format", "{{json .}}"])
+    if not result["success"]:
+        return result
+
+    containers: list[dict[str, Any]] = []
+    for line in str(result["data"].get("stdout", "")).splitlines():
+        if len(containers) >= container_limit:
+            break
+        try:
+            containers.append(json.loads(line))
+        except json.JSONDecodeError:
+            containers.append({"raw": line})
+    return _result(True, {"count": len(containers), "containers": containers, "truncated": len(containers) >= container_limit})
+
+
+def devops_list_npm_scripts(path: str | None = None) -> dict[str, Any]:
+    """Read package.json scripts from a safe local project path."""
+    try:
+        target = _resolve_user_path(path)
+    except Exception as exc:
+        return _result(False, error=f"Invalid path: {exc}")
+
+    if _is_restricted_path(target):
+        return _result(False, error=f"Restricted path is not available through read-only MCP: {target}")
+    package_file = target if target.name == "package.json" else target / "package.json"
+    if not package_file.exists() or not package_file.is_file():
+        return _result(False, error=f"package.json not found at: {package_file}")
+    if _is_secret_file(package_file):
+        return _result(False, error=f"Secret-like files are blocked from read-only MCP: {package_file.name}")
+
+    try:
+        package_data = json.loads(package_file.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return _result(False, error=f"Failed to read package.json: {exc}")
+
+    scripts = package_data.get("scripts") if isinstance(package_data, dict) else None
+    return _result(
+        True,
+        {
+            "path": str(package_file),
+            "name": package_data.get("name") if isinstance(package_data, dict) else None,
+            "scripts": scripts if isinstance(scripts, dict) else {},
         },
     )
 
@@ -335,6 +411,51 @@ def _normalize_app_query(value: str | None) -> str:
         }
     )
     return value.translate(translation).lower().strip()
+
+
+def _run_read_only_command(args: list[str]) -> dict[str, Any]:
+    try:
+        completed = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=COMMAND_TIMEOUT_SECONDS,
+            check=False,
+            shell=False,
+        )
+    except FileNotFoundError:
+        return _result(False, error=f"Command not found: {args[0]}")
+    except subprocess.TimeoutExpired:
+        return _result(False, error=f"Read-only command timed out after {COMMAND_TIMEOUT_SECONDS} seconds: {args[0]}")
+    except Exception as exc:
+        return _result(False, error=f"Read-only command failed: {exc}")
+
+    if completed.returncode != 0:
+        return _result(
+            False,
+            error=(completed.stderr or completed.stdout or f"Command exited with code {completed.returncode}").strip(),
+        )
+
+    return _result(
+        True,
+        {
+            "stdout": completed.stdout.strip(),
+            "stderr": completed.stderr.strip(),
+            "exit_code": completed.returncode,
+        },
+    )
+
+
+def _resolve_command_binary(command: str) -> str:
+    if os.name == "nt" and command == "git":
+        candidates = [
+            Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Git" / "cmd" / "git.exe",
+            Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Git" / "cmd" / "git.exe",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
+    return command
 
 
 def system_get_top_memory_processes(limit: int = 10) -> dict[str, Any]:
@@ -692,6 +813,9 @@ def _relative_depth(root: Path, path: Path) -> int:
 
 
 TOOL_REGISTRY = {
+    "devops_docker_ps": devops_docker_ps,
+    "devops_git_status": devops_git_status,
+    "devops_list_npm_scripts": devops_list_npm_scripts,
     "system_get_metrics_snapshot": system_get_metrics_snapshot,
     "system_list_installed_apps": system_list_installed_apps,
     "system_list_processes": system_list_processes,

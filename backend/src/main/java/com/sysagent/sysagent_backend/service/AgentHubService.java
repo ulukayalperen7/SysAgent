@@ -3,6 +3,7 @@ package com.sysagent.sysagent_backend.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,34 @@ public class AgentHubService {
         return jdbcTemplate.query(sql, this::mapAgentProfile);
     }
 
+    public String findCommandBlockReason(String command, String osName) {
+        String sql = """
+                select rule_type, pattern, reason
+                from agent_risk_policy_rules r
+                join agent_risk_policies p on p.id = r.policy_id
+                where p.enabled = true
+                  and r.enabled = true
+                  and r.effect = 'block'
+                order by r.priority asc
+                """;
+
+        String lowerCommand = command == null ? "" : command.toLowerCase();
+        boolean isWindows = osName != null && osName.toLowerCase().contains("win");
+        try {
+            Optional<String> reason = jdbcTemplate.query(sql, (rs, rowNum) -> new RiskRuleRow(
+                            rs.getString("rule_type"),
+                            rs.getString("pattern"),
+                            rs.getString("reason")))
+                    .stream()
+                    .filter(rule -> rule.blocks(lowerCommand, isWindows))
+                    .map(RiskRuleRow::reason)
+                    .findFirst();
+            return reason.orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private AgentProfileDto mapAgentProfile(ResultSet rs, int rowNum) throws SQLException {
         return AgentProfileDto.builder()
                 .id(rs.getString("id"))
@@ -73,5 +102,28 @@ public class AgentHubService {
                 .createdAt(rs.getString("created_at"))
                 .updatedAt(rs.getString("updated_at"))
                 .build();
+    }
+
+    private record RiskRuleRow(String ruleType, String pattern, String reason) {
+
+        boolean blocks(String lowerCommand, boolean isWindows) {
+            String lowerPattern = pattern == null ? "" : pattern.toLowerCase();
+            if (lowerPattern.isBlank()) {
+                return false;
+            }
+            if ("command_contains".equals(ruleType)) {
+                return lowerCommand.contains(lowerPattern);
+            }
+            if ("path_prefix".equals(ruleType)) {
+                if (isWindows) {
+                    return lowerCommand.contains(lowerPattern);
+                }
+                return lowerCommand.startsWith(lowerPattern) || lowerCommand.contains(" " + lowerPattern);
+            }
+            if ("regex".equals(ruleType)) {
+                return lowerCommand.matches("(?s).*" + lowerPattern + ".*");
+            }
+            return false;
+        }
     }
 }

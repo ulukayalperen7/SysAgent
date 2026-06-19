@@ -33,6 +33,30 @@ def plan_mcp_read_tool(user_input: str, intent: str) -> McpToolPlan | None:
 
     normalized = _normalize_for_matching(user_input)
 
+    if _looks_like_git_status(normalized):
+        return McpToolPlan(
+            "devops_git_status",
+            {"path": _extract_path(user_input)},
+            0.9,
+            "The request asks for read-only git repository status.",
+        )
+
+    if _looks_like_docker_ps(normalized):
+        return McpToolPlan(
+            "devops_docker_ps",
+            {"limit": _extract_limit(user_input, default=50, maximum=100)},
+            0.9,
+            "The request asks to list running Docker containers.",
+        )
+
+    if _looks_like_npm_scripts(normalized):
+        return McpToolPlan(
+            "devops_list_npm_scripts",
+            {"path": _extract_path(user_input)},
+            0.86,
+            "The request asks to inspect package.json scripts.",
+        )
+
     if _looks_like_installed_apps(normalized):
         return McpToolPlan(
             "system_list_installed_apps",
@@ -175,6 +199,18 @@ def _looks_like_installed_apps(normalized: str) -> bool:
     )
 
 
+def _looks_like_git_status(normalized: str) -> bool:
+    return "git status" in normalized or "git durum" in normalized or "repo status" in normalized
+
+
+def _looks_like_docker_ps(normalized: str) -> bool:
+    return "docker ps" in normalized or "docker containers" in normalized or "running containers" in normalized
+
+
+def _looks_like_npm_scripts(normalized: str) -> bool:
+    return any(term in normalized for term in ("npm scripts", "package scripts", "package.json scripts", "scripts in package.json"))
+
+
 def _extract_limit(text: str, default: int, maximum: int) -> int:
     match = re.search(r"\btop\s+(\d+)\b|\b(\d+)\s+(?:processes|files|connections|items)\b", text, re.IGNORECASE)
     if not match:
@@ -252,7 +288,7 @@ def _extract_path(text: str) -> str | None:
 
     path_after_preposition = re.search(r"(?:in|from|at|under|inside)\s+([^\r\n]+)$", text, re.IGNORECASE)
     if path_after_preposition:
-        return _normalize_user_path(path_after_preposition.group(1).strip(" ."))
+        return _normalize_user_path(path_after_preposition.group(1).strip().strip("'\""))
 
     return None
 

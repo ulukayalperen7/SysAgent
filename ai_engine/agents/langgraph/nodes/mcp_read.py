@@ -98,6 +98,37 @@ def _format_mcp_result(tool_name: str, result: dict[str, Any]) -> str:
 
     data = result.get("data", {})
 
+    if tool_name == "devops_git_status":
+        changes = data.get("changes", [])
+        change_lines = "\n".join(f"- {change}" for change in changes[:30]) if changes else "No working tree changes."
+        return (
+            "Summary:\nGit status inspected without changing the repository.\n\n"
+            "Findings:\n"
+            f"Path: {data.get('path')}\n"
+            f"Branch: {data.get('branch')}\n"
+            f"Clean: {data.get('clean')}\n"
+            f"{change_lines}"
+        )
+
+    if tool_name == "devops_docker_ps":
+        containers = data.get("containers", [])
+        lines = "\n".join(
+            f"- {container.get('Names') or container.get('raw')} | {container.get('Image')} | {container.get('Status')}"
+            for container in containers[:20]
+        ) if containers else "No running containers found."
+        return f"Summary:\nDocker containers inspected without mutation.\n\nFindings:\n{lines}"
+
+    if tool_name == "devops_list_npm_scripts":
+        scripts = data.get("scripts", {})
+        lines = "\n".join(f"- {name}: {command}" for name, command in list(scripts.items())[:30]) if scripts else "No npm scripts found."
+        return (
+            "Summary:\npackage.json scripts inspected without running npm.\n\n"
+            "Findings:\n"
+            f"Path: {data.get('path')}\n"
+            f"Package: {data.get('name')}\n"
+            f"{lines}"
+        )
+
     if tool_name == "system_get_top_memory_processes":
         lines = _format_process_rows(data.get("processes", []))
         return f"Summary:\nTop memory-consuming processes found.\n\nFindings:\n{lines}\n\nRecommendation:\nIf one process looks abnormal, ask me to investigate it before closing anything."

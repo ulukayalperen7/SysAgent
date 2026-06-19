@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiResponse } from '../models/api-response.model';
 import { environment } from '../../environments/environment';
-import { AgentIntentRequest, AgentIntentResponse, AiRuntimeStatus, AgentProfile } from '../models/agent.model';
+import { AgentIntentRequest, AgentIntentResponse, AiRuntimeStatus, AgentProfile, TaskExecutionResponse } from '../models/agent.model';
 
 @Injectable({
     providedIn: 'root'
@@ -62,9 +62,9 @@ export class AgentService {
         );
     }
 
-    executeTask(taskId: string): Observable<ApiResponse<string>> {
+    executeTask(taskId: string): Observable<ApiResponse<TaskExecutionResponse>> {
         const tasksUrl = `${environment.apiUrl}/tasks`;
-        return this.http.post<ApiResponse<string>>(`${tasksUrl}/${taskId}/execute`, {}).pipe(
+        return this.http.post<ApiResponse<TaskExecutionResponse>>(`${tasksUrl}/${taskId}/execute`, {}).pipe(
             catchError(error => {
                 console.error('AgentService: Error executing task', error);
                 throw error;

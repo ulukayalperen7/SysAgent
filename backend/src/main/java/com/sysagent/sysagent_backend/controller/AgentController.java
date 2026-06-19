@@ -92,6 +92,10 @@ public class AgentController {
         }
 
         AgentIntentResponseDto response = aiAgentAdapter.analyzeIntent(task.getId(), sanitizedIntent, currentMetrics, threadId);
+        if (response.getActiveStep() != null && !response.getActiveStep().isBlank()
+                && !response.getActiveStep().equals(sanitizedIntent)) {
+            tryUpdateTaskIntent(task.getId(), response.getActiveStep());
+        }
         
         // 4. Persist generated scripts before Angular is allowed to show approval.
         // If this write fails, returning the script would create a broken approval
@@ -124,6 +128,14 @@ public class AgentController {
         } catch (Exception e) {
             log.error("Could not persist AI analysis result for task {}", taskId, e);
             return false;
+        }
+    }
+
+    private void tryUpdateTaskIntent(String taskId, String activeStep) {
+        try {
+            taskService.updateTaskIntent(taskId, activeStep);
+        } catch (Exception e) {
+            log.warn("Could not update active step for task {}", taskId, e);
         }
     }
 

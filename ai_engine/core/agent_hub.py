@@ -425,7 +425,11 @@ def _fallback_routes() -> list[AgentRoute]:
 def _fallback_mcp_tool_permissions() -> dict[str, set[str]]:
     return {
         "mcp_read_agent": {
+            "devops_docker_ps",
+            "devops_git_status",
+            "devops_list_npm_scripts",
             "system_get_metrics_snapshot",
+            "system_list_installed_apps",
             "system_list_processes",
             "system_get_top_memory_processes",
             "network_list_connections",
