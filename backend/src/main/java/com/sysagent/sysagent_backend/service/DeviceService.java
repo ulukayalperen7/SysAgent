@@ -39,6 +39,12 @@ public class DeviceService {
                 .collect(Collectors.toList());
     }
 
+    public DeviceDto getOwnedDevice(Long deviceId, String ownerId) {
+        return deviceRepository.findByIdAndOwnerId(deviceId, ownerId)
+                .map(this::mapToDto)
+                .orElseThrow(() -> new IllegalArgumentException("Target device does not belong to the current user."));
+    }
+
     public DeviceRegistrationTokenResponseDto createRegistrationToken(String ownerId, String label) {
         String token = tokenHashingService.newPlainToken();
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30);

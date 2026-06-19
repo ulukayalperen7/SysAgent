@@ -74,6 +74,7 @@ export class AuthService {
     private storeSession(response: AuthResponse): void {
         localStorage.setItem(this.tokenKey, response.token);
         localStorage.setItem(this.userKey, JSON.stringify(response.user));
+        localStorage.removeItem('sysagent_terminal_thread_id');
         this.userSubject.next(response.user);
     }
 

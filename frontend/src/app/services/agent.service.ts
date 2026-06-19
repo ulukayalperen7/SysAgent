@@ -14,8 +14,8 @@ export class AgentService {
 
     constructor(private http: HttpClient) { }
 
-    processIntent(intent: string, threadId?: string): Observable<AgentIntentResponse> {
-        const payload: AgentIntentRequest = { intent, threadId };
+    processIntent(intent: string, threadId?: string, deviceId?: number | null): Observable<AgentIntentResponse> {
+        const payload: AgentIntentRequest = { intent, threadId, deviceId: deviceId ?? null };
         return this.http.post<ApiResponse<AgentIntentResponse>>(`${this.apiUrl}/process`, payload).pipe(
             map(response => {
                 // The backend always wraps responses. Guard here so the terminal

@@ -7,6 +7,8 @@ export interface TerminalLog {
     type?: string;
     script?: string;
     taskId?: string;
+    targetDeviceId?: number | null;
+    targetDeviceName?: string;
     executing?: boolean;
     executed?: boolean; // Track if the action was successfully performed
     failed?: boolean;   // Track if the execution failed (for self-healing UI State)
@@ -18,8 +20,8 @@ export interface TerminalLog {
 })
 export class TerminalService {
     private _logs: TerminalLog[] = [
-        { sender: 'system', text: 'SysAgent v0.1 bootstrapped on localhost.', type: 'info' },
-        { sender: 'system', text: 'Monitoring local system metrics...', type: 'info' },
+        { sender: 'system', text: 'SysAgent v0.1 bootstrapped on the backend host.', type: 'info' },
+        { sender: 'system', text: 'Monitoring system metrics...', type: 'info' },
         { sender: 'system', text: 'Agent ready. Type a command or natural language intent.', type: 'success' }
     ];
 

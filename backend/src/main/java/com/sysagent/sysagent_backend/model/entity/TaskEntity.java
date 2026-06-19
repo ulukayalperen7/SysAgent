@@ -40,6 +40,12 @@ public class TaskEntity {
      */
     @Column(nullable = false)
     private String ownerId;
+
+    /**
+     * Optional device selected by the user for this task.
+     * Null means the current backend host/local execution path.
+     */
+    private Long targetDeviceId;
     
     /**
      * The original natural language request from the user (e.g., "Clean logs older than 7 days").

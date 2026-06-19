@@ -22,15 +22,21 @@ public class TaskService {
 
     @Transactional
     public TaskEntity createTask(String intent, String ownerId) {
+        return createTask(intent, ownerId, null);
+    }
+
+    @Transactional
+    public TaskEntity createTask(String intent, String ownerId, Long targetDeviceId) {
         TaskEntity task = TaskEntity.builder()
                 .id(UUID.randomUUID().toString())
                 .intent(intent)
-                .ownerId(ownerId) // Fixed: Set ownerId to satisfy DB constraint
+                .ownerId(ownerId)
+                .targetDeviceId(targetDeviceId)
                 .status(TaskStatus.PENDING)
                 .timestamp(LocalDateTime.now())
                 .build();
                 
-        log.info("Created new PENDING task with ID: {} for user: {}", task.getId(), ownerId);
+        log.info("Created new PENDING task with ID: {} for user: {} targetDevice: {}", task.getId(), ownerId, targetDeviceId);
         return taskRepository.save(task);
     }
 

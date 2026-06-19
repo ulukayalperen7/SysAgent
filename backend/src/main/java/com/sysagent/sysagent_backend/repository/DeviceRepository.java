@@ -30,5 +30,7 @@ public interface DeviceRepository extends JpaRepository<DeviceEntity, Long> {
      */
     List<DeviceEntity> findByOwnerId(String ownerId);
 
+    Optional<DeviceEntity> findByIdAndOwnerId(Long id, String ownerId);
+
     Optional<DeviceEntity> findByOwnerIdAndName(String ownerId, String name);
 }

@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
@@ -43,5 +44,16 @@ class TaskServiceTest {
         assertThat(history).hasSize(1);
         assertThat(history.get(0).getId()).isEqualTo("task-1");
         assertThat(history.get(0).getStatus()).isEqualTo("completed");
+    }
+
+    @Test
+    void storesTargetDeviceWhenCreatingTask() {
+        when(taskRepository.save(any(TaskEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        TaskEntity task = taskService.createTask("open notepad", "test-user-1", 42L);
+
+        assertThat(task.getOwnerId()).isEqualTo("test-user-1");
+        assertThat(task.getTargetDeviceId()).isEqualTo(42L);
+        assertThat(task.getStatus()).isEqualTo(TaskStatus.PENDING);
     }
 }

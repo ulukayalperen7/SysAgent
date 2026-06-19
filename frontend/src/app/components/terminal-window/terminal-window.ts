@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../services/agent.service';
 import { TerminalService, TerminalLog } from '../../services/terminal.service';
+import { Device, DeviceService } from '../../services/device.service';
 import { AgentIntentResponse, TaskExecutionResponse } from '../../models/agent.model';
 import { ApiResponse } from '../../models/api-response.model';
 
@@ -28,21 +29,25 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
   // UI States
   isThinking = false;
   isExecuting = false;
+  devices: Device[] = [];
+  selectedDeviceId: number | null = null;
   private readonly threadId = this.getOrCreateThreadId();
 
   private shouldScrollToBottom = false;
 
   constructor(
     private agentService: AgentService,
+    private deviceService: DeviceService,
     private terminalService: TerminalService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     this.terminalService.logs$.subscribe(logs => {
-      this.shouldScrollToBottom = true; // Flag for auto-scroll on new message
+      this.shouldScrollToBottom = true;
       this.cdr.detectChanges();
     });
+    this.loadDevices();
   }
 
   /**
@@ -91,12 +96,12 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
       return;
     }
 
-    // Log user message and clear input
-    this.terminalService.addLog({ sender: 'user', text: `> ${command}` });
+    const targetName = this.getSelectedDeviceName();
+    this.terminalService.addLog({ sender: 'user', text: `[${targetName}] > ${command}` });
     inputElement.value = '';
     this.isThinking = true;
 
-    this.agentService.processIntent(command, this.threadId).subscribe({
+    this.agentService.processIntent(command, this.threadId, this.selectedDeviceId).subscribe({
       next: (response: AgentIntentResponse) => {
         this.isThinking = false;
         this.terminalService.addLog({
@@ -112,6 +117,8 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
             text: `Recommended Action:`,
             script: response.script,
             taskId: response.taskId,
+            targetDeviceId: this.selectedDeviceId,
+            targetDeviceName: targetName,
             pendingCount: response.pendingCount ?? 0,  // carry queue info for auto-resume
             type: 'warning'
           });
@@ -145,8 +152,6 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
 
           // Only resume if the API told us there are pending tasks in the queue
           const hasPendingTasks = (logEntry.pendingCount ?? 0) > 0;
-          console.log('Task success. pendingCount in logEntry:', logEntry.pendingCount, 'hasPendingTasks:', hasPendingTasks);
-
           if (hasPendingTasks) {
             this.terminalService.addLog({
               sender: 'system',
@@ -187,7 +192,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
 
   private autoResumeQueue() {
     this.isThinking = true;
-    this.agentService.processIntent("continue", this.threadId).subscribe({
+    this.agentService.processIntent("continue", this.threadId, this.selectedDeviceId).subscribe({
       next: (response: AgentIntentResponse) => {
         this.isThinking = false;
 
@@ -206,6 +211,8 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
             text: `Recommended Action:`,
             script: response.script,
             taskId: response.taskId,
+            targetDeviceId: this.selectedDeviceId,
+            targetDeviceName: this.getSelectedDeviceName(),
             pendingCount: response.pendingCount ?? 0,
             type: 'warning'
           });
@@ -245,7 +252,10 @@ ${errorContext}
 
 Please analyze the exact error, generate a corrected minimal script for the same current step, and do not repeat the same failed strategy.`;
 
-    this.agentService.processIntent(healPrompt, this.threadId).subscribe({
+    const targetDeviceId = failedLogEntry.targetDeviceId ?? this.selectedDeviceId;
+    const targetDeviceName = failedLogEntry.targetDeviceName ?? this.getSelectedDeviceName();
+
+    this.agentService.processIntent(healPrompt, this.threadId, targetDeviceId).subscribe({
       next: (response: AgentIntentResponse) => {
         this.isThinking = false;
         if (response.explanation && response.explanation.trim() !== '') {
@@ -261,6 +271,8 @@ Please analyze the exact error, generate a corrected minimal script for the same
             text: `Recommended Action (Corrected):`,
             script: response.script,
             taskId: response.taskId,
+            targetDeviceId,
+            targetDeviceName,
             pendingCount: response.pendingCount ?? 0,
             type: 'warning'
           });
@@ -283,6 +295,42 @@ Please analyze the exact error, generate a corrected minimal script for the same
       return fallback;
     }
     return `Request failed: ${apiMessage}`;
+  }
+
+  private loadDevices(): void {
+    this.deviceService.getDevices().subscribe({
+      next: devices => {
+        this.devices = devices;
+      },
+      error: err => {
+        this.terminalService.addLog({
+          sender: 'system',
+          text: this.extractApiErrorMessage(err, 'Device list could not be loaded. Local backend mode is still available.'),
+          type: 'error'
+        });
+      }
+    });
+  }
+
+  onDeviceChange(deviceId: number | null): void {
+    this.selectedDeviceId = deviceId;
+    this.terminalService.addLog({
+      sender: 'system',
+      text: `Target changed to ${this.getSelectedDeviceName()}.`,
+      type: 'info'
+    });
+  }
+
+  isRemoteLog(logEntry: TerminalLog): boolean {
+    return !!logEntry.targetDeviceId;
+  }
+
+  private getSelectedDeviceName(): string {
+    if (!this.selectedDeviceId) {
+      return 'Local backend';
+    }
+    const device = this.devices.find(item => item.id === this.selectedDeviceId);
+    return device ? device.name : `Device #${this.selectedDeviceId}`;
   }
 
   private truncateForAiContext(value: string, maxChars: number): string {

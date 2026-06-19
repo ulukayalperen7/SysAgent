@@ -508,3 +508,4 @@ Notes:
 - Cleaned Angular build warnings for known STOMP/SockJS CommonJS dependencies and the terminal component style budget.
 - Started the Auth foundation with JWT register/login, PBKDF2 password hashing, protected Angular routes, bearer-token HTTP interceptor, and server-side `CurrentUserProvider` resolution.
 - Added authenticated device registration-token generation plus a public node registration endpoint that binds a machine to the token owner.
+- Added target-device task binding: terminal requests can select a registered device, backend validates ownership, and remote execution is blocked until secure node transport is implemented.

@@ -14,6 +14,7 @@
     padding: 10px 16px;
     display: flex;
     align-items: center;
+    gap: 12px;
     border-bottom: 1px solid #21262d;
     flex-shrink: 0;
 
@@ -46,6 +47,25 @@
       color: #484f58;
       font-size: 0.8rem;
       font-family: 'Courier New', Courier, monospace;
+    }
+
+    .device-picker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #8b949e;
+      font-size: 0.78rem;
+
+      select {
+        max-width: 220px;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        color: #c9d1d9;
+        padding: 5px 8px;
+        font-size: 0.78rem;
+        outline: none;
+      }
     }
   }
 
@@ -130,6 +150,12 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 6px;
       padding: 12px;
+
+      .script-target {
+        margin-bottom: 8px;
+        color: #8b949e;
+        font-size: 12px;
+      }
 
       .script-block {
         margin: 0 0 12px 0;

@@ -189,6 +189,14 @@ create table if not exists automation_rules (
 create index if not exists idx_agent_profiles_owner_status on agent_profiles(owner_id, status);
 create index if not exists idx_app_users_email on app_users(email);
 create index if not exists idx_device_registration_tokens_owner on device_registration_tokens(owner_id, expires_at);
+alter table if exists tasks
+    add column if not exists target_device_id bigint;
+create index if not exists idx_tasks_owner_target_device on tasks(owner_id, target_device_id);
+alter table if exists tasks
+    drop constraint if exists fk_tasks_target_device;
+alter table if exists tasks
+    add constraint fk_tasks_target_device
+    foreign key (target_device_id) references devices(id) on delete set null;
 alter table if exists device_registration_tokens
     drop constraint if exists fk_device_registration_tokens_owner;
 alter table if exists device_registration_tokens

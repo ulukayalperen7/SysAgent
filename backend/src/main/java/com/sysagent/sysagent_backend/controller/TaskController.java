@@ -14,6 +14,7 @@ import com.sysagent.sysagent_backend.model.dto.TaskExecutionResponseDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.security.ScriptPolicyValidator;
+import com.sysagent.sysagent_backend.service.DeviceService;
 import com.sysagent.sysagent_backend.service.TaskService;
 import com.sysagent.sysagent_backend.service.ScriptExecutionService;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
@@ -34,6 +35,7 @@ public class TaskController {
     private final ScriptExecutionService scriptExecutionService;
     private final CurrentUserProvider currentUserProvider;
     private final ScriptPolicyValidator scriptPolicyValidator;
+    private final DeviceService deviceService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskHistoryDto>>> getTaskHistory() {
@@ -59,6 +61,26 @@ public class TaskController {
             return ResponseEntity.badRequest().body(ApiResponse.<TaskExecutionResponseDto>builder()
                     .status("ERROR")
                     .message("No script is associated with this task.")
+                    .build());
+        }
+
+        if (task.getTargetDeviceId() != null) {
+            try {
+                deviceService.getOwnedDevice(task.getTargetDeviceId(), currentUserProvider.getCurrentUserId());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(403).body(ApiResponse.<TaskExecutionResponseDto>builder()
+                        .status("ERROR")
+                        .message(e.getMessage())
+                        .build());
+            }
+            return ResponseEntity.status(501).body(ApiResponse.<TaskExecutionResponseDto>builder()
+                    .status("ERROR")
+                    .message("Remote device execution transport is not enabled yet. The task is safely stored but was not executed.")
+                    .data(TaskExecutionResponseDto.builder()
+                            .taskId(taskId)
+                            .status(task.getStatus().name())
+                            .error("REMOTE_EXECUTION_NOT_ENABLED")
+                            .build())
                     .build());
         }
 

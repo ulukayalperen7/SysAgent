@@ -23,6 +23,7 @@ import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.security.PromptSanitizer;
 import com.sysagent.sysagent_backend.service.AgentHubService;
+import com.sysagent.sysagent_backend.service.DeviceService;
 import com.sysagent.sysagent_backend.service.SystemMetricsService;
 import com.sysagent.sysagent_backend.service.TaskService;
 
@@ -42,6 +43,7 @@ public class AgentController {
     private final SystemMetricsService systemMetricsService;
     private final AgentHubService agentHubService;
     private final CurrentUserProvider currentUserProvider;
+    private final DeviceService deviceService;
 
     @GetMapping("/runtime-status")
     public ResponseEntity<ApiResponse<AiRuntimeStatusDto>> getRuntimeStatus() {
@@ -70,12 +72,23 @@ public class AgentController {
                     .body(ApiResponse.error("Intent cannot be empty."));
         }
 
+        String ownerId = currentUserProvider.getCurrentUserId();
+        Long targetDeviceId = request.getDeviceId();
+        if (targetDeviceId != null) {
+            try {
+                deviceService.getOwnedDevice(targetDeviceId, ownerId);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error(e.getMessage()));
+            }
+        }
+
         // 1. Immediately create a PENDING task in the DB to track this command.
         // Spring Boot owns the task record because script execution later depends
         // on retrieving the approved script by task ID.
         TaskEntity task;
         try {
-            task = taskService.createTask(sanitizedIntent, currentUserProvider.getCurrentUserId());
+            task = taskService.createTask(sanitizedIntent, ownerId, targetDeviceId);
         } catch (Exception e) {
             log.error("Could not create task before AI analysis", e);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class TaskHistoryDto {
     private String id;
     private String ownerId;
+    private Long targetDeviceId;
     private String intent;
     private String status;
     private LocalDateTime timestamp;
@@ -28,6 +29,7 @@ public class TaskHistoryDto {
         return TaskHistoryDto.builder()
                 .id(task.getId())
                 .ownerId(task.getOwnerId())
+                .targetDeviceId(task.getTargetDeviceId())
                 .intent(task.getIntent())
                 .status(task.getStatus() == null ? "unknown" : task.getStatus().name().toLowerCase())
                 .timestamp(task.getTimestamp())

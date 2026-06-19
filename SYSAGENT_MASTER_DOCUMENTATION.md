@@ -117,7 +117,8 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - API requests use JWT bearer tokens.
 - Owner IDs are resolved server-side from the authenticated token.
 - Devices are registered to a user through short-lived one-time registration tokens.
-- The current node registration flow creates the ownership record; full remote node runtime and command transport are still a later phase.
+- Terminal requests can carry an optional target device ID; backend validates that the selected device belongs to the authenticated user before creating the task.
+- Remote-device tasks are stored with `target_device_id`, but execution is intentionally blocked until the secure node command transport exists.
 
 ## 8. Self-Healing Model
 When an approved script fails:
@@ -145,7 +146,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth and remote access should wait until the core orchestration, MCP scope, checkpointing, and policy model are stronger.
+- Auth, owner scoping, and device ownership are now in place; the next remote-access step is secure node transport, not direct script execution over an untrusted shortcut.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:
