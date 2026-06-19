@@ -76,13 +76,21 @@ public class DeviceEntity {
     private String nodeVersion;
 
     /**
+     * Last CPU usage percentage reported by the node runtime.
+     */
+    private Integer cpuUsage;
+
+    /**
+     * Last RAM usage percentage reported by the node runtime.
+     */
+    private Integer ramUsage;
+
+    /**
      * The ID of the user who owns this device.
      * This is crucial for multi-tenant support (e.g., Ahmet only sees his own devices).
      */
     @Column(nullable = false)
     private String ownerId;
 
-    // Additional fields for hardware specs can be added here or in a separate Specs entity
-    // private Integer cpuCores;
-    // private Long totalRam;
+    // Additional immutable hardware specs can move to a separate Specs entity later.
 }

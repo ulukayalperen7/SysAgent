@@ -126,7 +126,7 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Spring forwards authenticated owner/device context to the AI Engine so LangGraph prompts and Agent Hub decision audit rows stay tied to the same user/device boundary.
 - Node registration now returns a one-time node runtime token; only its hash is stored.
 - Remote command transport uses node-token authenticated heartbeat, command polling, and result callback endpoints.
-- The first installable `sysagent-node` CLI package exists under `node_runtime`; packaging/service installation is the next runtime delivery step.
+- The installable `sysagent-node` CLI package exists under `node_runtime`; it can register, run interactively, and generate/apply native background runtime setup for Windows, Linux, and macOS.
 - Remote command status is visible through owner-scoped task APIs and the Angular terminal/history surfaces refresh queued node work until completion or failure.
 - The Devices page can open the terminal with a selected target device and inspect owner-scoped task logs for each registered node.
 
@@ -156,7 +156,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, and the first installable node runtime CLI are now in place; the next remote-access step is packaging it as a user-friendly background service.
+- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, and the first installable node runtime CLI/background runtime setup are now in place; the next remote-access step is broader runtime packaging and screen/context-aware GUI automation.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:

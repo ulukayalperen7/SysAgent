@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandDto;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandResultRequestDto;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandStatusDto;
+import com.sysagent.sysagent_backend.model.dto.NodeHeartbeatRequestDto;
 import com.sysagent.sysagent_backend.model.entity.DeviceEntity;
 import com.sysagent.sysagent_backend.model.entity.NodeCommandEntity;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
@@ -143,6 +144,28 @@ class NodeCommandServiceTest {
         assertThat(statuses.get(0).getStatus()).isEqualTo("COMPLETED");
         assertThat(statuses.get(0).getOutput()).isEqualTo("ok");
         assertThat(latest.getTaskId()).isEqualTo("task-3");
+    }
+
+    @Test
+    void recordsHeartbeatMetricsWithinSafeBounds() {
+        nodeCommandService = new NodeCommandService(deviceRepository, nodeCommandRepository, tokenHashingService, taskService);
+        DeviceEntity device = device("node-token");
+        when(deviceRepository.findById(10L)).thenReturn(Optional.of(device));
+        when(deviceRepository.save(any(DeviceEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        NodeHeartbeatRequestDto heartbeat = new NodeHeartbeatRequestDto();
+        heartbeat.setDeviceId(10L);
+        heartbeat.setHostname("Desk");
+        heartbeat.setCpuUsage(42);
+        heartbeat.setRamUsage(101);
+
+        nodeCommandService.recordHeartbeat("node-token", heartbeat, "10.0.0.2");
+
+        assertThat(device.getName()).isEqualTo("Desk");
+        assertThat(device.getCpuUsage()).isEqualTo(42);
+        assertThat(device.getRamUsage()).isNull();
+        assertThat(device.getStatus()).isEqualTo("online");
+        verify(deviceRepository).save(device);
     }
 
     private DeviceEntity device(String plainToken) {

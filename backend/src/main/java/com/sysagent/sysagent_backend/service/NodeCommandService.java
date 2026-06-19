@@ -69,6 +69,8 @@ public class NodeCommandService {
             device.setType(request.getType());
         }
         device.setNodeVersion(clean(request.getNodeVersion(), 80));
+        device.setCpuUsage(normalizedPercent(request.getCpuUsage()));
+        device.setRamUsage(normalizedPercent(request.getRamUsage()));
         device.setStatus("online");
         device.setLastSeen(LocalDateTime.now());
         deviceRepository.save(device);
@@ -169,5 +171,12 @@ public class NodeCommandService {
         String cleaned = value.trim();
         int maxLength = 120_000;
         return cleaned.length() > maxLength ? cleaned.substring(0, maxLength) : cleaned;
+    }
+
+    private Integer normalizedPercent(Integer value) {
+        if (value == null || value < 0 || value > 100) {
+            return null;
+        }
+        return value;
     }
 }

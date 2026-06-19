@@ -516,3 +516,5 @@ Notes:
 - Added owner-scoped remote command status APIs plus Angular terminal polling and History refresh so queued node commands progress through `QUEUED`, `CLAIMED`, `COMPLETED`, and `FAILED` without mock data.
 - Activated the Devices page action buttons: `Terminal` opens the dashboard with the selected device target, and `Logs` loads owner-scoped task history for that device.
 - Improved LangGraph checkpoint status reporting so Agent Hub shows whether PostgreSQL checkpointing is truly active, merely configured, or falling back to memory.
+- Added real node heartbeat CPU/RAM persistence so the Devices page no longer has to show placeholder metrics for registered runtimes.
+- Added cross-platform `sysagent-node service-install/service-uninstall` planning for Windows Scheduled Task, Linux systemd user service, and macOS LaunchAgent, with explicit `--apply` for execution.

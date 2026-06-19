@@ -114,8 +114,8 @@ public class DeviceService {
                 .ipAddress(entity.getIpAddress())
                 .lastSeen(entity.getLastSeen())
                 .ownerId(entity.getOwnerId())
-                .cpuUsage(null)
-                .ramUsage(null)
+                .cpuUsage(entity.getCpuUsage())
+                .ramUsage(entity.getRamUsage())
                 .type(entity.getType()) 
                 .build();
     }

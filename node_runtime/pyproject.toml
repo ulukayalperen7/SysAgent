@@ -3,6 +3,9 @@ name = "sysagent-node"
 version = "0.1.0"
 description = "SysAgent remote node runtime"
 requires-python = ">=3.11"
+dependencies = [
+    "psutil>=5.9,<8",
+]
 
 [project.scripts]
 sysagent-node = "sysagent_node.cli:main"

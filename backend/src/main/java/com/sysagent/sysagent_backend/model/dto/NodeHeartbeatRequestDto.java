@@ -11,4 +11,6 @@ public class NodeHeartbeatRequestDto {
     private String hostname;
     private String ipAddress;
     private DeviceType type;
+    private Integer cpuUsage;
+    private Integer ramUsage;
 }

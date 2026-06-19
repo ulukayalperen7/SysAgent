@@ -199,7 +199,9 @@ alter table if exists tasks
     foreign key (target_device_id) references devices(id) on delete set null;
 alter table if exists devices
     add column if not exists node_token_hash text,
-    add column if not exists node_version text;
+    add column if not exists node_version text,
+    add column if not exists cpu_usage integer check (cpu_usage is null or (cpu_usage >= 0 and cpu_usage <= 100)),
+    add column if not exists ram_usage integer check (ram_usage is null or (ram_usage >= 0 and ram_usage <= 100));
 create table if not exists node_commands (
     id uuid primary key default gen_random_uuid(),
     task_id text not null references tasks(id) on delete cascade,
