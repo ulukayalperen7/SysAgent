@@ -87,14 +87,14 @@ Current MCP tools are intentionally read-only:
 - `filesystem_search`
 - `filesystem_get_disk_usage`
 - `system_get_platform_info`
+- `system_list_installed_apps`
+- `devops_git_status`
+- `devops_docker_ps`
+- `devops_list_npm_scripts`
 
 MCP should grow first through safe read-only capabilities:
 - services and startup applications,
-- installed applications and package inventory,
-- disk usage by folder,
 - event log and application log readers,
-- Git and Docker read-only status tools,
-- filesystem search with bounded output,
 - DNS and network configuration inspection.
 
 MCP must not become the execution boundary. Write, delete, install, kill, firewall, or system mutation capabilities should remain script proposals that require Angular approval and Spring Boot execution.
@@ -106,6 +106,7 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
   - Prompt sanitization.
   - Command blacklist and sensitive path guards.
   - Intent-aware approval gating.
+  - Backend execution-policy revalidation before any approved script runs.
 - Unknown intents should default to safer handling.
 
 ## 8. Self-Healing Model

@@ -504,3 +504,5 @@ Notes:
 - Added read-only DevOps MCP tools for git status, Docker container listing, and package.json script inspection.
 - Added `active_step` propagation so resumed LangGraph queue steps are persisted against the concrete task instead of the literal `continue` prompt.
 - Added structured task execution responses and backend execution-policy revalidation before approved scripts can run.
+- Added focused backend tests for AI queue response mapping and execution-policy blocking.
+- Cleaned Angular build warnings for known STOMP/SockJS CommonJS dependencies and the terminal component style budget.

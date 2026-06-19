@@ -29,6 +29,10 @@
                 "input": "public"
               }
             ],
+            "allowedCommonJsDependencies": [
+              "@stomp/stompjs",
+              "sockjs-client"
+            ],
             "styles": [
               "src/styles.scss"
             ]
@@ -43,7 +47,7 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
+                  "maximumWarning": "6kB",
                   "maximumError": "8kB"
                 }
               ],
