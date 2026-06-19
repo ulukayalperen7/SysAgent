@@ -116,6 +116,9 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Passwords are hashed with PBKDF2; plaintext passwords are never stored.
 - API requests use JWT bearer tokens.
 - Owner IDs are resolved server-side from the authenticated token.
+- Auth endpoints are rate-limited in-process to slow brute-force login/register attempts.
+- API and WebSocket CORS are controlled by `SYSAGENT_CORS_ALLOWED_ORIGINS`; wildcard origins are rejected in production mode.
+- `SYSAGENT_PRODUCTION=true` requires a strong `SYSAGENT_AUTH_JWT_SECRET` before the backend starts.
 - Devices are registered to a user through short-lived one-time registration tokens.
 - Terminal requests can carry an optional target device ID; backend validates that the selected device belongs to the authenticated user before creating the task.
 - Remote-device tasks are stored with `target_device_id`, but execution is intentionally blocked until the secure node command transport exists.
