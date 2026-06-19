@@ -1,6 +1,7 @@
 package com.sysagent.sysagent_backend.adapter;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.context.annotation.Primary;
@@ -14,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import com.sysagent.sysagent_backend.config.AiEngineProperties;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,13 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
     private final AiEngineProperties aiEngine;
 
     @Override
-    public AgentIntentResponseDto analyzeIntent(String taskId, String intent, SystemMetricsDto metrics, String threadId) {
+    public AgentIntentResponseDto analyzeIntent(
+            String taskId,
+            String intent,
+            SystemMetricsDto metrics,
+            String threadId,
+            String ownerId,
+            DeviceDto targetDevice) {
         log.info("Analyzing intent for task: {}", taskId);
 
         // --- Defense-in-depth: Java-side Security Checks ---
@@ -52,6 +60,9 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         requestPayload.put("user_prompt", intent);
         requestPayload.put("metrics", metrics);
         requestPayload.put("thread_id", threadId);
+        requestPayload.put("owner_id", ownerId);
+        requestPayload.put("target_device_id", targetDevice == null ? null : targetDevice.getId());
+        requestPayload.put("device_context", buildDeviceContext(targetDevice));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -150,6 +161,20 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         }
         String value = ((String) textObj).trim();
         return value.isEmpty() ? null : value;
+    }
+
+    private static Map<String, Object> buildDeviceContext(DeviceDto targetDevice) {
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("execution_mode", targetDevice == null ? "local_backend" : "remote_device");
+        if (targetDevice == null) {
+            return context;
+        }
+        context.put("id", targetDevice.getId());
+        context.put("name", targetDevice.getName());
+        context.put("type", targetDevice.getType() == null ? null : targetDevice.getType().name());
+        context.put("status", targetDevice.getStatus());
+        context.put("last_seen", targetDevice.getLastSeen() == null ? null : targetDevice.getLastSeen().toString());
+        return context;
     }
 
     private static String stripCodeFences(String raw) {

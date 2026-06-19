@@ -47,12 +47,14 @@ def run_crewai_diagnostics_node(state: AgentState):
         f"RAM: {metrics_context.get('ramUsage', 0)}%, "
         f"Disk: {metrics_context.get('usedDisk', 0)//(1024**3)}GB used."
     )
+    target_context = _format_target_context(state)
     
     inputs = {
         "metrics": summarized_metrics,
         "user_prompt": state["user_input"],
         "history": history_str,
-        "os_type": state.get("os_type", "Unknown OS")
+        "os_type": state.get("os_type", "Unknown OS"),
+        "target_context": target_context,
     }
     
     raw_result = str(crew_instance.crew().kickoff(inputs=inputs))
@@ -86,6 +88,7 @@ def generate_action_script_node(state: AgentState):
     llm = _get_langchain_llm()
     
     history_str = _compact_history(state.get("messages", []), max_messages=8, max_chars=400)
+    target_context = _format_target_context(state)
 
     platform_rules = ""
     if "win" in os_name.lower():
@@ -111,6 +114,7 @@ def generate_action_script_node(state: AgentState):
     prompt = f"""
     You are a system command generator. Your intent is {intent}.
     Target OS: {os_name}
+    Target Context: {target_context}
     User Input: {state['user_input']}
     
     Context History:
@@ -136,6 +140,7 @@ def generate_action_script_node(state: AgentState):
     - Never combine unrelated operations in one script.
     
     IMPORTANT:
+    - Target Context is metadata only. Do not claim remote execution succeeded; Spring Boot controls final execution.
     - NO markdown code fences in the Script value. Raw command only.
     - If no command is needed, you MUST still say 'Script: NONE'.
     """
@@ -198,6 +203,17 @@ def _finalize_script_proposal(state: AgentState, explanation: str, script: str, 
     current_explanation = state.get("explanation", "")
     new_explanation = f"{current_explanation}\n{terminal_explanation}".strip()
     return {"script": script, "explanation": new_explanation, "messages": [msg]}
+
+
+def _format_target_context(state: AgentState) -> str:
+    context = state.get("device_context") or {}
+    mode = context.get("execution_mode") or "local_backend"
+    if mode == "remote_device":
+        name = context.get("name") or f"Device #{state.get('target_device_id')}"
+        device_type = context.get("type") or "Unknown"
+        status = context.get("status") or "unknown"
+        return f"Remote device '{name}' ({device_type}, status={status})."
+    return "Local backend host."
 
 def execute_safe_action_node(state: AgentState):
     """

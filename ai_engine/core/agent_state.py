@@ -1,5 +1,5 @@
 import operator
-from typing import TypedDict, Annotated, List, Dict, Any
+from typing import TypedDict, Annotated, List, Dict, Any, NotRequired
 
 class AgentState(TypedDict):
     """
@@ -8,6 +8,11 @@ class AgentState(TypedDict):
     """
     # Unique identifier for isolated user sessions (e.g., node_id + user_id)
     thread_id: str
+
+    # Auth/device context supplied by the Spring API boundary.
+    owner_id: NotRequired[str | None]
+    target_device_id: NotRequired[int | None]
+    device_context: NotRequired[Dict[str, Any]]
     
     # Input variables
     user_input: str

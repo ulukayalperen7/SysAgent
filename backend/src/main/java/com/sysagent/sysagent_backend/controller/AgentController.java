@@ -16,6 +16,7 @@ import com.sysagent.sysagent_backend.model.dto.AgentIntentRequestDto;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.AgentProfileDto;
 import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
@@ -74,9 +75,10 @@ public class AgentController {
 
         String ownerId = currentUserProvider.getCurrentUserId();
         Long targetDeviceId = request.getDeviceId();
+        DeviceDto targetDevice = null;
         if (targetDeviceId != null) {
             try {
-                deviceService.getOwnedDevice(targetDeviceId, ownerId);
+                targetDevice = deviceService.getOwnedDevice(targetDeviceId, ownerId);
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(ApiResponse.error(e.getMessage()));
@@ -104,7 +106,13 @@ public class AgentController {
             threadId = "thread_" + task.getId();
         }
 
-        AgentIntentResponseDto response = aiAgentAdapter.analyzeIntent(task.getId(), sanitizedIntent, currentMetrics, threadId);
+        AgentIntentResponseDto response = aiAgentAdapter.analyzeIntent(
+                task.getId(),
+                sanitizedIntent,
+                currentMetrics,
+                threadId,
+                ownerId,
+                targetDevice);
         if (response.getActiveStep() != null && !response.getActiveStep().isBlank()
                 && !response.getActiveStep().equals(sanitizedIntent)) {
             tryUpdateTaskIntent(task.getId(), response.getActiveStep());

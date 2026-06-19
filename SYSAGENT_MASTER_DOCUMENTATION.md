@@ -119,6 +119,7 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Devices are registered to a user through short-lived one-time registration tokens.
 - Terminal requests can carry an optional target device ID; backend validates that the selected device belongs to the authenticated user before creating the task.
 - Remote-device tasks are stored with `target_device_id`, but execution is intentionally blocked until the secure node command transport exists.
+- Spring forwards authenticated owner/device context to the AI Engine so LangGraph prompts and Agent Hub decision audit rows stay tied to the same user/device boundary.
 
 ## 8. Self-Healing Model
 When an approved script fails:

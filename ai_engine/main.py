@@ -6,7 +6,7 @@ managing the interaction between Intent Nodes, Direct Chat, and CrewAI Tools.
 """
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Dict, Any
 
 from core.config import settings
@@ -77,6 +77,9 @@ async def runtime_status(refresh_agent_hub: bool = False):
 class AnalyzeRequest(BaseModel):
     task_id: str | None = None
     thread_id: str = "default_thread_1" # Injected by Java Backend for isolated sessions
+    owner_id: str | None = None
+    target_device_id: int | None = None
+    device_context: Dict[str, Any] = Field(default_factory=dict)
     user_prompt: str
     metrics: Dict[str, Any]
 
@@ -97,6 +100,9 @@ async def analyze_system(request: AnalyzeRequest):
         # Prepare the state for the LangGraph execution
         initial_state = {
             "thread_id": request.thread_id,
+            "owner_id": request.owner_id,
+            "target_device_id": request.target_device_id,
+            "device_context": request.device_context or {"execution_mode": "local_backend"},
             "user_input": sanitized_prompt,
             "metrics": request.metrics,
             "os_type": request.metrics.get("osName", "Unknown OS"),
@@ -122,6 +128,7 @@ async def analyze_system(request: AnalyzeRequest):
         record_agent_decision_audit(
             task_id=request.task_id,
             thread_id=request.thread_id,
+            owner_id=request.owner_id,
             intent_key=current_intent,
             agent_slug=_agent_slug_for_route(selected_route.target_langgraph_node if selected_route else None),
             mcp_tools_used=final_state.get("mcp_tools_used", []),
@@ -133,6 +140,8 @@ async def analyze_system(request: AnalyzeRequest):
                 "target_langgraph_node": selected_route.target_langgraph_node if selected_route else None,
                 "script_proposed": bool(script and script != "NONE"),
                 "pending_count": len(final_state.get("task_queue", [])),
+                "target_device_id": request.target_device_id,
+                "device_context": request.device_context or {"execution_mode": "local_backend"},
             },
         )
         

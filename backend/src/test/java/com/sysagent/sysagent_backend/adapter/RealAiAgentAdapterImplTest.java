@@ -10,14 +10,18 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import com.sysagent.sysagent_backend.config.AiEngineProperties;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
+import com.sysagent.sysagent_backend.model.enums.DeviceType;
 
 @ExtendWith(MockitoExtension.class)
 class RealAiAgentAdapterImplTest {
@@ -45,11 +49,20 @@ class RealAiAgentAdapterImplTest {
                 "task-1",
                 "create note.txt then open it",
                 SystemMetricsDto.builder().osName("Windows 11").build(),
-                "thread-1");
+                "thread-1",
+                "user-1",
+                DeviceDto.builder().id(7L).name("Office PC").type(DeviceType.WINDOWS).status("online").build());
 
         assertThat(response.getTaskId()).isEqualTo("task-1");
         assertThat(response.getActiveStep()).isEqualTo("create note.txt on desktop");
         assertThat(response.getPendingCount()).isEqualTo(2);
         assertThat(response.getScript()).contains("New-Item");
+
+        ArgumentCaptor<HttpEntity<Map<String, Object>>> captor = ArgumentCaptor.forClass(HttpEntity.class);
+        org.mockito.Mockito.verify(restTemplate).postForEntity(eq("http://localhost:8001/analyze"), captor.capture(), eq(Map.class));
+        Map<String, Object> payload = captor.getValue().getBody();
+        assertThat(payload).containsEntry("owner_id", "user-1");
+        assertThat(payload).containsEntry("target_device_id", 7L);
+        assertThat((Map<String, Object>) payload.get("device_context")).containsEntry("execution_mode", "remote_device");
     }
 }
