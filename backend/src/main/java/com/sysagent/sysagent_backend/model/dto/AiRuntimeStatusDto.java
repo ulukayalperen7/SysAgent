@@ -87,6 +87,7 @@ public class AiRuntimeStatusDto {
                 .configuredBackend(stringValue(data.get("configured_backend"), "unknown"))
                 .activeBackend(stringValue(data.get("active_backend"), "unknown"))
                 .databaseUrlConfigured(booleanValue(data.get("database_url_configured")))
+                .detail(stringValue(data.get("detail"), null))
                 .build();
     }
 
@@ -214,6 +215,7 @@ public class AiRuntimeStatusDto {
         private String configuredBackend;
         private String activeBackend;
         private boolean databaseUrlConfigured;
+        private String detail;
     }
 
     @Data

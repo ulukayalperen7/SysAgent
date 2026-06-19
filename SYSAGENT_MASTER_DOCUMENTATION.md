@@ -128,6 +128,7 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Remote command transport uses node-token authenticated heartbeat, command polling, and result callback endpoints.
 - The first installable `sysagent-node` CLI package exists under `node_runtime`; packaging/service installation is the next runtime delivery step.
 - Remote command status is visible through owner-scoped task APIs and the Angular terminal/history surfaces refresh queued node work until completion or failure.
+- The Devices page can open the terminal with a selected target device and inspect owner-scoped task logs for each registered node.
 
 ## 8. Self-Healing Model
 When an approved script fails:
@@ -155,7 +156,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, and the first installable node runtime CLI are now in place; the next remote-access step is packaging it as a user-friendly background service.
+- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, and the first installable node runtime CLI are now in place; the next remote-access step is packaging it as a user-friendly background service.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:

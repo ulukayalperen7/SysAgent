@@ -1,8 +1,10 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { DeviceService, Device, DeviceRegistrationToken } from '../../services/device.service';
+import { TaskHistoryItem } from '../../models/task.model';
 
 @Component({
   selector: 'app-devices',
@@ -18,9 +20,14 @@ export class Devices implements OnInit {
   registrationLabel = '';
   registrationToken?: DeviceRegistrationToken;
   creatingToken = false;
+  selectedDevice?: Device;
+  deviceTasks: TaskHistoryItem[] = [];
+  loadingTasks = false;
+  taskErrorMessage = '';
 
   constructor(
     private deviceService: DeviceService,
+    private router: Router,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -62,5 +69,31 @@ export class Devices implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  openTerminal(device: Device) {
+    this.router.navigate(['/dashboard'], { queryParams: { deviceId: device.id } });
+  }
+
+  loadDeviceLogs(device: Device) {
+    this.selectedDevice = device;
+    this.loadingTasks = true;
+    this.taskErrorMessage = '';
+    this.deviceService.getDeviceTasks(device.id).subscribe({
+      next: tasks => {
+        this.deviceTasks = tasks;
+        this.loadingTasks = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.taskErrorMessage = err?.message || 'Device logs could not be loaded.';
+        this.loadingTasks = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  remoteState(task: TaskHistoryItem): string {
+    return task.remoteCommandStatus || (task.targetDeviceId ? 'PENDING' : 'LOCAL');
   }
 }

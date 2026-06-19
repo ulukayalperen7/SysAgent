@@ -63,9 +63,44 @@
             </div>
 
             <div class="card-footer">
-                <button class="btn-secondary btn-sm" disabled>Terminal</button>
-                <button class="btn-secondary btn-sm" disabled>Logs</button>
+                <button class="btn-secondary btn-sm" type="button" (click)="openTerminal(device)">Terminal</button>
+                <button class="btn-secondary btn-sm" type="button" (click)="loadDeviceLogs(device)">Logs</button>
             </div>
         </div>
     </div>
+
+    <section class="logs-panel" *ngIf="selectedDevice">
+        <div class="logs-header">
+            <div>
+                <h2>{{ selectedDevice.name }} Logs</h2>
+                <p>Recent owner-scoped tasks and remote command states for this node.</p>
+            </div>
+            <button class="btn-secondary btn-sm" type="button" (click)="loadDeviceLogs(selectedDevice)" [disabled]="loadingTasks">
+                {{ loadingTasks ? 'Refreshing...' : 'Refresh' }}
+            </button>
+        </div>
+
+        <div class="state-panel" *ngIf="loadingTasks">Loading device logs...</div>
+        <div class="state-panel error" *ngIf="taskErrorMessage">{{ taskErrorMessage }}</div>
+
+        <div class="logs-table" *ngIf="!loadingTasks && !taskErrorMessage">
+            <div class="log-row log-head">
+                <span>Task</span>
+                <span>Intent</span>
+                <span>Task Status</span>
+                <span>Remote</span>
+                <span>Time</span>
+            </div>
+            <div class="log-row" *ngFor="let task of deviceTasks">
+                <span class="mono">{{ task.id }}</span>
+                <span>{{ task.intent }}</span>
+                <span>{{ task.status }}</span>
+                <span class="remote-state" [ngClass]="remoteState(task).toLowerCase()">{{ remoteState(task) }}</span>
+                <span>{{ task.timestamp | date:'short' }}</span>
+            </div>
+            <div class="empty-logs" *ngIf="deviceTasks.length === 0">
+                No tasks have targeted this device yet.
+            </div>
+        </div>
+    </section>
 </div>

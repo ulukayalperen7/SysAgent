@@ -64,6 +64,7 @@
                 <h2>Checkpoint</h2>
                 <p>{{ status.checkpoint.configuredBackend }}</p>
                 <span class="meta-line">DB URL {{ status.checkpoint.databaseUrlConfigured ? 'configured' : 'not configured' }}</span>
+                <span class="meta-line" *ngIf="status.checkpoint.detail">{{ status.checkpoint.detail }}</span>
             </section>
 
             <section class="status-card" [class.bad]="!status.mcp.available">

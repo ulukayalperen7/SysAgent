@@ -47,6 +47,26 @@ class TaskServiceTest {
     }
 
     @Test
+    void getsTenantScopedDeviceTaskHistoryNewestFirstFromRepository() {
+        TaskEntity task = TaskEntity.builder()
+                .id("task-device-1")
+                .ownerId("test-user-1")
+                .targetDeviceId(42L)
+                .intent("open code")
+                .status(TaskStatus.IN_PROGRESS)
+                .timestamp(LocalDateTime.now())
+                .build();
+        when(taskRepository.findByOwnerIdAndTargetDeviceIdOrderByTimestampDesc("test-user-1", 42L))
+                .thenReturn(List.of(task));
+
+        List<TaskHistoryDto> history = taskService.getTaskHistoryByOwnerAndDevice("test-user-1", 42L);
+
+        assertThat(history).hasSize(1);
+        assertThat(history.get(0).getId()).isEqualTo("task-device-1");
+        assertThat(history.get(0).getTargetDeviceId()).isEqualTo(42L);
+    }
+
+    @Test
     void storesTargetDeviceWhenCreatingTask() {
         when(taskRepository.save(any(TaskEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

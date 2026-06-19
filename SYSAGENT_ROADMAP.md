@@ -514,3 +514,5 @@ Notes:
 - Hardened Auth/CORS for the June 20, 2026 remote-access path: configurable CORS whitelist, login/register rate limiting, and production startup checks for JWT secret/CORS wildcard safety.
 - Added the first installable `sysagent-node` Python CLI runtime with device registration, local token config, heartbeat, command polling, local execution, result callback, and focused config/executor tests.
 - Added owner-scoped remote command status APIs plus Angular terminal polling and History refresh so queued node commands progress through `QUEUED`, `CLAIMED`, `COMPLETED`, and `FAILED` without mock data.
+- Activated the Devices page action buttons: `Terminal` opens the dashboard with the selected device target, and `Logs` loads owner-scoped task history for that device.
+- Improved LangGraph checkpoint status reporting so Agent Hub shows whether PostgreSQL checkpointing is truly active, merely configured, or falling back to memory.

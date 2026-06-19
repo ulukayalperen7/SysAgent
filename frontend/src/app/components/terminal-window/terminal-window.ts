@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild, AfterViewChecked, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AgentService } from '../../services/agent.service';
 import { TerminalService, TerminalLog } from '../../services/terminal.service';
 import { Device, DeviceService } from '../../services/device.service';
@@ -42,6 +43,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
     private agentService: AgentService,
     private deviceService: DeviceService,
     private taskService: TaskService,
+    private route: ActivatedRoute,
     private terminalService: TerminalService,
     private cdr: ChangeDetectorRef
   ) { }
@@ -394,6 +396,7 @@ Please analyze the exact error, generate a corrected minimal script for the same
     this.deviceService.getDevices().subscribe({
       next: devices => {
         this.devices = devices;
+        this.applyDeviceFromRoute();
       },
       error: err => {
         this.terminalService.addLog({
@@ -402,6 +405,27 @@ Please analyze the exact error, generate a corrected minimal script for the same
           type: 'error'
         });
       }
+    });
+  }
+
+  private applyDeviceFromRoute(): void {
+    const rawDeviceId = this.route.snapshot.queryParamMap.get('deviceId');
+    if (!rawDeviceId) {
+      return;
+    }
+    const deviceId = Number(rawDeviceId);
+    if (!Number.isFinite(deviceId)) {
+      return;
+    }
+    const exists = this.devices.some(device => device.id === deviceId);
+    if (!exists || this.selectedDeviceId === deviceId) {
+      return;
+    }
+    this.selectedDeviceId = deviceId;
+    this.terminalService.addLog({
+      sender: 'system',
+      text: `Target changed to ${this.getSelectedDeviceName()}.`,
+      type: 'info'
     });
   }
 

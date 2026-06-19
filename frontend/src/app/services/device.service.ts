@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiResponse } from '../models/api-response.model';
 import { environment } from '../../environments/environment';
+import { TaskHistoryItem } from '../models/task.model';
 
 export interface Device {
     id: number;
@@ -50,6 +51,21 @@ export class DeviceService {
             }),
             catchError(error => {
                 console.error('DeviceService: Error creating registration token', error);
+                throw error;
+            })
+        );
+    }
+
+    getDeviceTasks(deviceId: number): Observable<TaskHistoryItem[]> {
+        return this.http.get<ApiResponse<TaskHistoryItem[]>>(`${this.apiUrl}/${deviceId}/tasks`).pipe(
+            map(response => {
+                if (response.status !== 'SUCCESS' || !response.data) {
+                    throw new Error(response.message || 'Device task history could not be loaded.');
+                }
+                return response.data;
+            }),
+            catchError(error => {
+                console.error('DeviceService: Error loading device tasks', error);
                 throw error;
             })
         );

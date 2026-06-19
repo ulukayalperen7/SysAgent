@@ -20,4 +20,6 @@ public interface TaskRepository extends JpaRepository<TaskEntity, String> {
     List<TaskEntity> findByOwnerId(String ownerId);
 
     List<TaskEntity> findByOwnerIdOrderByTimestampDesc(String ownerId);
+
+    List<TaskEntity> findByOwnerIdAndTargetDeviceIdOrderByTimestampDesc(String ownerId, Long targetDeviceId);
 }

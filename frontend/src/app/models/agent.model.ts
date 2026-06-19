@@ -45,6 +45,7 @@ export interface CheckpointSummary {
     configuredBackend: string;
     activeBackend: string;
     databaseUrlConfigured: boolean;
+    detail?: string | null;
 }
 
 export interface McpSummary {

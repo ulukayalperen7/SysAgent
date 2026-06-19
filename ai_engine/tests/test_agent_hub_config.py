@@ -132,6 +132,7 @@ class AgentHubConfigTests(unittest.TestCase):
         self.assertEqual(status["configured_backend"], "postgres")
         self.assertEqual(status["active_backend"], "memory")
         self.assertEqual(status["database_url_configured"], "False")
+        self.assertIn("no database URL", status["detail"])
 
     def test_checkpoint_status_reports_postgres_when_configured(self):
         with patch.object(settings, "langgraph_checkpoint_backend", "postgres"), patch.object(
@@ -139,8 +140,9 @@ class AgentHubConfigTests(unittest.TestCase):
         ):
             status = checkpoint_status()
 
-        self.assertEqual(status["active_backend"], "postgres")
+        self.assertEqual(status["configured_backend"], "postgres")
         self.assertEqual(status["database_url_configured"], "True")
+        self.assertIn("configured", status["detail"])
 
 
 if __name__ == "__main__":

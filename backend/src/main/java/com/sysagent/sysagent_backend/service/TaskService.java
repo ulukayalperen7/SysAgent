@@ -51,6 +51,13 @@ public class TaskService {
                 .map(TaskHistoryDto::fromEntity)
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<TaskHistoryDto> getTaskHistoryByOwnerAndDevice(String ownerId, Long deviceId) {
+        return taskRepository.findByOwnerIdAndTargetDeviceIdOrderByTimestampDesc(ownerId, deviceId).stream()
+                .map(TaskHistoryDto::fromEntity)
+                .toList();
+    }
     
     @Transactional(readOnly = true)
     public TaskEntity getTaskById(String taskId) {
