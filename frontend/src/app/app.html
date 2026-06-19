@@ -1,5 +1,5 @@
 <div class="app-shell sidebar-layout">
-  <aside class="sidebar">
+  <aside class="sidebar" *ngIf="authService.isAuthenticated()">
     <a routerLink="/home" class="brand" style="text-decoration: none; cursor: pointer;">
       <div class="brand-icon">SA</div>
       <div class="brand-text">
@@ -26,6 +26,14 @@
         <lucide-icon name="history" class="icon"></lucide-icon> Logs / History
       </a>
     </nav>
+
+    <div class="sidebar-user">
+      <div>
+        <span class="user-name">{{ authService.currentUser?.displayName || authService.currentUser?.email }}</span>
+        <span class="user-email">{{ authService.currentUser?.email }}</span>
+      </div>
+      <button type="button" (click)="logout()">Logout</button>
+    </div>
   </aside>
 
   <main class="app-main">

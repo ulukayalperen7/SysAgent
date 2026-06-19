@@ -25,17 +25,19 @@ Core mission:
 - `Database` (Supabase/PostgreSQL): persistence for tasks, status, scripts, and audit history.
 - `MCP Layer`: standardized capability access for safe read-only tools first.
 - `Agent Hub`: database-backed runtime configuration for agents, intent routes, MCP permissions, risk policies, prompt versions, device scopes, and decision audit.
+- `Auth Layer`: JWT login/register with PBKDF2 password hashing and server-side owner scoping.
 
 ## 4. Data Flow
 1. User sends intent from terminal UI.
-2. Backend creates a task record in Supabase.
-3. Backend collects current host metrics.
-4. Backend sends prompt + metrics + thread/session metadata to AI Engine.
-5. LangGraph decomposes, routes, and returns explanation + optional script.
-6. Backend stores generated script (if present).
-7. User approves script in UI for non-autonomous actions.
-8. Backend executes script and returns output.
-9. Failures are fed back into self-healing loop when appropriate.
+2. Frontend sends the JWT bearer token with the request.
+3. Backend resolves the authenticated user and creates an owner-scoped task record in Supabase.
+4. Backend collects current host metrics.
+5. Backend sends prompt + metrics + thread/session metadata to AI Engine.
+6. LangGraph decomposes, routes, and returns explanation + optional script.
+7. Backend stores generated script (if present).
+8. User approves script in UI for non-autonomous actions.
+9. Backend revalidates execution policy, executes the script, and returns structured output.
+10. Failures are fed back into self-healing loop when appropriate.
 
 ## 5. LangGraph: How It Works
 LangGraph is the orchestration brain.
@@ -109,6 +111,14 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
   - Backend execution-policy revalidation before any approved script runs.
 - Unknown intents should default to safer handling.
 
+## 7.1 Auth and Device Ownership
+- Users register/login through the Spring Boot API.
+- Passwords are hashed with PBKDF2; plaintext passwords are never stored.
+- API requests use JWT bearer tokens.
+- Owner IDs are resolved server-side from the authenticated token.
+- Devices are registered to a user through short-lived one-time registration tokens.
+- The current node registration flow creates the ownership record; full remote node runtime and command transport are still a later phase.
+
 ## 8. Self-Healing Model
 When an approved script fails:
 - Execution error is returned by backend.
@@ -152,7 +162,7 @@ This makes behavior traceable and production-ready.
 3. Add a semantic MCP tool planner so tool selection is not limited to keyword and regex matching.
 4. Bind Agent Hub prompt versions into runtime prompt construction.
 5. Add an evaluation suite for read-only routing, risky approval gates, multi-step queues, Turkish/English commands, and self-healing.
-6. Keep Auth, remote access, and automations behind the core reliability work.
+6. Build remote node runtime, secure command transport, and automation execution only after Auth/device ownership is stable.
 
 ## 13. Framework Posture
 Current core framework choices:

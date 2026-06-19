@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import {
@@ -8,11 +9,13 @@ import {
   Workflow,
   History
 } from 'lucide-angular';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
+    CommonModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
@@ -22,5 +25,9 @@ import {
   styleUrl: './app.scss'
 })
 export class App {
-  // Root shell for SysAgent
+  constructor(public authService: AuthService) { }
+
+  logout(): void {
+    this.authService.logout();
+  }
 }

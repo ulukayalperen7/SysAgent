@@ -1,0 +1,34 @@
+<div class="auth-page">
+  <section class="auth-panel">
+    <div class="brand-mark">SA</div>
+    <h1>{{ mode === 'login' ? 'Sign in to SysAgent' : 'Create your SysAgent account' }}</h1>
+    <p>{{ mode === 'login' ? 'Access your registered machines and agent workflows.' : 'Register securely before pairing your first machine.' }}</p>
+
+    <form (ngSubmit)="submit()">
+      <label *ngIf="mode === 'register'">
+        Display name
+        <input name="displayName" [(ngModel)]="displayName" autocomplete="name">
+      </label>
+
+      <label>
+        Email
+        <input name="email" type="email" [(ngModel)]="email" autocomplete="email" required>
+      </label>
+
+      <label>
+        Password
+        <input name="password" type="password" [(ngModel)]="password" autocomplete="current-password" minlength="8" required>
+      </label>
+
+      <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Please wait...' : (mode === 'login' ? 'Sign in' : 'Create account') }}
+      </button>
+    </form>
+
+    <button class="mode-link" type="button" (click)="toggleMode()">
+      {{ mode === 'login' ? 'Need an account? Register' : 'Already registered? Sign in' }}
+    </button>
+  </section>
+</div>

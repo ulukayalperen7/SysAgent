@@ -16,6 +16,12 @@ export interface Device {
     lastSeen?: string; // Added to match backend
 }
 
+export interface DeviceRegistrationToken {
+    token: string;
+    expiresAt: string;
+    bootstrapCommand: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -29,6 +35,21 @@ export class DeviceService {
             map(response => response.data ?? []),
             catchError(error => {
                 console.error('DeviceService: Error fetching devices', error);
+                throw error;
+            })
+        );
+    }
+
+    createRegistrationToken(label: string): Observable<DeviceRegistrationToken> {
+        return this.http.post<ApiResponse<DeviceRegistrationToken>>(`${this.apiUrl}/registration-token`, { label }).pipe(
+            map(response => {
+                if (response.status !== 'SUCCESS' || !response.data) {
+                    throw new Error(response.message || 'Device registration token could not be created.');
+                }
+                return response.data;
+            }),
+            catchError(error => {
+                console.error('DeviceService: Error creating registration token', error);
                 throw error;
             })
         );

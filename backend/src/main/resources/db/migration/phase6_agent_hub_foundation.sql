@@ -1,5 +1,26 @@
 create extension if not exists pgcrypto;
 
+create table if not exists app_users (
+    id text primary key default gen_random_uuid()::text,
+    email text not null unique,
+    password_hash text not null,
+    display_name text,
+    status text not null default 'active' check (status in ('active', 'disabled', 'deleted')),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    last_login_at timestamptz
+);
+
+create table if not exists device_registration_tokens (
+    id uuid primary key default gen_random_uuid(),
+    owner_id text not null references app_users(id) on delete cascade,
+    token_hash text not null unique,
+    label text,
+    expires_at timestamptz not null,
+    used_at timestamptz,
+    created_at timestamptz not null default now()
+);
+
 create table if not exists agent_profiles (
     id uuid primary key default gen_random_uuid(),
     slug text not null unique,
@@ -166,6 +187,13 @@ create table if not exists automation_rules (
 );
 
 create index if not exists idx_agent_profiles_owner_status on agent_profiles(owner_id, status);
+create index if not exists idx_app_users_email on app_users(email);
+create index if not exists idx_device_registration_tokens_owner on device_registration_tokens(owner_id, expires_at);
+alter table if exists device_registration_tokens
+    drop constraint if exists fk_device_registration_tokens_owner;
+alter table if exists device_registration_tokens
+    add constraint fk_device_registration_tokens_owner
+    foreign key (owner_id) references app_users(id) on delete cascade;
 create index if not exists idx_agent_intent_routes_key_enabled on agent_intent_routes(intent_key, enabled, priority);
 create index if not exists idx_agent_decision_audit_task on agent_decision_audit(task_id);
 create index if not exists idx_agent_decision_audit_thread on agent_decision_audit(thread_id);

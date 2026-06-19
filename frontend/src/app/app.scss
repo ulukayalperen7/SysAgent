@@ -107,6 +107,47 @@
       margin: 1rem 0.5rem;
     }
   }
+
+  .sidebar-user {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .user-name,
+    .user-email {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-name {
+      color: #e6edf3;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .user-email {
+      color: #8b949e;
+      font-size: 0.75rem;
+    }
+
+    button {
+      height: 34px;
+      border: 1px solid #30363d;
+      background: transparent;
+      color: #8b949e;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      color: #e6edf3;
+      border-color: #58a6ff;
+    }
+  }
 }
 
 .app-main {

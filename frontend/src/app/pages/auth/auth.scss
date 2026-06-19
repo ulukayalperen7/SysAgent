@@ -1,0 +1,94 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #010409;
+  color: #e6edf3;
+  padding: 24px;
+}
+
+.auth-panel {
+  width: min(420px, 100%);
+  border: 1px solid #30363d;
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 28px;
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #58a6ff;
+    color: #010409;
+    font-weight: 800;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 1.45rem;
+  }
+
+  p {
+    margin: 0 0 22px;
+    color: #8b949e;
+    line-height: 1.5;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #c9d1d9;
+    font-size: 0.88rem;
+  }
+
+  input {
+    height: 42px;
+    border: 1px solid #30363d;
+    background: #010409;
+    color: #e6edf3;
+    border-radius: 6px;
+    padding: 0 12px;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: #58a6ff;
+  }
+
+  button {
+    height: 42px;
+    border: 0;
+    border-radius: 6px;
+    background: #238636;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .mode-link {
+    margin-top: 14px;
+    background: transparent;
+    color: #58a6ff;
+    border: 1px solid #30363d;
+  }
+
+  .error {
+    color: #ff8080;
+    font-size: 0.86rem;
+  }
+}

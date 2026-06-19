@@ -4,9 +4,20 @@
             <h1 class="page-title">Connected Devices</h1>
             <p class="page-subtitle">Manage and monitor your local OS nodes</p>
         </div>
-        <button class="btn-primary" disabled title="Pairing will be enabled with Auth and remote access hardening">
-            Add New Device
+        <button class="btn-primary" (click)="createRegistrationToken()" [disabled]="creatingToken">
+            {{ creatingToken ? 'Creating...' : 'Add New Device' }}
         </button>
+    </div>
+
+    <div class="registration-panel">
+        <label>
+            Node label
+            <input [(ngModel)]="registrationLabel" placeholder="Work laptop, lab PC, server..." />
+        </label>
+        <div class="token-box" *ngIf="registrationToken">
+            <span>Registration token expires at {{ registrationToken.expiresAt | date:'short' }}</span>
+            <code>{{ registrationToken.bootstrapCommand }}</code>
+        </div>
     </div>
 
     <div class="state-panel" *ngIf="loading">Loading devices...</div>

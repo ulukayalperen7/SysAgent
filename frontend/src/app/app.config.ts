@@ -1,15 +1,16 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { LucideAngularModule, TerminalSquare, Cpu, PackageSearch, Workflow, History, Search, Monitor, Laptop, Server, Copy, FolderSearch, Blocks, ScanSearch, ShieldCheck, Download, FolderOpen, Clock, Zap } from 'lucide-angular';
 
 import { routes } from './app.routes';
+import { authInterceptor } from './services/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({
         TerminalSquare,

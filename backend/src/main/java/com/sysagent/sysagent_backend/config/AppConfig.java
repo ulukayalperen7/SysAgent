@@ -11,7 +11,7 @@ import org.springframework.web.client.RestTemplate;
  * Defines shared beans like RestTemplate for HTTP calls to the AI Engine.
  */
 @Configuration
-@EnableConfigurationProperties(AiEngineProperties.class)
+@EnableConfigurationProperties({AiEngineProperties.class, AuthProperties.class})
 public class AppConfig {
 
     @Bean
