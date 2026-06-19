@@ -46,6 +46,8 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         return path.startsWith("/api/auth/login")
                 || path.startsWith("/api/auth/register")
                 || path.startsWith("/api/node/register")
+                || path.startsWith("/api/node/heartbeat")
+                || path.startsWith("/api/node/commands")
                 || path.startsWith("/error");
     }
 }

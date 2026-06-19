@@ -120,6 +120,8 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Terminal requests can carry an optional target device ID; backend validates that the selected device belongs to the authenticated user before creating the task.
 - Remote-device tasks are stored with `target_device_id`, but execution is intentionally blocked until the secure node command transport exists.
 - Spring forwards authenticated owner/device context to the AI Engine so LangGraph prompts and Agent Hub decision audit rows stay tied to the same user/device boundary.
+- Node registration now returns a one-time node runtime token; only its hash is stored.
+- Remote command transport uses node-token authenticated heartbeat, command polling, and result callback endpoints.
 
 ## 8. Self-Healing Model
 When an approved script fails:
@@ -147,7 +149,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth, owner scoping, and device ownership are now in place; the next remote-access step is secure node transport, not direct script execution over an untrusted shortcut.
+- Auth, owner scoping, device ownership, and the backend node command queue are now in place; the next remote-access step is the actual installable node runtime.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:
@@ -164,7 +166,7 @@ This makes behavior traceable and production-ready.
 3. Add a semantic MCP tool planner so tool selection is not limited to keyword and regex matching.
 4. Bind Agent Hub prompt versions into runtime prompt construction.
 5. Add an evaluation suite for read-only routing, risky approval gates, multi-step queues, Turkish/English commands, and self-healing.
-6. Build remote node runtime, secure command transport, and automation execution only after Auth/device ownership is stable.
+6. Build the installable remote node runtime that calls the existing heartbeat, command polling, and result callback endpoints.
 
 ## 13. Framework Posture
 Current core framework choices:

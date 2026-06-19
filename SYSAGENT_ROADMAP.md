@@ -510,3 +510,4 @@ Notes:
 - Added authenticated device registration-token generation plus a public node registration endpoint that binds a machine to the token owner.
 - Added target-device task binding: terminal requests can select a registered device, backend validates ownership, and remote execution is blocked until secure node transport is implemented.
 - Added owner/device context propagation from Spring to the AI Engine so LangGraph prompts and Agent Hub audit metadata can reason about the selected execution target.
+- Added the first secure remote-node transport foundation: node token hash storage, heartbeat, command polling, result callback, remote command queue persistence, and frontend queued-state handling.

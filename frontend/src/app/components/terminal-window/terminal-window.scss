@@ -71,15 +71,13 @@
 
   .terminal-body {
     flex: 1;
-    padding: 1rem 1.25rem;
     overflow-y: auto;
-    background-color: #010409;
     padding: 15px;
     background: rgba(13, 17, 23, 0.4);
     backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
-    gap: 12px; // Space between log entries
+    gap: 12px;
 
     .log-entry {
       animation: fadeIn 0.3s ease-in-out;
@@ -201,6 +199,10 @@
 
       &.success {
         color: #7ee787;
+      }
+
+      &.queued {
+        color: #79c0ff;
       }
 
       &.error {

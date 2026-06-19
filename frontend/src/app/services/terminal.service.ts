@@ -11,6 +11,7 @@ export interface TerminalLog {
     targetDeviceName?: string;
     executing?: boolean;
     executed?: boolean; // Track if the action was successfully performed
+    queued?: boolean;
     failed?: boolean;   // Track if the execution failed (for self-healing UI State)
     pendingCount?: number; // Number of tasks remaining in the queue
 }

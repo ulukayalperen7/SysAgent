@@ -42,6 +42,7 @@ def run_crewai_diagnostics_node(state: AgentState):
         
     # Serialize metrics to string to pass to CrewAI prompt safely
     metrics_context = state.get("metrics", {})
+    os_name = _target_os_name(state)
     summarized_metrics = (
         f"CPU: {metrics_context.get('cpuUsage', 0)}%, "
         f"RAM: {metrics_context.get('ramUsage', 0)}%, "
@@ -53,7 +54,7 @@ def run_crewai_diagnostics_node(state: AgentState):
         "metrics": summarized_metrics,
         "user_prompt": state["user_input"],
         "history": history_str,
-        "os_type": state.get("os_type", "Unknown OS"),
+        "os_type": os_name,
         "target_context": target_context,
     }
     
@@ -71,7 +72,7 @@ def generate_action_script_node(state: AgentState):
     """
     Generates OS-specific scripts for actionable intents and runs them through SecurityGuardian.
     """
-    os_name = state.get("os_type", "Unknown OS")
+    os_name = _target_os_name(state)
     intent = state.get("current_intent", "UNKNOWN")
 
     # Prefer deterministic proposals for common terminal operations. This keeps
@@ -214,6 +215,18 @@ def _format_target_context(state: AgentState) -> str:
         status = context.get("status") or "unknown"
         return f"Remote device '{name}' ({device_type}, status={status})."
     return "Local backend host."
+
+
+def _target_os_name(state: AgentState) -> str:
+    context = state.get("device_context") or {}
+    device_type = str(context.get("type") or "").upper()
+    if device_type == "WINDOWS":
+        return "Windows"
+    if device_type == "LINUX":
+        return "Linux"
+    if device_type == "MACOS":
+        return "macOS"
+    return state.get("os_type", "Unknown OS")
 
 def execute_safe_action_node(state: AgentState):
     """

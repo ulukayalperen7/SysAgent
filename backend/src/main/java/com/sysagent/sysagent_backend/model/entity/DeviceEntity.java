@@ -65,6 +65,17 @@ public class DeviceEntity {
     private LocalDateTime lastSeen;
 
     /**
+     * Hash of the node runtime token returned once during registration.
+     * The raw token is never stored.
+     */
+    private String nodeTokenHash;
+
+    /**
+     * Optional version string reported by the installed node runtime.
+     */
+    private String nodeVersion;
+
+    /**
      * The ID of the user who owns this device.
      * This is crucial for multi-tenant support (e.g., Ahmet only sees his own devices).
      */

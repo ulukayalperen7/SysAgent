@@ -149,6 +149,17 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         // Use the backend's explicit status — not string matching on output content
         if (response.status === 'SUCCESS') {
           logEntry.executed = true; // Hide button, show green badge
+          const remoteQueued = response.data?.status === 'IN_PROGRESS'
+            && response.data?.output === 'REMOTE_COMMAND_QUEUED';
+          if (remoteQueued) {
+            logEntry.queued = true;
+            this.terminalService.addLog({
+              sender: 'system',
+              text: 'Remote command queued. The node will poll, execute, and report the result.',
+              type: 'success'
+            });
+            return;
+          }
 
           // Only resume if the API told us there are pending tasks in the queue
           const hasPendingTasks = (logEntry.pendingCount ?? 0) > 0;

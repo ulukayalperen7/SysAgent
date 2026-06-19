@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
 import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.dto.TaskExecutionResponseDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.security.ScriptPolicyValidator;
 import com.sysagent.sysagent_backend.service.DeviceService;
+import com.sysagent.sysagent_backend.service.NodeCommandService;
 import com.sysagent.sysagent_backend.service.TaskService;
 import com.sysagent.sysagent_backend.service.ScriptExecutionService;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
@@ -36,6 +38,7 @@ public class TaskController {
     private final CurrentUserProvider currentUserProvider;
     private final ScriptPolicyValidator scriptPolicyValidator;
     private final DeviceService deviceService;
+    private final NodeCommandService nodeCommandService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskHistoryDto>>> getTaskHistory() {
@@ -64,26 +67,6 @@ public class TaskController {
                     .build());
         }
 
-        if (task.getTargetDeviceId() != null) {
-            try {
-                deviceService.getOwnedDevice(task.getTargetDeviceId(), currentUserProvider.getCurrentUserId());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.status(403).body(ApiResponse.<TaskExecutionResponseDto>builder()
-                        .status("ERROR")
-                        .message(e.getMessage())
-                        .build());
-            }
-            return ResponseEntity.status(501).body(ApiResponse.<TaskExecutionResponseDto>builder()
-                    .status("ERROR")
-                    .message("Remote device execution transport is not enabled yet. The task is safely stored but was not executed.")
-                    .data(TaskExecutionResponseDto.builder()
-                            .taskId(taskId)
-                            .status(task.getStatus().name())
-                            .error("REMOTE_EXECUTION_NOT_ENABLED")
-                            .build())
-                    .build());
-        }
-
         // Guard: prevent re-executing a task that already ran
         if (task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.FAILED) {
             return ResponseEntity.badRequest().body(ApiResponse.<TaskExecutionResponseDto>builder()
@@ -92,7 +75,19 @@ public class TaskController {
                     .build());
         }
 
+        DeviceDto targetDevice = null;
         String osName = System.getProperty("os.name", "unknown");
+        if (task.getTargetDeviceId() != null) {
+            try {
+                targetDevice = deviceService.getOwnedDevice(task.getTargetDeviceId(), currentUserProvider.getCurrentUserId());
+                osName = targetDevice.getType() == null ? osName : targetDevice.getType().name();
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(403).body(ApiResponse.<TaskExecutionResponseDto>builder()
+                        .status("ERROR")
+                        .message(e.getMessage())
+                        .build());
+            }
+        }
         ScriptPolicyValidator.PolicyDecision policy = scriptPolicyValidator.validate(task.getScript(), osName);
         if (!policy.allowed()) {
             tryUpdateStatus(taskId, TaskStatus.FAILED);
@@ -103,6 +98,26 @@ public class TaskController {
                             .taskId(taskId)
                             .status(TaskStatus.FAILED.name())
                             .error(policy.reason())
+                            .build())
+                    .build());
+        }
+
+        if (task.getTargetDeviceId() != null) {
+            try {
+                nodeCommandService.enqueue(task);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(400).body(ApiResponse.<TaskExecutionResponseDto>builder()
+                        .status("ERROR")
+                        .message(e.getMessage())
+                        .build());
+            }
+            return ResponseEntity.ok(ApiResponse.<TaskExecutionResponseDto>builder()
+                    .status("SUCCESS")
+                    .message("Remote command queued for the selected device.")
+                    .data(TaskExecutionResponseDto.builder()
+                            .taskId(taskId)
+                            .status(TaskStatus.IN_PROGRESS.name())
+                            .output("REMOTE_COMMAND_QUEUED")
                             .build())
                     .build());
         }

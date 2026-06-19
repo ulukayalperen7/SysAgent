@@ -29,12 +29,12 @@
       <div *ngIf="log.script && !log.executed" class="script-container">
         <div class="script-target">Target: {{ log.targetDeviceName || 'Local backend' }}</div>
         <pre class="script-block">{{ log.script }}</pre>
-        <button class="btn-execute" *ngIf="log.taskId" [disabled]="log.executing || isRemoteLog(log)" (click)="executeScript(log)">
-          {{ isRemoteLog(log) ? 'Remote run pending node transport' : (log.executing ? 'Executing...' : 'Approve & Run locally') }}
+        <button class="btn-execute" *ngIf="log.taskId" [disabled]="log.executing" (click)="executeScript(log)">
+          {{ isRemoteLog(log) ? (log.executing ? 'Queuing...' : 'Approve & Queue remote') : (log.executing ? 'Executing...' : 'Approve & Run locally') }}
         </button>
       </div>
-      <div *ngIf="log.executed" class="execution-badge" [ngClass]="log.failed ? 'error' : 'success'">
-        {{ log.failed ? 'Action failed. Corrected proposal generated.' : 'Action completed successfully.' }}
+      <div *ngIf="log.executed" class="execution-badge" [ngClass]="log.failed ? 'error' : (log.queued ? 'queued' : 'success')">
+        {{ log.failed ? 'Action failed. Corrected proposal generated.' : (log.queued ? 'Remote command queued for node execution.' : 'Action completed successfully.') }}
       </div>
     </div>
   </div>

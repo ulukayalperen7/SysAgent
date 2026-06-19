@@ -197,6 +197,24 @@ alter table if exists tasks
 alter table if exists tasks
     add constraint fk_tasks_target_device
     foreign key (target_device_id) references devices(id) on delete set null;
+alter table if exists devices
+    add column if not exists node_token_hash text,
+    add column if not exists node_version text;
+create table if not exists node_commands (
+    id uuid primary key default gen_random_uuid(),
+    task_id text not null references tasks(id) on delete cascade,
+    device_id bigint not null references devices(id) on delete cascade,
+    owner_id text not null,
+    script text not null,
+    status text not null default 'QUEUED' check (status in ('QUEUED', 'CLAIMED', 'COMPLETED', 'FAILED')),
+    output text,
+    error text,
+    created_at timestamptz not null default now(),
+    claimed_at timestamptz,
+    completed_at timestamptz
+);
+create index if not exists idx_node_commands_device_status on node_commands(device_id, status, created_at);
+create index if not exists idx_node_commands_task on node_commands(task_id);
 alter table if exists device_registration_tokens
     drop constraint if exists fk_device_registration_tokens_owner;
 alter table if exists device_registration_tokens

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.sysagent.sysagent_backend.model.dto.DeviceNodeRegistrationRequestDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceRegistrationTokenResponseDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
+import com.sysagent.sysagent_backend.model.dto.NodeRegistrationResponseDto;
 import com.sysagent.sysagent_backend.model.entity.DeviceEntity;
 import com.sysagent.sysagent_backend.model.entity.DeviceRegistrationTokenEntity;
 import com.sysagent.sysagent_backend.model.enums.DeviceType;
@@ -64,7 +65,7 @@ public class DeviceService {
                 .build();
     }
 
-    public DeviceDto registerNode(DeviceNodeRegistrationRequestDto request, String fallbackIpAddress) {
+    public NodeRegistrationResponseDto registerNode(DeviceNodeRegistrationRequestDto request, String fallbackIpAddress) {
         if (request.getToken() == null || request.getToken().isBlank()) {
             throw new IllegalArgumentException("Registration token is required.");
         }
@@ -81,6 +82,7 @@ public class DeviceService {
         String name = cleanDeviceName(request.getName());
         DeviceType type = request.getType() == null ? DeviceType.WINDOWS : request.getType();
         String ipAddress = cleanIp(request.getIpAddress(), fallbackIpAddress);
+        String nodeToken = tokenHashingService.newPlainToken();
         DeviceEntity device = deviceRepository.findByOwnerIdAndName(token.getOwnerId(), name)
                 .orElse(DeviceEntity.builder()
                         .ownerId(token.getOwnerId())
@@ -92,11 +94,16 @@ public class DeviceService {
         device.setType(type);
         device.setStatus("online");
         device.setLastSeen(LocalDateTime.now());
+        device.setNodeTokenHash(tokenHashingService.hash(nodeToken));
         DeviceEntity saved = deviceRepository.save(device);
 
         token.setUsedAt(LocalDateTime.now());
         registrationTokenRepository.save(token);
-        return mapToDto(saved);
+        return NodeRegistrationResponseDto.builder()
+                .device(mapToDto(saved))
+                .nodeToken(nodeToken)
+                .heartbeatIntervalSeconds(30)
+                .build();
     }
 
     private DeviceDto mapToDto(DeviceEntity entity) {
