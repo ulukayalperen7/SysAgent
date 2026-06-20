@@ -132,6 +132,7 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Node desktop context is now part of the remote-device foundation: the node can submit active-window/process metadata and a bounded screenshot snapshot; the backend stores it owner-scoped and the Devices page can preview the latest context.
 - Screen images are not blindly persisted through AI state. For screen-context requests, the backend may include the latest bounded screenshot, AI Engine summarizes it into text with a vision-capable model when enabled, and raw base64 is removed before LangGraph state and Agent Hub audit metadata.
 - GUI actions are introduced only as approval-gated script proposals. The first foundation supports Windows click/type helpers that can use the latest active process/window context, but they still flow through Angular approval, backend policy validation, task audit, and the node command queue.
+- After each queued remote command, the node runtime attempts a fresh desktop context snapshot so the UI and later AI steps can reason from the latest observed state rather than waiting for the periodic context interval.
 
 ## 8. Self-Healing Model
 When an approved script fails:

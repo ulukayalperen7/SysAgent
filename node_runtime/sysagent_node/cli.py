@@ -148,6 +148,7 @@ def _poll_once(cfg: NodeConfig) -> int:
         "output": result.get("output"),
         "error": result.get("error"),
     })
+    _submit_context_after_command(cfg)
     print("Result submitted.")
     return 0 if result["success"] else 2
 
@@ -173,6 +174,13 @@ def _run(cfg: NodeConfig, poll_interval: int, context_interval: int) -> int:
     except KeyboardInterrupt:
         print("Stopped.")
         return 0
+
+
+def _submit_context_after_command(cfg: NodeConfig) -> None:
+    try:
+        _submit_context(cfg)
+    except (ApiError, OSError, ValueError) as exc:
+        print(f"Post-command desktop context warning: {exc}", file=sys.stderr)
 
 
 def _service_install(path: Path | None, poll_interval: int, context_interval: int, apply: bool) -> int:

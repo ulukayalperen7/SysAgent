@@ -525,3 +525,4 @@ Notes:
 - Hardened screen-context observability and dependency safety by lazy-loading vision dependencies, exposing screen vision settings in runtime status, and documenting that raw screenshots are converted to bounded text summaries before LangGraph/audit storage.
 - Added the first approval-gated GUI action proposal foundation for Windows remote nodes: screen-context-aware click/type script proposals can focus the latest active process, click explicit coordinates or active-window center, and type bounded text through the existing Angular approval, backend policy, and node command queue path.
 - Added automatic desktop context retention pruning so each owner/device keeps only the latest bounded snapshot history instead of growing Supabase storage indefinitely.
+- Added post-command desktop context refresh in the node runtime so GUI actions and remote scripts produce a fresh best-effort screenshot/context snapshot after result callback.
