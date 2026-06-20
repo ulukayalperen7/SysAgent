@@ -518,3 +518,5 @@ Notes:
 - Improved LangGraph checkpoint status reporting so Agent Hub shows whether PostgreSQL checkpointing is truly active, merely configured, or falling back to memory.
 - Added real node heartbeat CPU/RAM persistence so the Devices page no longer has to show placeholder metrics for registered runtimes.
 - Added cross-platform `sysagent-node service-install/service-uninstall` planning for Windows Scheduled Task, Linux systemd user service, and macOS LaunchAgent, with explicit `--apply` for execution.
+- Added the first desktop context foundation for remote nodes: node-token-protected snapshot submission, owner-scoped latest context API, active-window/process metadata, bounded screenshot storage, and Devices page preview.
+- Propagated lightweight screen context summaries into the AI Engine payload for selected remote devices without embedding large screenshot payloads in every analysis request.

@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "SysAgent remote node runtime"
 requires-python = ">=3.11"
 dependencies = [
+    "pillow>=10,<12",
     "psutil>=5.9,<8",
 ]
 

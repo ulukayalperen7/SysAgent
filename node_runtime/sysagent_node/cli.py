@@ -8,6 +8,7 @@ from pathlib import Path
 
 from sysagent_node import __version__
 from sysagent_node.config import NodeConfig, config_path, load_config, save_config
+from sysagent_node.desktop_context import collect_desktop_context
 from sysagent_node.executor import execute_script
 from sysagent_node.http_client import ApiError, SysAgentApi
 from sysagent_node.metrics import collect_metrics
@@ -31,16 +32,23 @@ def main(argv: list[str] | None = None) -> int:
     heartbeat = subcommands.add_parser("heartbeat")
     heartbeat.add_argument("--config", type=Path)
 
+    context = subcommands.add_parser("context")
+    context.add_argument("--config", type=Path)
+    context.add_argument("--no-screenshot", action="store_true")
+    context.add_argument("--max-width", type=int, default=1280)
+
     poll = subcommands.add_parser("poll-once")
     poll.add_argument("--config", type=Path)
 
     run = subcommands.add_parser("run")
     run.add_argument("--config", type=Path)
     run.add_argument("--poll-interval", type=int, default=3)
+    run.add_argument("--context-interval", type=int, default=120)
 
     service_install = subcommands.add_parser("service-install")
     service_install.add_argument("--config", type=Path)
     service_install.add_argument("--poll-interval", type=int, default=3)
+    service_install.add_argument("--context-interval", type=int, default=120)
     service_install.add_argument("--apply", action="store_true")
 
     service_uninstall = subcommands.add_parser("service-uninstall")
@@ -57,14 +65,19 @@ def main(argv: list[str] | None = None) -> int:
             _heartbeat(cfg)
             print("Heartbeat accepted.")
             return 0
+        if args.command == "context":
+            cfg = load_config(args.config)
+            _submit_context(cfg, include_screenshot=not args.no_screenshot, max_width=args.max_width)
+            print("Desktop context accepted.")
+            return 0
         if args.command == "poll-once":
             cfg = load_config(args.config)
             return _poll_once(cfg)
         if args.command == "run":
             cfg = load_config(args.config)
-            return _run(cfg, args.poll_interval)
+            return _run(cfg, args.poll_interval, args.context_interval)
         if args.command == "service-install":
-            return _service_install(args.config, args.poll_interval, args.apply)
+            return _service_install(args.config, args.poll_interval, args.context_interval, args.apply)
         if args.command == "service-uninstall":
             return _service_uninstall(args.apply)
     except (ApiError, FileNotFoundError, KeyError, ValueError, OSError) as exc:
@@ -111,6 +124,13 @@ def _heartbeat(cfg: NodeConfig) -> None:
     api.heartbeat(payload)
 
 
+def _submit_context(cfg: NodeConfig, include_screenshot: bool = True, max_width: int = 1280) -> None:
+    api = SysAgentApi(cfg.server_url, cfg.node_token)
+    payload = collect_desktop_context(include_screenshot=include_screenshot, max_width=max_width)
+    payload["deviceId"] = cfg.device_id
+    api.submit_context(payload)
+
+
 def _poll_once(cfg: NodeConfig) -> int:
     api = SysAgentApi(cfg.server_url, cfg.node_token)
     command = api.next_command(cfg.device_id)
@@ -132,8 +152,9 @@ def _poll_once(cfg: NodeConfig) -> int:
     return 0 if result["success"] else 2
 
 
-def _run(cfg: NodeConfig, poll_interval: int) -> int:
+def _run(cfg: NodeConfig, poll_interval: int, context_interval: int) -> int:
     next_heartbeat = 0.0
+    next_context = 0.0
     print(f"SysAgent node running for device {cfg.device_id}. Press Ctrl+C to stop.")
     try:
         while True:
@@ -141,6 +162,12 @@ def _run(cfg: NodeConfig, poll_interval: int) -> int:
             if now >= next_heartbeat:
                 _heartbeat(cfg)
                 next_heartbeat = now + cfg.heartbeat_interval_seconds
+            if context_interval > 0 and now >= next_context:
+                try:
+                    _submit_context(cfg)
+                except (ApiError, OSError, ValueError) as exc:
+                    print(f"Desktop context warning: {exc}", file=sys.stderr)
+                next_context = now + max(30, context_interval)
             _poll_once(cfg)
             time.sleep(max(1, poll_interval))
     except KeyboardInterrupt:
@@ -148,8 +175,8 @@ def _run(cfg: NodeConfig, poll_interval: int) -> int:
         return 0
 
 
-def _service_install(path: Path | None, poll_interval: int, apply: bool) -> int:
-    plan = create_install_plan(path, poll_interval, apply=apply)
+def _service_install(path: Path | None, poll_interval: int, context_interval: int, apply: bool) -> int:
+    plan = create_install_plan(path, poll_interval, context_interval, apply=apply)
     print(f"Service file written to {plan.path}.")
     for command in plan.commands:
         print(f"Run: {command}")

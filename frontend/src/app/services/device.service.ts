@@ -23,6 +23,20 @@ export interface DeviceRegistrationToken {
     bootstrapCommand: string;
 }
 
+export interface DeviceContextSnapshot {
+    id: string;
+    deviceId: number;
+    activeWindowTitle?: string | null;
+    activeProcessName?: string | null;
+    screenWidth?: number | null;
+    screenHeight?: number | null;
+    screenshotMimeType?: string | null;
+    screenshotBase64?: string | null;
+    metadataJson?: string | null;
+    capturedAt?: string | null;
+    createdAt?: string | null;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -66,6 +80,16 @@ export class DeviceService {
             }),
             catchError(error => {
                 console.error('DeviceService: Error loading device tasks', error);
+                throw error;
+            })
+        );
+    }
+
+    getLatestDeviceContext(deviceId: number): Observable<DeviceContextSnapshot | null> {
+        return this.http.get<ApiResponse<DeviceContextSnapshot | null>>(`${this.apiUrl}/${deviceId}/context/latest`).pipe(
+            map(response => response.data ?? null),
+            catchError(error => {
+                console.error('DeviceService: Error loading device context', error);
                 throw error;
             })
         );

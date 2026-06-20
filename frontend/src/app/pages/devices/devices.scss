@@ -310,6 +310,41 @@ $border-color: #30363d;
     overflow: hidden;
 }
 
+.context-panel {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    background: #010409;
+
+    .context-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        color: $text-muted;
+        font-size: 0.82rem;
+
+        strong {
+            color: $text-primary;
+        }
+    }
+
+    img {
+        width: 100%;
+        max-height: 360px;
+        object-fit: contain;
+        border: 1px solid $border-color;
+        border-radius: 6px;
+        background: #000;
+    }
+}
+
+.error-text {
+    color: #ff7b72;
+}
+
 .log-row {
     display: grid;
     grid-template-columns: 1.1fr 1.7fr 0.8fr 0.8fr 0.9fr;

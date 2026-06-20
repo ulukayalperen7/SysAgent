@@ -14,7 +14,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -30,6 +29,7 @@ import com.sysagent.sysagent_backend.model.enums.NodeCommandStatus;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
 import com.sysagent.sysagent_backend.repository.DeviceRepository;
 import com.sysagent.sysagent_backend.repository.NodeCommandRepository;
+import com.sysagent.sysagent_backend.security.NodeDeviceAuthService;
 import com.sysagent.sysagent_backend.security.TokenHashingService;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,12 +46,11 @@ class NodeCommandServiceTest {
 
     private final TokenHashingService tokenHashingService = new TokenHashingService();
 
-    @InjectMocks
     private NodeCommandService nodeCommandService;
 
     @Test
     void queuesClaimsAndCompletesRemoteCommandWithNodeToken() {
-        nodeCommandService = new NodeCommandService(deviceRepository, nodeCommandRepository, tokenHashingService, taskService);
+        nodeCommandService = service();
         String nodeToken = "node-token";
         DeviceEntity device = device(nodeToken);
         TaskEntity task = TaskEntity.builder()
@@ -95,7 +94,7 @@ class NodeCommandServiceTest {
 
     @Test
     void rejectsInvalidNodeToken() {
-        nodeCommandService = new NodeCommandService(deviceRepository, nodeCommandRepository, tokenHashingService, taskService);
+        nodeCommandService = service();
         when(deviceRepository.findById(10L)).thenReturn(Optional.of(device("correct-token")));
 
         assertThatThrownBy(() -> nodeCommandService.claimNextCommand("wrong-token", 10L))
@@ -105,7 +104,7 @@ class NodeCommandServiceTest {
 
     @Test
     void rejectsQueueWhenDeviceOwnerDoesNotMatchTaskOwner() {
-        nodeCommandService = new NodeCommandService(deviceRepository, nodeCommandRepository, tokenHashingService, taskService);
+        nodeCommandService = service();
         when(deviceRepository.findById(10L)).thenReturn(Optional.of(device("correct-token")));
         TaskEntity task = TaskEntity.builder()
                 .id("task-2")
@@ -121,7 +120,7 @@ class NodeCommandServiceTest {
 
     @Test
     void returnsOwnerScopedCommandStatusesWithoutScriptBody() {
-        nodeCommandService = new NodeCommandService(deviceRepository, nodeCommandRepository, tokenHashingService, taskService);
+        nodeCommandService = service();
         NodeCommandEntity command = NodeCommandEntity.builder()
                 .id(UUID.randomUUID())
                 .taskId("task-3")
@@ -148,7 +147,7 @@ class NodeCommandServiceTest {
 
     @Test
     void recordsHeartbeatMetricsWithinSafeBounds() {
-        nodeCommandService = new NodeCommandService(deviceRepository, nodeCommandRepository, tokenHashingService, taskService);
+        nodeCommandService = service();
         DeviceEntity device = device("node-token");
         when(deviceRepository.findById(10L)).thenReturn(Optional.of(device));
         when(deviceRepository.save(any(DeviceEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -179,5 +178,13 @@ class NodeCommandServiceTest {
                 .nodeTokenHash(tokenHashingService.hash(plainToken))
                 .lastSeen(LocalDateTime.now())
                 .build();
+    }
+
+    private NodeCommandService service() {
+        return new NodeCommandService(
+                deviceRepository,
+                nodeCommandRepository,
+                new NodeDeviceAuthService(deviceRepository, tokenHashingService),
+                taskService);
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceRegistrationTokenRequestDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceRegistrationTokenResponseDto;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandStatusDto;
@@ -21,6 +22,7 @@ import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.service.DeviceService;
+import com.sysagent.sysagent_backend.service.DeviceContextService;
 import com.sysagent.sysagent_backend.service.NodeCommandService;
 import com.sysagent.sysagent_backend.service.TaskService;
 
@@ -39,6 +41,7 @@ public class DeviceController {
     private final CurrentUserProvider currentUserProvider;
     private final TaskService taskService;
     private final NodeCommandService nodeCommandService;
+    private final DeviceContextService deviceContextService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<DeviceDto>>> getConnectedDevices() {
@@ -63,6 +66,14 @@ public class DeviceController {
                 .message("Device task history fetched successfully")
                 .data(tasks)
                 .build());
+    }
+
+    @GetMapping("/{id}/context/latest")
+    public ResponseEntity<ApiResponse<DeviceContextSnapshotDto>> getLatestDeviceContext(@PathVariable("id") Long deviceId) {
+        String ownerId = currentUserProvider.getCurrentUserId();
+        deviceService.getOwnedDevice(deviceId, ownerId);
+        DeviceContextSnapshotDto latest = deviceContextService.getLatestForOwner(deviceId, ownerId).orElse(null);
+        return ResponseEntity.ok(ApiResponse.success(latest, "Latest device context fetched successfully"));
     }
 
     @PostMapping("/registration-token")

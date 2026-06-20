@@ -8,7 +8,7 @@ This package is the small runtime installed on a user machine so the SysAgent we
 2. User runs `sysagent-node register --server <backend-url> --token <registration-token>`.
 3. The backend returns a device id and one-time node runtime token.
 4. The runtime stores the token locally in `~/.sysagent-node/config.json`.
-5. `sysagent-node run` sends heartbeat, polls queued commands, executes approved scripts locally, and posts results back.
+5. `sysagent-node run` sends heartbeat, submits desktop context snapshots, polls queued commands, executes approved scripts locally, and posts results back.
 6. For always-on access, `sysagent-node service-install` writes the platform service definition and shows the install command.
 
 ## Commands
@@ -25,6 +25,7 @@ Then register and run:
 sysagent-node register --server http://localhost:8080 --token <registration-token>
 sysagent-node status
 sysagent-node heartbeat
+sysagent-node context
 sysagent-node poll-once
 sysagent-node run
 ```
@@ -55,4 +56,4 @@ python -m sysagent_node.cli status
 python -m unittest discover -s tests -q
 ```
 
-The runtime stores the backend-issued node token in `~/.sysagent-node/config.json`. Keep that file private. Heartbeats include basic CPU/RAM usage when `psutil` is available. The runtime has a local denylist for critical destructive command patterns, but the main approval and audit boundary remains the Spring backend.
+The runtime stores the backend-issued node token in `~/.sysagent-node/config.json`. Keep that file private. Heartbeats include basic CPU/RAM usage when `psutil` is available. Desktop context includes active window metadata and a downscaled screenshot when the OS allows capture; use `sysagent-node context --no-screenshot` or `sysagent-node run --context-interval 0` to disable screenshot submission. The runtime has a local denylist for critical destructive command patterns, but the main approval and audit boundary remains the Spring backend.

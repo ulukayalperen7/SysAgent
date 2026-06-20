@@ -20,15 +20,20 @@ class ServicePlan:
     commands: list[str]
 
 
-def create_install_plan(config: Path | None, poll_interval: int, apply: bool = False) -> ServicePlan:
+def create_install_plan(
+    config: Path | None,
+    poll_interval: int,
+    context_interval: int,
+    apply: bool = False,
+) -> ServicePlan:
     cfg = config or config_path()
     system = platform.system().lower()
     if system == "windows":
-        plan = _windows_install_plan(cfg, poll_interval)
+        plan = _windows_install_plan(cfg, poll_interval, context_interval)
     elif system == "darwin":
-        plan = _macos_install_plan(cfg, poll_interval)
+        plan = _macos_install_plan(cfg, poll_interval, context_interval)
     else:
-        plan = _linux_install_plan(cfg, poll_interval)
+        plan = _linux_install_plan(cfg, poll_interval, context_interval)
 
     if apply:
         _run_commands(plan.commands)
@@ -49,7 +54,7 @@ def create_uninstall_plan(apply: bool = False) -> ServicePlan:
     return plan
 
 
-def _python_module_command(config: Path, poll_interval: int) -> str:
+def _python_module_command(config: Path, poll_interval: int, context_interval: int) -> str:
     return " ".join([
         shlex.quote(sys.executable),
         "-m",
@@ -59,14 +64,16 @@ def _python_module_command(config: Path, poll_interval: int) -> str:
         shlex.quote(str(config)),
         "--poll-interval",
         str(max(1, poll_interval)),
+        "--context-interval",
+        str(max(0, context_interval)),
     ])
 
 
-def _linux_install_plan(config: Path, poll_interval: int) -> ServicePlan:
+def _linux_install_plan(config: Path, poll_interval: int, context_interval: int) -> ServicePlan:
     unit_dir = Path.home() / ".config" / "systemd" / "user"
     unit_path = unit_dir / "sysagent-node.service"
     unit_dir.mkdir(parents=True, exist_ok=True)
-    unit_path.write_text(systemd_unit(config, poll_interval), encoding="utf-8")
+    unit_path.write_text(systemd_unit(config, poll_interval, context_interval), encoding="utf-8")
     return ServicePlan(
         unit_path,
         [
@@ -87,11 +94,11 @@ def _linux_uninstall_plan() -> ServicePlan:
     )
 
 
-def _macos_install_plan(config: Path, poll_interval: int) -> ServicePlan:
+def _macos_install_plan(config: Path, poll_interval: int, context_interval: int) -> ServicePlan:
     agents_dir = Path.home() / "Library" / "LaunchAgents"
     plist_path = agents_dir / f"{MACOS_LABEL}.plist"
     agents_dir.mkdir(parents=True, exist_ok=True)
-    plist_path.write_text(launchd_plist(config, poll_interval), encoding="utf-8")
+    plist_path.write_text(launchd_plist(config, poll_interval, context_interval), encoding="utf-8")
     uid = os.getuid() if hasattr(os, "getuid") else "$(id -u)"
     return ServicePlan(
         plist_path,
@@ -115,11 +122,11 @@ def _macos_uninstall_plan() -> ServicePlan:
     )
 
 
-def _windows_install_plan(config: Path, poll_interval: int) -> ServicePlan:
+def _windows_install_plan(config: Path, poll_interval: int, context_interval: int) -> ServicePlan:
     script_dir = Path(os.getenv("APPDATA") or Path.home() / "AppData" / "Roaming") / "SysAgentNode"
     script_path = script_dir / "install-service.ps1"
     script_dir.mkdir(parents=True, exist_ok=True)
-    script_path.write_text(windows_install_script(config, poll_interval), encoding="utf-8")
+    script_path.write_text(windows_install_script(config, poll_interval, context_interval), encoding="utf-8")
     return ServicePlan(
         script_path,
         [
@@ -141,7 +148,7 @@ def _windows_uninstall_plan() -> ServicePlan:
     )
 
 
-def systemd_unit(config: Path, poll_interval: int) -> str:
+def systemd_unit(config: Path, poll_interval: int, context_interval: int) -> str:
     return f"""[Unit]
 Description=SysAgent Node Runtime
 After=network-online.target
@@ -149,7 +156,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart={_python_module_command(config, poll_interval)}
+ExecStart={_python_module_command(config, poll_interval, context_interval)}
 Restart=always
 RestartSec=5
 
@@ -158,7 +165,7 @@ WantedBy=default.target
 """
 
 
-def launchd_plist(config: Path, poll_interval: int) -> str:
+def launchd_plist(config: Path, poll_interval: int, context_interval: int) -> str:
     args = [
         sys.executable,
         "-m",
@@ -168,6 +175,8 @@ def launchd_plist(config: Path, poll_interval: int) -> str:
         str(config),
         "--poll-interval",
         str(max(1, poll_interval)),
+        "--context-interval",
+        str(max(0, context_interval)),
     ]
     arg_items = "\n".join(f"        <string>{_xml_escape(arg)}</string>" for arg in args)
     return f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -190,8 +199,11 @@ def launchd_plist(config: Path, poll_interval: int) -> str:
 """
 
 
-def windows_install_script(config: Path, poll_interval: int) -> str:
-    arguments = f'-m sysagent_node.cli run --config "{config}" --poll-interval {max(1, poll_interval)}'
+def windows_install_script(config: Path, poll_interval: int, context_interval: int) -> str:
+    arguments = (
+        f'-m sysagent_node.cli run --config "{config}" '
+        f"--poll-interval {max(1, poll_interval)} --context-interval {max(0, context_interval)}"
+    )
     return f"""$ErrorActionPreference = "Stop"
 $taskName = "{WINDOWS_TASK_NAME}"
 $action = New-ScheduledTaskAction -Execute "{sys.executable}" -Argument '{arguments}'

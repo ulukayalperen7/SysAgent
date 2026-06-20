@@ -82,6 +82,18 @@
 
         <div class="state-panel" *ngIf="loadingTasks">Loading device logs...</div>
         <div class="state-panel error" *ngIf="taskErrorMessage">{{ taskErrorMessage }}</div>
+        <div class="context-panel">
+            <div class="context-meta">
+                <strong>Desktop Context</strong>
+                <span *ngIf="loadingContext">Loading...</span>
+                <span *ngIf="!loadingContext && latestContext?.capturedAt">
+                    {{ latestContext?.activeProcessName || 'Unknown app' }} · {{ latestContext?.capturedAt | date:'shortTime' }}
+                </span>
+                <span *ngIf="!loadingContext && latestContext === null">No context has been submitted yet.</span>
+                <span class="error-text" *ngIf="contextErrorMessage">{{ contextErrorMessage }}</span>
+            </div>
+            <img *ngIf="contextImageSrc() as imageSrc" [src]="imageSrc" alt="Latest desktop context screenshot" />
+        </div>
 
         <div class="logs-table" *ngIf="!loadingTasks && !taskErrorMessage">
             <div class="log-row log-head">

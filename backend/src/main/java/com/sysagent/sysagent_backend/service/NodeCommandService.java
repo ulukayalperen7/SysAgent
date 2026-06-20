@@ -19,7 +19,7 @@ import com.sysagent.sysagent_backend.model.enums.NodeCommandStatus;
 import com.sysagent.sysagent_backend.model.enums.TaskStatus;
 import com.sysagent.sysagent_backend.repository.DeviceRepository;
 import com.sysagent.sysagent_backend.repository.NodeCommandRepository;
-import com.sysagent.sysagent_backend.security.TokenHashingService;
+import com.sysagent.sysagent_backend.security.NodeDeviceAuthService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,7 +29,7 @@ public class NodeCommandService {
 
     private final DeviceRepository deviceRepository;
     private final NodeCommandRepository nodeCommandRepository;
-    private final TokenHashingService tokenHashingService;
+    private final NodeDeviceAuthService nodeDeviceAuthService;
     private final TaskService taskService;
 
     @Transactional
@@ -56,7 +56,7 @@ public class NodeCommandService {
 
     @Transactional
     public void recordHeartbeat(String nodeToken, NodeHeartbeatRequestDto request, String fallbackIpAddress) {
-        DeviceEntity device = authenticateDevice(request.getDeviceId(), nodeToken);
+        DeviceEntity device = nodeDeviceAuthService.authenticateDevice(request.getDeviceId(), nodeToken);
         if (request.getHostname() != null && !request.getHostname().isBlank()) {
             device.setName(clean(request.getHostname(), 120));
         }
@@ -78,7 +78,7 @@ public class NodeCommandService {
 
     @Transactional
     public Optional<NodeCommandDto> claimNextCommand(String nodeToken, Long deviceId) {
-        authenticateDevice(deviceId, nodeToken);
+        nodeDeviceAuthService.authenticateDevice(deviceId, nodeToken);
         Optional<NodeCommandEntity> next = nodeCommandRepository
                 .findFirstByDeviceIdAndStatusOrderByCreatedAtAsc(deviceId, NodeCommandStatus.QUEUED);
         if (next.isEmpty()) {
@@ -105,7 +105,7 @@ public class NodeCommandService {
 
     @Transactional
     public void recordCommandResult(String nodeToken, String commandId, NodeCommandResultRequestDto request) {
-        DeviceEntity device = authenticateDevice(request.getDeviceId(), nodeToken);
+        DeviceEntity device = nodeDeviceAuthService.authenticateDevice(request.getDeviceId(), nodeToken);
         UUID id = parseCommandId(commandId);
         NodeCommandEntity command = nodeCommandRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Command not found."));
@@ -126,18 +126,6 @@ public class NodeCommandService {
                 command.getTaskId(),
                 request.isSuccess() ? TaskStatus.COMPLETED : TaskStatus.FAILED,
                 null);
-    }
-
-    private DeviceEntity authenticateDevice(Long deviceId, String nodeToken) {
-        DeviceEntity device = requireDevice(deviceId);
-        String expectedHash = device.getNodeTokenHash();
-        if (expectedHash == null || expectedHash.isBlank() || nodeToken == null || nodeToken.isBlank()) {
-            throw new IllegalArgumentException("Invalid node token.");
-        }
-        if (!expectedHash.equals(tokenHashingService.hash(nodeToken))) {
-            throw new IllegalArgumentException("Invalid node token.");
-        }
-        return device;
     }
 
     private DeviceEntity requireDevice(Long deviceId) {

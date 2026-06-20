@@ -2,6 +2,7 @@ package com.sysagent.sysagent_backend.adapter;
 
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
@@ -12,7 +13,8 @@ public interface AiAgentAdapter {
             SystemMetricsDto metrics,
             String threadId,
             String ownerId,
-            DeviceDto targetDevice);
+            DeviceDto targetDevice,
+            DeviceContextSnapshotDto targetContext);
 
     AiRuntimeStatusDto getRuntimeStatus();
 }

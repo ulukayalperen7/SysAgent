@@ -15,6 +15,7 @@ import com.sysagent.sysagent_backend.model.dto.AgentIntentRequestDto;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.AgentProfileDto;
 import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
@@ -24,6 +25,7 @@ import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.security.PromptSanitizer;
 import com.sysagent.sysagent_backend.service.AgentHubService;
 import com.sysagent.sysagent_backend.service.DeviceService;
+import com.sysagent.sysagent_backend.service.DeviceContextService;
 import com.sysagent.sysagent_backend.service.SystemMetricsService;
 import com.sysagent.sysagent_backend.service.TaskService;
 
@@ -43,6 +45,7 @@ public class AgentController {
     private final AgentHubService agentHubService;
     private final CurrentUserProvider currentUserProvider;
     private final DeviceService deviceService;
+    private final DeviceContextService deviceContextService;
 
     @GetMapping("/runtime-status")
     public ResponseEntity<ApiResponse<AiRuntimeStatusDto>> getRuntimeStatus() {
@@ -74,9 +77,11 @@ public class AgentController {
         String ownerId = currentUserProvider.getCurrentUserId();
         Long targetDeviceId = request.getDeviceId();
         DeviceDto targetDevice = null;
+        DeviceContextSnapshotDto targetContext = null;
         if (targetDeviceId != null) {
             try {
                 targetDevice = deviceService.getOwnedDevice(targetDeviceId, ownerId);
+                targetContext = deviceContextService.getLatestForOwner(targetDeviceId, ownerId).orElse(null);
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(ApiResponse.error(e.getMessage()));
@@ -110,7 +115,8 @@ public class AgentController {
                 currentMetrics,
                 threadId,
                 ownerId,
-                targetDevice);
+                targetDevice,
+                targetContext);
         if (response.getActiveStep() != null && !response.getActiveStep().isBlank()
                 && !response.getActiveStep().equals(sanitizedIntent)) {
             tryUpdateTaskIntent(task.getId(), response.getActiveStep());

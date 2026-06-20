@@ -26,6 +26,9 @@ class SysAgentApi:
     def heartbeat(self, payload: dict[str, Any]) -> None:
         self._post("/api/node/heartbeat", payload, auth=True)
 
+    def submit_context(self, payload: dict[str, Any]) -> None:
+        self._post("/api/node/context", payload, auth=True)
+
     def next_command(self, device_id: int) -> dict[str, Any] | None:
         query = parse.urlencode({"deviceId": device_id})
         response = self._get(f"/api/node/commands/next?{query}", auth=True)

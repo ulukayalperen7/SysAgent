@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import com.sysagent.sysagent_backend.config.AiEngineProperties;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
@@ -37,7 +38,8 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             SystemMetricsDto metrics,
             String threadId,
             String ownerId,
-            DeviceDto targetDevice) {
+            DeviceDto targetDevice,
+            DeviceContextSnapshotDto targetContext) {
         log.info("Analyzing intent for task: {}", taskId);
 
         // --- Defense-in-depth: Java-side Security Checks ---
@@ -62,7 +64,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         requestPayload.put("thread_id", threadId);
         requestPayload.put("owner_id", ownerId);
         requestPayload.put("target_device_id", targetDevice == null ? null : targetDevice.getId());
-        requestPayload.put("device_context", buildDeviceContext(targetDevice));
+        requestPayload.put("device_context", buildDeviceContext(targetDevice, targetContext));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -163,7 +165,9 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         return value.isEmpty() ? null : value;
     }
 
-    private static Map<String, Object> buildDeviceContext(DeviceDto targetDevice) {
+    private static Map<String, Object> buildDeviceContext(
+            DeviceDto targetDevice,
+            DeviceContextSnapshotDto targetContext) {
         Map<String, Object> context = new LinkedHashMap<>();
         context.put("execution_mode", targetDevice == null ? "local_backend" : "remote_device");
         if (targetDevice == null) {
@@ -174,6 +178,16 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         context.put("type", targetDevice.getType() == null ? null : targetDevice.getType().name());
         context.put("status", targetDevice.getStatus());
         context.put("last_seen", targetDevice.getLastSeen() == null ? null : targetDevice.getLastSeen().toString());
+        if (targetContext != null) {
+            Map<String, Object> screenContext = new LinkedHashMap<>();
+            screenContext.put("captured_at", targetContext.getCapturedAt() == null ? null : targetContext.getCapturedAt().toString());
+            screenContext.put("active_window_title", targetContext.getActiveWindowTitle());
+            screenContext.put("active_process_name", targetContext.getActiveProcessName());
+            screenContext.put("screen_width", targetContext.getScreenWidth());
+            screenContext.put("screen_height", targetContext.getScreenHeight());
+            screenContext.put("has_screenshot", targetContext.getScreenshotBase64() != null && !targetContext.getScreenshotBase64().isBlank());
+            context.put("screen_context", screenContext);
+        }
         return context;
     }
 

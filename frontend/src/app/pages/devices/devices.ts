@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { DeviceService, Device, DeviceRegistrationToken } from '../../services/device.service';
+import { DeviceService, Device, DeviceRegistrationToken, DeviceContextSnapshot } from '../../services/device.service';
 import { TaskHistoryItem } from '../../models/task.model';
 
 @Component({
@@ -24,6 +24,9 @@ export class Devices implements OnInit {
   deviceTasks: TaskHistoryItem[] = [];
   loadingTasks = false;
   taskErrorMessage = '';
+  latestContext?: DeviceContextSnapshot | null;
+  loadingContext = false;
+  contextErrorMessage = '';
 
   constructor(
     private deviceService: DeviceService,
@@ -78,7 +81,10 @@ export class Devices implements OnInit {
   loadDeviceLogs(device: Device) {
     this.selectedDevice = device;
     this.loadingTasks = true;
+    this.loadingContext = true;
     this.taskErrorMessage = '';
+    this.contextErrorMessage = '';
+    this.latestContext = undefined;
     this.deviceService.getDeviceTasks(device.id).subscribe({
       next: tasks => {
         this.deviceTasks = tasks;
@@ -91,9 +97,28 @@ export class Devices implements OnInit {
         this.cdr.detectChanges();
       }
     });
+    this.deviceService.getLatestDeviceContext(device.id).subscribe({
+      next: context => {
+        this.latestContext = context;
+        this.loadingContext = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.contextErrorMessage = err?.message || 'Desktop context could not be loaded.';
+        this.loadingContext = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   remoteState(task: TaskHistoryItem): string {
     return task.remoteCommandStatus || (task.targetDeviceId ? 'PENDING' : 'LOCAL');
+  }
+
+  contextImageSrc(): string | null {
+    if (!this.latestContext?.screenshotBase64 || !this.latestContext.screenshotMimeType) {
+      return null;
+    }
+    return `data:${this.latestContext.screenshotMimeType};base64,${this.latestContext.screenshotBase64}`;
   }
 }

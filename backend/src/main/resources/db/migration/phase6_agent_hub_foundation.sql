@@ -217,6 +217,43 @@ create table if not exists node_commands (
 );
 create index if not exists idx_node_commands_device_status on node_commands(device_id, status, created_at);
 create index if not exists idx_node_commands_task on node_commands(task_id);
+create table if not exists device_context_snapshots (
+    id uuid primary key default gen_random_uuid(),
+    device_id bigint not null references devices(id) on delete cascade,
+    owner_id text not null,
+    active_window_title text,
+    active_process_name text,
+    screen_width integer,
+    screen_height integer,
+    screenshot_mime_type text,
+    screenshot_base64 text,
+    metadata_json text not null default '{}',
+    captured_at timestamptz not null default now(),
+    created_at timestamptz not null default now()
+);
+alter table if exists device_context_snapshots
+    add column if not exists metadata_json text not null default '{}',
+    add column if not exists captured_at timestamptz not null default now(),
+    add column if not exists created_at timestamptz not null default now();
+update device_context_snapshots
+set
+    metadata_json = coalesce(metadata_json, '{}'),
+    captured_at = coalesce(captured_at, now()),
+    created_at = coalesce(created_at, now());
+alter table if exists device_context_snapshots
+    alter column metadata_json set default '{}',
+    alter column metadata_json set not null,
+    alter column captured_at set default now(),
+    alter column captured_at set not null,
+    alter column created_at set default now(),
+    alter column created_at set not null;
+alter table if exists device_context_snapshots
+    drop constraint if exists fk_device_context_snapshots_device;
+alter table if exists device_context_snapshots
+    add constraint fk_device_context_snapshots_device
+    foreign key (device_id) references devices(id) on delete cascade;
+create index if not exists idx_device_context_snapshots_device_owner_created
+    on device_context_snapshots(device_id, owner_id, created_at desc);
 alter table if exists device_registration_tokens
     drop constraint if exists fk_device_registration_tokens_owner;
 alter table if exists device_registration_tokens

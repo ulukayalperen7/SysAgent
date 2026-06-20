@@ -12,12 +12,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sysagent.sysagent_backend.model.dto.DeviceNodeRegistrationRequestDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
+import com.sysagent.sysagent_backend.model.dto.NodeDesktopContextRequestDto;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandDto;
 import com.sysagent.sysagent_backend.model.dto.NodeCommandResultRequestDto;
 import com.sysagent.sysagent_backend.model.dto.NodeHeartbeatRequestDto;
 import com.sysagent.sysagent_backend.model.dto.NodeRegistrationResponseDto;
 import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.service.DeviceService;
+import com.sysagent.sysagent_backend.service.DeviceContextService;
 import com.sysagent.sysagent_backend.service.NodeCommandService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +33,7 @@ public class NodeRegistrationController {
 
     private final DeviceService deviceService;
     private final NodeCommandService nodeCommandService;
+    private final DeviceContextService deviceContextService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<NodeRegistrationResponseDto>> registerNode(
@@ -53,6 +57,18 @@ public class NodeRegistrationController {
             return ResponseEntity.ok(ApiResponse.success("Heartbeat accepted"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/context")
+    public ResponseEntity<ApiResponse<DeviceContextSnapshotDto>> desktopContext(
+            @RequestHeader("X-SysAgent-Node-Token") String nodeToken,
+            @RequestBody NodeDesktopContextRequestDto request) {
+        try {
+            DeviceContextSnapshotDto snapshot = deviceContextService.recordSnapshot(nodeToken, request);
+            return ResponseEntity.ok(ApiResponse.success(snapshot, "Desktop context accepted"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
         }
     }
 

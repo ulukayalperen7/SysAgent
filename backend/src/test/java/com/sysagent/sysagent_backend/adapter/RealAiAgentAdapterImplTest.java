@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.sysagent.sysagent_backend.config.AiEngineProperties;
 import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
+import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 import com.sysagent.sysagent_backend.model.enums.DeviceType;
@@ -51,7 +52,14 @@ class RealAiAgentAdapterImplTest {
                 SystemMetricsDto.builder().osName("Windows 11").build(),
                 "thread-1",
                 "user-1",
-                DeviceDto.builder().id(7L).name("Office PC").type(DeviceType.WINDOWS).status("online").build());
+                DeviceDto.builder().id(7L).name("Office PC").type(DeviceType.WINDOWS).status("online").build(),
+                DeviceContextSnapshotDto.builder()
+                        .activeWindowTitle("Postman")
+                        .activeProcessName("Postman.exe")
+                        .screenWidth(1920)
+                        .screenHeight(1080)
+                        .screenshotBase64("abc")
+                        .build());
 
         assertThat(response.getTaskId()).isEqualTo("task-1");
         assertThat(response.getActiveStep()).isEqualTo("create note.txt on desktop");
@@ -63,6 +71,10 @@ class RealAiAgentAdapterImplTest {
         Map<String, Object> payload = captor.getValue().getBody();
         assertThat(payload).containsEntry("owner_id", "user-1");
         assertThat(payload).containsEntry("target_device_id", 7L);
-        assertThat((Map<String, Object>) payload.get("device_context")).containsEntry("execution_mode", "remote_device");
+        Map<String, Object> deviceContext = (Map<String, Object>) payload.get("device_context");
+        assertThat(deviceContext).containsEntry("execution_mode", "remote_device");
+        assertThat((Map<String, Object>) deviceContext.get("screen_context"))
+                .containsEntry("active_process_name", "Postman.exe")
+                .containsEntry("has_screenshot", true);
     }
 }
