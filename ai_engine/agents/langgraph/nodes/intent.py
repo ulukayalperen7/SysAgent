@@ -77,6 +77,7 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
         "open ", "launch ", "start ", "close ", "kill ", "quit ",
         "next song", "next track", "previous song", "play pause",
         " ac", "ac ", "kapat", "sonlandir", "sarki", "calistir", "baslat",
+        "click", "tikla", "tıkla", "type ", "send keys", "write into", "klavyeden yaz",
     )
     devops_write_terms = ("uninstall", "npm install", "pip install", "docker restart", "git push", "winget", "yukle", "kur", "kaldir")
     devops_read_terms = ("git status", "git durum", "docker ps", "docker containers", "running containers", "npm scripts", "package.json scripts")
@@ -96,6 +97,8 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
         return "DEVOPS_WRITE"
     if any(term in lower for term in devops_read_terms):
         return "DEVOPS_READ"
+    if any(term in lower for term in ("click", "tikla", "tıkla", "type ", "send keys", "write into", "klavyeden yaz")):
+        return "APP_CONTROL"
     if any(term in lower for term in write_terms):
         return "FILE_SYSTEM_WRITE"
     if any(term in lower for term in app_terms):

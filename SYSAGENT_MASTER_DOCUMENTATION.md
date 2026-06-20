@@ -131,6 +131,7 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - The Devices page can open the terminal with a selected target device and inspect owner-scoped task logs for each registered node.
 - Node desktop context is now part of the remote-device foundation: the node can submit active-window/process metadata and a bounded screenshot snapshot; the backend stores it owner-scoped and the Devices page can preview the latest context.
 - Screen images are not blindly persisted through AI state. For screen-context requests, the backend may include the latest bounded screenshot, AI Engine summarizes it into text with a vision-capable model when enabled, and raw base64 is removed before LangGraph state and Agent Hub audit metadata.
+- GUI actions are introduced only as approval-gated script proposals. The first foundation supports Windows click/type helpers that can use the latest active process/window context, but they still flow through Angular approval, backend policy validation, task audit, and the node command queue.
 
 ## 8. Self-Healing Model
 When an approved script fails:
@@ -158,7 +159,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, installable node runtime CLI/background setup, desktop context snapshots, and controlled screen-summary context are now in place. The next remote-access step is explicit GUI action execution with approval boundaries, not silent remote control.
+- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, installable node runtime CLI/background setup, desktop context snapshots, controlled screen-summary context, and the first approval-gated GUI click/type proposal path are now in place. The next remote-access step is better GUI targeting and feedback loops, not silent remote control.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:

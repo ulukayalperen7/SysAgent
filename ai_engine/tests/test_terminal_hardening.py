@@ -203,6 +203,38 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertIn('Stop-Process -Name "Code"', proposal.script)
         self.assertNotIn('"this app"', proposal.script)
 
+    def test_gui_type_targets_active_process_from_screen_context(self):
+        self.assertEqual(_detect_intent_deterministic('write into this "hello world"'), "APP_CONTROL")
+        proposal = propose_deterministic_script(
+            'write into this "hello world"',
+            "APP_CONTROL",
+            "Windows",
+            context_messages=[
+                {"role": "system", "content": "Current desktop active application/process named 'Code.exe'."},
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('$targetProcess = "Code"', proposal.script)
+        self.assertIn("System.Windows.Forms", proposal.script)
+        self.assertIn('SendWait("hello world")', proposal.script)
+
+    def test_gui_click_can_use_explicit_coordinates(self):
+        self.assertEqual(_detect_intent_deterministic("click 120,240"), "APP_CONTROL")
+        proposal = propose_deterministic_script(
+            "click 120,240",
+            "APP_CONTROL",
+            "Windows",
+            context_messages=[
+                {"role": "system", "content": "Current desktop active application/process named 'Code.exe'."},
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("$x = 120", proposal.script)
+        self.assertIn("$y = 240", proposal.script)
+        self.assertIn("mouse_event", proposal.script)
+
     def test_real_turkish_intent_detects_trailing_app_open(self):
         self.assertEqual(_detect_intent_deterministic("notepad'\u0131 a\u00e7"), "APP_CONTROL")
 

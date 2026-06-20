@@ -174,6 +174,31 @@ def _propose_windows_script(
                 rollback="Close the application if it was opened by mistake.",
             )
 
+    if intent == "APP_CONTROL" and _looks_like_gui_type(lower):
+        text = _extract_gui_type_text(user_input)
+        if text:
+            process = _sanitize_process_name(_extract_recent_app_name(context_messages) or "")
+            script = _windows_gui_type_script(text, process)
+            target = process or "the current foreground window"
+            return ScriptProposal(
+                explanation=f"You want to type text into {target}.",
+                script=script,
+                risk_level="Medium",
+                rollback="Undo or delete the typed text in the target application if it was sent to the wrong place.",
+            )
+
+    if intent == "APP_CONTROL" and _looks_like_gui_click(lower):
+        coords = _extract_click_coordinates(user_input)
+        process = _sanitize_process_name(_extract_recent_app_name(context_messages) or "")
+        script = _windows_gui_click_script(coords, process)
+        target = f"screen coordinates {coords[0]},{coords[1]}" if coords else "the center of the active window"
+        return ScriptProposal(
+            explanation=f"You want to click {target}.",
+            script=script,
+            risk_level="Medium",
+            rollback="Clicking is not automatically reversible; review the target and script before approving.",
+        )
+
     if intent == "FILE_SYSTEM_WRITE":
         file_name = _extract_file_name(user_input)
         if not file_name and _looks_like_contextual_file_write(lower):
@@ -380,6 +405,77 @@ def _windows_open_app_script(app: str) -> str:
     )
 
 
+def _windows_focus_process_script(process_name: str) -> str:
+    if not process_name:
+        return ""
+    safe_process = _escape_powershell_double_quoted(_sanitize_process_name(process_name))
+    return (
+        f'$targetProcess = "{safe_process}"\n'
+        "$proc = Get-Process -Name $targetProcess -ErrorAction SilentlyContinue | "
+        "Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1\n"
+        "if ($proc) {\n"
+        '  Add-Type -TypeDefinition @"\n'
+        "using System;\n"
+        "using System.Runtime.InteropServices;\n"
+        "public class SysAgentWindowFocus {\n"
+        '  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);\n'
+        "}\n"
+        '"@\n'
+        "  [SysAgentWindowFocus]::SetForegroundWindow($proc.MainWindowHandle) | Out-Null\n"
+        "  Start-Sleep -Milliseconds 250\n"
+        "}\n"
+    )
+
+
+def _windows_gui_click_script(coords: tuple[int, int] | None, process_name: str) -> str:
+    focus = _windows_focus_process_script(process_name)
+    coordinate_setup = (
+        f"$x = {coords[0]}\n$y = {coords[1]}\n"
+        if coords
+        else (
+            'Add-Type -TypeDefinition @"\n'
+            "using System;\n"
+            "using System.Runtime.InteropServices;\n"
+            "public class SysAgentActiveWindowRect {\n"
+            '  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();\n'
+            '  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);\n'
+            "  public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }\n"
+            "}\n"
+            '"@\n'
+            "$hwnd = [SysAgentActiveWindowRect]::GetForegroundWindow()\n"
+            "$rect = New-Object SysAgentActiveWindowRect+RECT\n"
+            "[SysAgentActiveWindowRect]::GetWindowRect($hwnd, [ref]$rect) | Out-Null\n"
+            "$x = [int](($rect.Left + $rect.Right) / 2)\n"
+            "$y = [int](($rect.Top + $rect.Bottom) / 2)\n"
+        )
+    )
+    return (
+        focus
+        + coordinate_setup
+        + 'Add-Type -TypeDefinition @"\n'
+        + "using System;\n"
+        + "using System.Runtime.InteropServices;\n"
+        + "public class SysAgentMouseInput {\n"
+        + '  [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);\n'
+        + '  [DllImport("user32.dll")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, UIntPtr dwExtraInfo);\n'
+        + "}\n"
+        + '"@\n'
+        + "[SysAgentMouseInput]::SetCursorPos($x, $y) | Out-Null\n"
+        + "Start-Sleep -Milliseconds 100\n"
+        + "[SysAgentMouseInput]::mouse_event(0x0002, $x, $y, 0, [UIntPtr]::Zero)\n"
+        + "[SysAgentMouseInput]::mouse_event(0x0004, $x, $y, 0, [UIntPtr]::Zero)\n"
+    )
+
+
+def _windows_gui_type_script(text: str, process_name: str) -> str:
+    escaped_text = _escape_send_keys_text(text)
+    return (
+        _windows_focus_process_script(process_name)
+        + "Add-Type -AssemblyName System.Windows.Forms\n"
+        + f'[System.Windows.Forms.SendKeys]::SendWait("{escaped_text}")'
+    )
+
+
 def _looks_like_open_app(lower: str) -> bool:
     if re.search(r"\b(ac|calistir|baslat)\b", lower):
         return True
@@ -390,6 +486,14 @@ def _looks_like_close_app(lower: str) -> bool:
     if re.search(r"\b(kapat|sonlandir)\b", lower):
         return True
     return any(term in lower for term in ("close ", "quit ", "kill ", "kapat", "sonlandır"))
+
+
+def _looks_like_gui_click(lower: str) -> bool:
+    return any(term in lower for term in ("click", "tikla", "tıkla"))
+
+
+def _looks_like_gui_type(lower: str) -> bool:
+    return any(term in lower for term in ("type ", "write into", "send keys", "klavyeden yaz", "buraya yaz"))
 
 
 def _is_media_next(lower: str) -> bool:
@@ -435,6 +539,35 @@ def _extract_app_name(text: str, close: bool) -> str | None:
     app = match.group(1).strip(" .")
     app = re.split(r"\s+(?:then|sonra|and then|ardından)\s+", app, maxsplit=1, flags=re.IGNORECASE)[0]
     return _strip_turkish_object_suffix(app.strip()) or None
+
+
+def _extract_gui_type_text(text: str) -> str | None:
+    quoted = re.search(r"['\"]([^'\"]{1,500})['\"]", text)
+    if quoted:
+        return quoted.group(1).strip()
+    patterns = [
+        r"\btype\s+(.{1,500})$",
+        r"\bsend keys\s+(.{1,500})$",
+        r"\bwrite into (?:this|current|active|bunu|buraya)?\s*(.{1,500})$",
+        r"\b(?:klavyeden yaz|buraya yaz)\s+(.{1,500})$",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            candidate = match.group(1).strip(" .")
+            return candidate or None
+    return None
+
+
+def _extract_click_coordinates(text: str) -> tuple[int, int] | None:
+    match = re.search(r"\b(?:x\s*=?\s*)?(\d{1,5})\s*[,x]\s*(?:y\s*=?\s*)?(\d{1,5})\b", text, re.IGNORECASE)
+    if not match:
+        return None
+    x = int(match.group(1))
+    y = int(match.group(2))
+    if x < 0 or y < 0 or x > 16384 or y > 16384:
+        return None
+    return x, y
 
 
 def _resolve_app_reference(app: str | None, text: str, context_messages: list[dict] | None) -> str | None:
@@ -662,6 +795,13 @@ def _sanitize_file_name(file_name: str) -> str:
 
 def _escape_powershell_double_quoted(value: str) -> str:
     return value.replace("`", "``").replace('"', '`"').replace("$", "`$")
+
+
+def _escape_send_keys_text(value: str) -> str:
+    escaped = _escape_powershell_double_quoted(value)
+    for char in ("+", "^", "%", "~", "(", ")", "{", "}", "[", "]"):
+        escaped = escaped.replace(char, "{" + char + "}")
+    return escaped
 
 
 def _normalize_for_matching(text: str) -> str:
