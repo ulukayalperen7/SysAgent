@@ -3,6 +3,7 @@ package com.sysagent.sysagent_backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ class DeviceContextServiceTest {
         assertThat(snapshot.getOwnerId()).isEqualTo("user-1");
         assertThat(snapshot.getActiveProcessName()).isEqualTo("Code.exe");
         assertThat(snapshot.getMetadataJson()).contains("\"platform\":\"Windows\"");
+        verify(snapshotRepository).deleteOlderThanLimit(10L, "user-1", 50);
     }
 
     @Test

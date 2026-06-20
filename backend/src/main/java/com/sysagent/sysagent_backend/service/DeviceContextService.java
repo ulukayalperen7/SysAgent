@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class DeviceContextService {
 
     private static final int MAX_SCREENSHOT_BASE64_LENGTH = 2_500_000;
+    private static final int MAX_SNAPSHOTS_PER_DEVICE = 50;
 
     private final DeviceContextSnapshotRepository snapshotRepository;
     private final NodeDeviceAuthService nodeDeviceAuthService;
@@ -45,7 +46,9 @@ public class DeviceContextService {
                 .capturedAt(parseCapturedAt(request.getCapturedAt()))
                 .createdAt(LocalDateTime.now())
                 .build();
-        return DeviceContextSnapshotDto.fromEntity(snapshotRepository.save(snapshot));
+        DeviceContextSnapshotEntity saved = snapshotRepository.save(snapshot);
+        snapshotRepository.deleteOlderThanLimit(device.getId(), device.getOwnerId(), MAX_SNAPSHOTS_PER_DEVICE);
+        return DeviceContextSnapshotDto.fromEntity(saved);
     }
 
     @Transactional(readOnly = true)
