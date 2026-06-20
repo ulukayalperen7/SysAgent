@@ -15,6 +15,7 @@ from core.langgraph_checkpoint import checkpoint_status
 from core.mcp_client import local_system_mcp_client
 from core.mcp_process import ensure_local_mcp_server
 from core.runtime_health import runtime_health_status
+from core.screen_context import prepare_device_context_for_graph, redact_device_context_for_audit
 from core.security import SecurityAnalyzer
 from core.security_guardian import SecurityGuardian
 
@@ -97,12 +98,15 @@ async def analyze_system(request: AnalyzeRequest):
     sanitized_prompt = SecurityAnalyzer.sanitize_prompt(request.user_prompt)
 
     try:
+        device_context = prepare_device_context_for_graph(
+            request.device_context or {"execution_mode": "local_backend"}
+        )
         # Prepare the state for the LangGraph execution
         initial_state = {
             "thread_id": request.thread_id,
             "owner_id": request.owner_id,
             "target_device_id": request.target_device_id,
-            "device_context": request.device_context or {"execution_mode": "local_backend"},
+            "device_context": device_context,
             "user_input": sanitized_prompt,
             "metrics": request.metrics,
             "os_type": request.metrics.get("osName", "Unknown OS"),
@@ -141,7 +145,7 @@ async def analyze_system(request: AnalyzeRequest):
                 "script_proposed": bool(script and script != "NONE"),
                 "pending_count": len(final_state.get("task_queue", [])),
                 "target_device_id": request.target_device_id,
-                "device_context": request.device_context or {"execution_mode": "local_backend"},
+                "device_context": redact_device_context_for_audit(device_context),
             },
         )
         

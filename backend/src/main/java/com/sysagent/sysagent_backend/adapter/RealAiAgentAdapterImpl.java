@@ -64,7 +64,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         requestPayload.put("thread_id", threadId);
         requestPayload.put("owner_id", ownerId);
         requestPayload.put("target_device_id", targetDevice == null ? null : targetDevice.getId());
-        requestPayload.put("device_context", buildDeviceContext(targetDevice, targetContext));
+        requestPayload.put("device_context", buildDeviceContext(targetDevice, targetContext, shouldIncludeScreenImage(intent)));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -167,7 +167,8 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
 
     private static Map<String, Object> buildDeviceContext(
             DeviceDto targetDevice,
-            DeviceContextSnapshotDto targetContext) {
+            DeviceContextSnapshotDto targetContext,
+            boolean includeScreenImage) {
         Map<String, Object> context = new LinkedHashMap<>();
         context.put("execution_mode", targetDevice == null ? "local_backend" : "remote_device");
         if (targetDevice == null) {
@@ -186,9 +187,35 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             screenContext.put("screen_width", targetContext.getScreenWidth());
             screenContext.put("screen_height", targetContext.getScreenHeight());
             screenContext.put("has_screenshot", targetContext.getScreenshotBase64() != null && !targetContext.getScreenshotBase64().isBlank());
+            if (includeScreenImage && targetContext.getScreenshotBase64() != null && !targetContext.getScreenshotBase64().isBlank()) {
+                screenContext.put("screen_image_mime_type", targetContext.getScreenshotMimeType());
+                screenContext.put("screen_image_base64", targetContext.getScreenshotBase64());
+            }
             context.put("screen_context", screenContext);
         }
         return context;
+    }
+
+    private static boolean shouldIncludeScreenImage(String intent) {
+        if (intent == null) {
+            return false;
+        }
+        String lower = intent.toLowerCase();
+        return lower.contains("screen")
+                || lower.contains("screenshot")
+                || lower.contains("ekran")
+                || lower.contains("görü")
+                || lower.contains("goru")
+                || lower.contains("this")
+                || lower.contains("that")
+                || lower.contains("bunu")
+                || lower.contains("şunu")
+                || lower.contains("sunu")
+                || lower.contains("current")
+                || lower.contains("active")
+                || lower.contains("click")
+                || lower.contains("tıkla")
+                || lower.contains("tikla");
     }
 
     private static String stripCodeFences(String raw) {

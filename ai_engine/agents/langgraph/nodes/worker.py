@@ -230,10 +230,12 @@ def _format_screen_context(screen: dict) -> str:
     if screen.get("screen_width") and screen.get("screen_height"):
         dimensions = f" Screen size: {screen.get('screen_width')}x{screen.get('screen_height')}."
     has_screenshot = "yes" if screen.get("has_screenshot") else "no"
+    summary = screen.get("vision_summary")
+    summary_text = f" Vision summary: {summary}" if summary else ""
     return (
         f"Latest desktop context captured at {captured_at}: "
         f"active window='{active_window}', active process='{active_process}', "
-        f"screenshot_available={has_screenshot}.{dimensions}"
+        f"screenshot_available={has_screenshot}.{dimensions}{summary_text}"
     )
 
 
@@ -255,6 +257,14 @@ def _messages_with_screen_context(state: AgentState) -> list[dict]:
             {
                 "role": "system",
                 "content": f"Current desktop active window title is '{active_window}'.",
+            }
+        )
+    vision_summary = screen.get("vision_summary")
+    if vision_summary:
+        messages.append(
+            {
+                "role": "system",
+                "content": f"Current desktop screenshot summary: {vision_summary}",
             }
         )
     return messages

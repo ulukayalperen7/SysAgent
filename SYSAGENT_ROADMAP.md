@@ -521,3 +521,4 @@ Notes:
 - Added the first desktop context foundation for remote nodes: node-token-protected snapshot submission, owner-scoped latest context API, active-window/process metadata, bounded screenshot storage, and Devices page preview.
 - Propagated lightweight screen context summaries into the AI Engine payload for selected remote devices without embedding large screenshot payloads in every analysis request.
 - Connected remote screen context to LangGraph script proposal prompts and deterministic app-reference resolution, so requests like "close this app" can resolve to the latest active process without hardcoding product-specific commands.
+- Added controlled screenshot-to-text preparation: backend only includes raw screen images for screen-context requests, AI Engine can summarize them with a vision-capable Gemini model, and raw base64 is removed before LangGraph state/audit storage.

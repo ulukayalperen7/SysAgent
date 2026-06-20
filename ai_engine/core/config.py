@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default="", env="OPENAI_API_KEY")
     llm_request_timeout_seconds: int = Field(default=20, ge=1, le=120, env="LLM_REQUEST_TIMEOUT_SECONDS")
     llm_retries: int = Field(default=1, ge=0, le=6, env="LLM_RETRIES")
+    screen_vision_enabled: bool = Field(default=True, env="SCREEN_VISION_ENABLED")
+    screen_vision_max_base64_chars: int = Field(default=1_000_000, ge=100_000, le=3_000_000, env="SCREEN_VISION_MAX_BASE64_CHARS")
 
     # API Settings
     port: int = Field(default=8001, env="PORT")
