@@ -57,6 +57,12 @@ public class DeviceContextService {
                 .map(DeviceContextSnapshotDto::fromEntity);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<DeviceContextSnapshotDto> getLatestPostCommandContext(Long deviceId, String ownerId, String taskId) {
+        return snapshotRepository.findLatestPostCommandContext(deviceId, ownerId, taskId)
+                .map(DeviceContextSnapshotDto::fromEntity);
+    }
+
     private String clean(String value, int maxLength) {
         if (value == null) {
             return null;

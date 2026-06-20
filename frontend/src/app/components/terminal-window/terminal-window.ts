@@ -13,6 +13,8 @@ import { ApiResponse } from '../../models/api-response.model';
 const MAX_PROMPT_LENGTH = 4000;
 const REMOTE_STATUS_POLL_MS = 3000;
 const REMOTE_STATUS_MAX_ATTEMPTS = 120;
+const POST_COMMAND_CONTEXT_RETRY_MS = 1000;
+const POST_COMMAND_CONTEXT_MAX_ATTEMPTS = 6;
 
 @Component({
   selector: 'app-terminal-window',
@@ -292,9 +294,11 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
             text: output ? `Remote command completed:\n${output}` : 'Remote command completed.',
             type: 'success'
           });
-          if ((logEntry.pendingCount ?? 0) > 0) {
-            this.autoResumeQueue();
-          }
+          this.waitForPostCommandContext(logEntry, () => {
+            if ((logEntry.pendingCount ?? 0) > 0) {
+              this.autoResumeQueue();
+            }
+          });
           return;
         }
 
@@ -322,6 +326,51 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
 
   private scheduleRemoteStatusPoll(logEntry: TerminalLog, attempt: number): void {
     window.setTimeout(() => this.pollRemoteCommandStatus(logEntry, attempt + 1), REMOTE_STATUS_POLL_MS);
+  }
+
+  private waitForPostCommandContext(logEntry: TerminalLog, done: () => void, attempt = 0): void {
+    if (!logEntry.taskId || !logEntry.targetDeviceId) {
+      done();
+      return;
+    }
+    this.taskService.getPostCommandContext(logEntry.taskId).subscribe({
+      next: context => {
+        if (context) {
+          const active = context.activeWindowTitle || context.activeProcessName || 'desktop';
+          const size = context.screenWidth && context.screenHeight
+            ? ` (${context.screenWidth}x${context.screenHeight})`
+            : '';
+          this.terminalService.addLog({
+            sender: 'system',
+            text: `Fresh desktop context captured after command: ${active}${size}.`,
+            type: 'success'
+          });
+          done();
+          return;
+        }
+        if (attempt + 1 >= POST_COMMAND_CONTEXT_MAX_ATTEMPTS) {
+          this.terminalService.addLog({
+            sender: 'system',
+            text: 'Remote command completed, but fresh desktop context was not available yet.',
+            type: 'warning'
+          });
+          done();
+          return;
+        }
+        window.setTimeout(
+          () => this.waitForPostCommandContext(logEntry, done, attempt + 1),
+          POST_COMMAND_CONTEXT_RETRY_MS
+        );
+      },
+      error: err => {
+        this.terminalService.addLog({
+          sender: 'system',
+          text: this.extractApiErrorMessage(err, 'Fresh desktop context refresh failed. Continuing.'),
+          type: 'warning'
+        });
+        done();
+      }
+    });
   }
 
   /**

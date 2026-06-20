@@ -40,7 +40,7 @@ class CliPollingTests(unittest.TestCase):
             node_token="node-token",
         )
 
-    def test_poll_once_submits_fresh_context_after_command_result(self):
+    def test_remote_flow_executes_reports_result_and_submits_fresh_context(self):
         with patch("sysagent_node.cli.SysAgentApi", FakeApi), \
              patch("sysagent_node.cli.execute_script", return_value={"success": True, "output": "ok", "error": None}), \
              patch("sysagent_node.cli._submit_context") as submit_context, \
@@ -49,7 +49,16 @@ class CliPollingTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(FakeApi.instances[0].command_result_payload[0], "command-1")
-        submit_context.assert_called_once_with(self.cfg)
+        self.assertEqual(FakeApi.instances[0].command_result_payload[1]["deviceId"], 42)
+        self.assertTrue(FakeApi.instances[0].command_result_payload[1]["success"])
+        self.assertEqual(FakeApi.instances[0].command_result_payload[1]["output"], "ok")
+        submit_context.assert_called_once()
+        args, kwargs = submit_context.call_args
+        self.assertEqual(args[0], self.cfg)
+        self.assertEqual(kwargs["extra_metadata"]["post_command"], True)
+        self.assertEqual(kwargs["extra_metadata"]["command_id"], "command-1")
+        self.assertEqual(kwargs["extra_metadata"]["task_id"], "task-1")
+        self.assertEqual(kwargs["extra_metadata"]["command_success"], True)
 
     def test_poll_once_does_not_submit_context_when_no_command_exists(self):
         with patch("sysagent_node.cli.SysAgentApi", EmptyApi), \

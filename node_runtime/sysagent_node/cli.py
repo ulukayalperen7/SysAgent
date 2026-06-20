@@ -124,10 +124,21 @@ def _heartbeat(cfg: NodeConfig) -> None:
     api.heartbeat(payload)
 
 
-def _submit_context(cfg: NodeConfig, include_screenshot: bool = True, max_width: int = 1280) -> None:
+def _submit_context(
+    cfg: NodeConfig,
+    include_screenshot: bool = True,
+    max_width: int = 1280,
+    extra_metadata: dict[str, object] | None = None,
+) -> None:
     api = SysAgentApi(cfg.server_url, cfg.node_token)
     payload = collect_desktop_context(include_screenshot=include_screenshot, max_width=max_width)
     payload["deviceId"] = cfg.device_id
+    if extra_metadata:
+        metadata = payload.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = {}
+        metadata.update(extra_metadata)
+        payload["metadata"] = metadata
     api.submit_context(payload)
 
 
@@ -148,7 +159,7 @@ def _poll_once(cfg: NodeConfig) -> int:
         "output": result.get("output"),
         "error": result.get("error"),
     })
-    _submit_context_after_command(cfg)
+    _submit_context_after_command(cfg, command_id, str(command.get("taskId") or ""), bool(result["success"]))
     print("Result submitted.")
     return 0 if result["success"] else 2
 
@@ -176,9 +187,17 @@ def _run(cfg: NodeConfig, poll_interval: int, context_interval: int) -> int:
         return 0
 
 
-def _submit_context_after_command(cfg: NodeConfig) -> None:
+def _submit_context_after_command(cfg: NodeConfig, command_id: str, task_id: str, success: bool) -> None:
     try:
-        _submit_context(cfg)
+        _submit_context(
+            cfg,
+            extra_metadata={
+                "post_command": True,
+                "command_id": command_id,
+                "task_id": task_id,
+                "command_success": success,
+            },
+        )
     except (ApiError, OSError, ValueError) as exc:
         print(f"Post-command desktop context warning: {exc}", file=sys.stderr)
 

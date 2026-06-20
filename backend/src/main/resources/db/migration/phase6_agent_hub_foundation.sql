@@ -267,6 +267,40 @@ create unique index if not exists idx_agent_risk_policy_rules_seed_unique on age
 create index if not exists idx_automation_rules_owner_status on automation_rules(owner_id, status);
 create index if not exists idx_automation_rules_target_agent on automation_rules(target_agent_id);
 
+alter table if exists app_users enable row level security;
+alter table if exists devices enable row level security;
+alter table if exists tasks enable row level security;
+alter table if exists device_registration_tokens enable row level security;
+alter table if exists node_commands enable row level security;
+alter table if exists device_context_snapshots enable row level security;
+alter table if exists automation_rules enable row level security;
+alter table if exists agent_decision_audit enable row level security;
+
+drop policy if exists service_role_all_app_users on app_users;
+create policy service_role_all_app_users on app_users
+    for all to service_role using (true) with check (true);
+drop policy if exists service_role_all_devices on devices;
+create policy service_role_all_devices on devices
+    for all to service_role using (true) with check (true);
+drop policy if exists service_role_all_tasks on tasks;
+create policy service_role_all_tasks on tasks
+    for all to service_role using (true) with check (true);
+drop policy if exists service_role_all_device_registration_tokens on device_registration_tokens;
+create policy service_role_all_device_registration_tokens on device_registration_tokens
+    for all to service_role using (true) with check (true);
+drop policy if exists service_role_all_node_commands on node_commands;
+create policy service_role_all_node_commands on node_commands
+    for all to service_role using (true) with check (true);
+drop policy if exists service_role_all_device_context_snapshots on device_context_snapshots;
+create policy service_role_all_device_context_snapshots on device_context_snapshots
+    for all to service_role using (true) with check (true);
+drop policy if exists service_role_all_automation_rules on automation_rules;
+create policy service_role_all_automation_rules on automation_rules
+    for all to service_role using (true) with check (true);
+drop policy if exists service_role_all_agent_decision_audit on agent_decision_audit;
+create policy service_role_all_agent_decision_audit on agent_decision_audit
+    for all to service_role using (true) with check (true);
+
 insert into agent_profiles
     (slug, name, description, agent_type, status, risk_ceiling, requires_approval, config)
 values

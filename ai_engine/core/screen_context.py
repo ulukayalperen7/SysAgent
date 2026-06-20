@@ -83,7 +83,10 @@ def summarize_screen_image(mime_type: str, image_base64: str) -> str | None:
                     "Summarize this desktop screenshot for an OS automation agent. "
                     "Focus on visible application, active window, obvious UI state, "
                     "selected/focused elements, and any warnings/dialogs. "
-                    "Do not invent hidden information. Keep it under 5 short bullets."
+                    "When obvious clickable controls are visible, include up to 8 target hints "
+                    "using this exact format: Target: <visible label> @ x=<pixel> y=<pixel>. "
+                    "Only estimate coordinates for clearly visible controls. "
+                    "Do not invent hidden information. Keep it under 8 short bullets."
                 ),
             },
             {

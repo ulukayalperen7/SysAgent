@@ -5,7 +5,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { NodeCommandStatus, TaskHistoryItem } from '../models/task.model';
+import { NodeCommandStatus, TaskHistoryItem, TaskPostCommandContext } from '../models/task.model';
 
 @Injectable({
     providedIn: 'root'
@@ -40,6 +40,21 @@ export class TaskService {
             }),
             catchError(error => {
                 console.error('TaskService: Error loading remote command status', error);
+                throw error;
+            })
+        );
+    }
+
+    getPostCommandContext(taskId: string): Observable<TaskPostCommandContext | null> {
+        return this.http.get<ApiResponse<TaskPostCommandContext>>(`${this.apiUrl}/${taskId}/post-command-context`).pipe(
+            map(response => {
+                if (response.status !== 'SUCCESS') {
+                    throw new Error(response.message || 'Post-command context response was not successful.');
+                }
+                return response.data ?? null;
+            }),
+            catchError(error => {
+                console.error('TaskService: Error loading post-command context', error);
                 throw error;
             })
         );

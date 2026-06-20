@@ -15,6 +15,20 @@ import com.sysagent.sysagent_backend.model.entity.DeviceContextSnapshotEntity;
 public interface DeviceContextSnapshotRepository extends JpaRepository<DeviceContextSnapshotEntity, UUID> {
     Optional<DeviceContextSnapshotEntity> findFirstByDeviceIdAndOwnerIdOrderByCreatedAtDesc(Long deviceId, String ownerId);
 
+    @Query(value = """
+            select *
+            from device_context_snapshots
+            where device_id = :deviceId
+              and owner_id = :ownerId
+              and nullif(metadata_json, '')::jsonb ->> 'task_id' = :taskId
+            order by created_at desc
+            limit 1
+            """, nativeQuery = true)
+    Optional<DeviceContextSnapshotEntity> findLatestPostCommandContext(
+            @Param("deviceId") Long deviceId,
+            @Param("ownerId") String ownerId,
+            @Param("taskId") String taskId);
+
     @Modifying
     @Query(value = """
             delete from device_context_snapshots

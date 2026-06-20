@@ -235,6 +235,76 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertIn("$y = 240", proposal.script)
         self.assertIn("mouse_event", proposal.script)
 
+    def test_gui_click_can_target_label_from_vision_summary(self):
+        proposal = propose_deterministic_script(
+            "click Submit",
+            "APP_CONTROL",
+            "Windows",
+            context_messages=[
+                {
+                    "role": "system",
+                    "content": "Current desktop screenshot summary: Target: Submit @ x=640 y=512.",
+                },
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("$x = 640", proposal.script)
+        self.assertIn("$y = 512", proposal.script)
+        self.assertIn("mouse_event", proposal.script)
+
+    def test_gui_click_can_target_turkish_button_label_from_vision_summary(self):
+        proposal = propose_deterministic_script(
+            "Submit butonuna t\u0131kla",
+            "APP_CONTROL",
+            "Windows",
+            context_messages=[
+                {
+                    "role": "system",
+                    "content": "Current desktop screenshot summary: Target: Submit @ x=640 y=512.",
+                },
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("$x = 640", proposal.script)
+        self.assertIn("$y = 512", proposal.script)
+        self.assertIn("mouse_event", proposal.script)
+
+    def test_linux_gui_click_uses_xdotool_with_vision_target(self):
+        proposal = propose_deterministic_script(
+            "click Submit",
+            "APP_CONTROL",
+            "Linux",
+            context_messages=[
+                {
+                    "role": "system",
+                    "content": "Current desktop screenshot summary: Target: Submit @ x=640 y=512.",
+                },
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("xdotool", proposal.script)
+        self.assertIn("mousemove 640 512 click 1", proposal.script)
+
+    def test_macos_gui_click_uses_cliclick_with_vision_target(self):
+        proposal = propose_deterministic_script(
+            "click Submit",
+            "APP_CONTROL",
+            "macOS",
+            context_messages=[
+                {
+                    "role": "system",
+                    "content": "Current desktop screenshot summary: Target: Submit @ x=640 y=512.",
+                },
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn("cliclick", proposal.script)
+        self.assertIn("c:640,512", proposal.script)
+
     def test_real_turkish_intent_detects_trailing_app_open(self):
         self.assertEqual(_detect_intent_deterministic("notepad'\u0131 a\u00e7"), "APP_CONTROL")
 

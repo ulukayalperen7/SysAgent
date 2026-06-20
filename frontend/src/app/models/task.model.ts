@@ -41,3 +41,17 @@ export interface NodeCommandStatus {
     claimedAt?: string | null;
     completedAt?: string | null;
 }
+
+export interface TaskPostCommandContext {
+    id: string;
+    deviceId: number;
+    activeWindowTitle?: string | null;
+    activeProcessName?: string | null;
+    screenWidth?: number | null;
+    screenHeight?: number | null;
+    screenshotMimeType?: string | null;
+    screenshotBase64?: string | null;
+    metadataJson?: string | null;
+    capturedAt?: string | null;
+    createdAt?: string | null;
+}

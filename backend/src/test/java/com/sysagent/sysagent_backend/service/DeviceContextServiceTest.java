@@ -70,6 +70,28 @@ class DeviceContextServiceTest {
                 .hasMessage("Unsupported screenshot mime type.");
     }
 
+    @Test
+    void loadsLatestPostCommandContextForTask() {
+        DeviceContextSnapshotEntity entity = DeviceContextSnapshotEntity.builder()
+                .id(java.util.UUID.randomUUID())
+                .deviceId(10L)
+                .ownerId("user-1")
+                .activeWindowTitle("Done")
+                .activeProcessName("Code.exe")
+                .metadataJson("{\"post_command\":true,\"task_id\":\"task-1\"}")
+                .createdAt(LocalDateTime.now())
+                .build();
+        when(snapshotRepository.findLatestPostCommandContext(10L, "user-1", "task-1"))
+                .thenReturn(Optional.of(entity));
+
+        DeviceContextSnapshotDto snapshot = service
+                .getLatestPostCommandContext(10L, "user-1", "task-1")
+                .orElseThrow();
+
+        assertThat(snapshot.getActiveWindowTitle()).isEqualTo("Done");
+        assertThat(snapshot.getMetadataJson()).contains("\"post_command\":true");
+    }
+
     private DeviceEntity device(String plainToken) {
         return DeviceEntity.builder()
                 .id(10L)

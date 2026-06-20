@@ -526,3 +526,7 @@ Notes:
 - Added the first approval-gated GUI action proposal foundation for Windows remote nodes: screen-context-aware click/type script proposals can focus the latest active process, click explicit coordinates or active-window center, and type bounded text through the existing Angular approval, backend policy, and node command queue path.
 - Added automatic desktop context retention pruning so each owner/device keeps only the latest bounded snapshot history instead of growing Supabase storage indefinitely.
 - Added post-command desktop context refresh in the node runtime so GUI actions and remote scripts produce a fresh best-effort screenshot/context snapshot after result callback.
+- Enabled the first Supabase/PostgreSQL RLS safety layer for owner/device/task/context tables while preserving Spring backend service-role access until direct end-user DB policies are explicitly designed.
+- Added screen-summary label targeting for GUI clicks, so requests such as "click Submit" or "Submit butonuna tikla" can resolve to coordinates from vision context without hardcoding application-specific workflows.
+- Added Linux and macOS GUI helper plans for click/type automation: Linux uses `xdotool`; macOS uses `cliclick` for coordinates and System Events for typing, with explicit missing-tool errors.
+- Added an owner-scoped post-command context lookup endpoint and Angular terminal retry loop so completed remote commands can surface fresh desktop context before queued multi-step automation continues.

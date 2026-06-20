@@ -117,12 +117,13 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Passwords are hashed with PBKDF2; plaintext passwords are never stored.
 - API requests use JWT bearer tokens.
 - Owner IDs are resolved server-side from the authenticated token.
+- Supabase/PostgreSQL owner data tables have RLS enabled with backend `service_role` policies for the current Spring-owned API boundary; direct end-user database policies should only be opened after Supabase Auth claims are bound to `owner_id`.
 - Auth endpoints are rate-limited in-process to slow brute-force login/register attempts.
 - API and WebSocket CORS are controlled by `SYSAGENT_CORS_ALLOWED_ORIGINS`; wildcard origins are rejected in production mode.
 - `SYSAGENT_PRODUCTION=true` requires a strong `SYSAGENT_AUTH_JWT_SECRET` before the backend starts.
 - Devices are registered to a user through short-lived one-time registration tokens.
 - Terminal requests can carry an optional target device ID; backend validates that the selected device belongs to the authenticated user before creating the task.
-- Remote-device tasks are stored with `target_device_id`, but execution is intentionally blocked until the secure node command transport exists.
+- Remote-device tasks are stored with `target_device_id`; approved scripts can now be queued to the registered node runtime through the secure backend polling transport.
 - Spring forwards authenticated owner/device context to the AI Engine so LangGraph prompts and Agent Hub decision audit rows stay tied to the same user/device boundary.
 - Node registration now returns a one-time node runtime token; only its hash is stored.
 - Remote command transport uses node-token authenticated heartbeat, command polling, and result callback endpoints.
@@ -131,8 +132,8 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - The Devices page can open the terminal with a selected target device and inspect owner-scoped task logs for each registered node.
 - Node desktop context is now part of the remote-device foundation: the node can submit active-window/process metadata and a bounded screenshot snapshot; the backend stores it owner-scoped and the Devices page can preview the latest context.
 - Screen images are not blindly persisted through AI state. For screen-context requests, the backend may include the latest bounded screenshot, AI Engine summarizes it into text with a vision-capable model when enabled, and raw base64 is removed before LangGraph state and Agent Hub audit metadata.
-- GUI actions are introduced only as approval-gated script proposals. The first foundation supports Windows click/type helpers that can use the latest active process/window context, but they still flow through Angular approval, backend policy validation, task audit, and the node command queue.
-- After each queued remote command, the node runtime attempts a fresh desktop context snapshot so the UI and later AI steps can reason from the latest observed state rather than waiting for the periodic context interval.
+- GUI actions are introduced only as approval-gated script proposals. The first foundation supports Windows click/type helpers, plus Linux `xdotool` and macOS `cliclick`/System Events helper plans when those host tools are available. These actions can use visible target labels from the latest screen summary, but they still flow through Angular approval, backend policy validation, task audit, and the node command queue.
+- After each queued remote command, the node runtime attempts a fresh desktop context snapshot. The Angular terminal waits briefly for this post-command context before continuing a queued multi-step flow, so later AI steps can reason from the latest observed state rather than the previous screenshot.
 
 ## 8. Self-Healing Model
 When an approved script fails:
@@ -160,7 +161,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, installable node runtime CLI/background setup, desktop context snapshots, controlled screen-summary context, and the first approval-gated GUI click/type proposal path are now in place. The next remote-access step is better GUI targeting and feedback loops, not silent remote control.
+- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, installable node runtime CLI/background setup, desktop context snapshots, controlled screen-summary context, label-based GUI click targeting, and post-command context feedback are now in place. The next remote-access step is deeper visual verification and richer desktop automation, not silent remote control.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:

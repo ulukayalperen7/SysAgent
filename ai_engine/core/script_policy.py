@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shlex
 from dataclasses import dataclass
 from typing import Literal
 
@@ -42,7 +43,7 @@ def propose_deterministic_script(
     operations still go to Angular for approval and Spring Boot for execution.
     """
     if "win" not in os_name.lower():
-        return _propose_unix_script(user_input, intent)
+        return _propose_unix_script(user_input, intent, os_name, context_messages)
     return _propose_windows_script(user_input, intent, context_messages)
 
 
@@ -189,6 +190,8 @@ def _propose_windows_script(
 
     if intent == "APP_CONTROL" and _looks_like_gui_click(lower):
         coords = _extract_click_coordinates(user_input)
+        if coords is None:
+            coords = _extract_click_target_from_context(user_input, context_messages)
         process = _sanitize_process_name(_extract_recent_app_name(context_messages) or "")
         script = _windows_gui_click_script(coords, process)
         target = f"screen coordinates {coords[0]},{coords[1]}" if coords else "the center of the active window"
@@ -265,8 +268,34 @@ def _propose_windows_script(
     return None
 
 
-def _propose_unix_script(user_input: str, intent: str) -> ScriptProposal | None:
+def _propose_unix_script(
+    user_input: str,
+    intent: str,
+    os_name: str,
+    context_messages: list[dict] | None = None,
+) -> ScriptProposal | None:
     lower = _normalize_for_matching(user_input)
+    is_macos = "darwin" in os_name.lower() or "mac" in os_name.lower()
+    if intent == "APP_CONTROL" and _looks_like_gui_type(lower):
+        text = _extract_gui_type_text(user_input)
+        if text:
+            return ScriptProposal(
+                explanation="You want to type text into the active local GUI control.",
+                script=_macos_type_script(text) if is_macos else _linux_type_script(text),
+                risk_level="Medium",
+                rollback="Use the target application's undo shortcut if the text was entered in the wrong place.",
+            )
+    if intent == "APP_CONTROL" and _looks_like_gui_click(lower):
+        coords = _extract_click_coordinates(user_input)
+        if coords is None:
+            coords = _extract_click_target_from_context(user_input, context_messages)
+        if coords:
+            return ScriptProposal(
+                explanation=f"You want to click the visible desktop target at x={coords[0]}, y={coords[1]}.",
+                script=_macos_click_script(coords[0], coords[1]) if is_macos else _linux_click_script(coords[0], coords[1]),
+                risk_level="Medium",
+                rollback="Click back to the previous UI state or use the application's undo/back control if needed.",
+            )
     if intent == "APP_CONTROL" and _looks_like_close_app(lower):
         app = _extract_app_name(user_input, close=True)
         if app:
@@ -288,6 +317,42 @@ def _propose_unix_script(user_input: str, intent: str) -> ScriptProposal | None:
                 rollback="Close the application if it was opened by mistake.",
             )
     return None
+
+
+def _linux_click_script(x: int, y: int) -> str:
+    return (
+        "if ! command -v xdotool >/dev/null 2>&1; then\n"
+        "  echo 'xdotool is required for Linux GUI click automation.' >&2\n"
+        "  exit 2\n"
+        "fi\n"
+        f"xdotool mousemove {x} {y} click 1"
+    )
+
+
+def _linux_type_script(text: str) -> str:
+    return (
+        "if ! command -v xdotool >/dev/null 2>&1; then\n"
+        "  echo 'xdotool is required for Linux GUI typing automation.' >&2\n"
+        "  exit 2\n"
+        "fi\n"
+        f"xdotool type --clearmodifiers --delay 5 -- {shlex.quote(text)}"
+    )
+
+
+def _macos_click_script(x: int, y: int) -> str:
+    return (
+        "if ! command -v cliclick >/dev/null 2>&1; then\n"
+        "  echo 'cliclick is required for macOS GUI click automation: brew install cliclick' >&2\n"
+        "  exit 2\n"
+        "fi\n"
+        f"cliclick c:{x},{y}"
+    )
+
+
+def _macos_type_script(text: str) -> str:
+    safe_text = text.replace("\\", "\\\\").replace('"', '\\"')
+    apple_event = f'tell application "System Events" to keystroke "{safe_text}"'
+    return f"osascript -e {shlex.quote(apple_event)}"
 
 
 def _windows_media_key_script(virtual_key: str) -> str:
@@ -568,6 +633,59 @@ def _extract_click_coordinates(text: str) -> tuple[int, int] | None:
     if x < 0 or y < 0 or x > 16384 or y > 16384:
         return None
     return x, y
+
+
+def _extract_click_target_from_context(text: str, context_messages: list[dict] | None) -> tuple[int, int] | None:
+    label = _extract_click_label(text)
+    if not label or not context_messages:
+        return None
+    normalized_label = _normalize_for_matching(label)
+    patterns = [
+        r"Target:\s*([^@\n\r]+?)\s*@\s*x\s*=\s*(\d{1,5})\s*y\s*=\s*(\d{1,5})",
+        r"([^@\n\r]+?)\s*@\s*x\s*=\s*(\d{1,5})\s*y\s*=\s*(\d{1,5})",
+        r"([^@\n\r]+?)\s+at\s+x\s*=\s*(\d{1,5})\s+y\s*=\s*(\d{1,5})",
+    ]
+    for message in reversed(context_messages[-8:]):
+        content = str(message.get("content", ""))
+        for pattern in patterns:
+            for match in re.finditer(pattern, content, re.IGNORECASE):
+                candidate = _normalize_for_matching(match.group(1))
+                if normalized_label in candidate or candidate in normalized_label:
+                    x = int(match.group(2))
+                    y = int(match.group(3))
+                    if 0 <= x <= 16384 and 0 <= y <= 16384:
+                        return x, y
+    return None
+
+
+def _extract_click_label(text: str) -> str | None:
+    quoted = re.search(r"['\"]([^'\"]{1,80})['\"]", text)
+    if quoted:
+        return _clean_click_label(quoted.group(1))
+    normalized = _normalize_for_matching(text)
+    patterns = [
+        r"\bclick\s+(?:the\s+)?(.{1,80}?)(?:\s+button)?$",
+        r"\btikla\s+(.{1,80}?)(?:\s+buton(?:u|una)?)?$",
+        r"(.{1,80}?)(?:\s+(?:button|btn|buton|butonu|butonuna|dugme|dugmesi))?\s+tikla$",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, normalized, re.IGNORECASE)
+        if match:
+            label = _clean_click_label(match.group(1))
+            if label and not re.match(r"^\d{1,5}\s*[,x]\s*\d{1,5}$", label):
+                return label
+    return None
+
+
+def _clean_click_label(label: str) -> str:
+    cleaned = _normalize_for_matching(label).strip(" .")
+    cleaned = re.sub(
+        r"\s+(?:button|btn|buton|butonu|butonuna|dugme|dugmesi)$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    return cleaned.strip(" .")
 
 
 def _resolve_app_reference(app: str | None, text: str, context_messages: list[dict] | None) -> str | None:

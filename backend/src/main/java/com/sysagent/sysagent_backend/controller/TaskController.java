@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sysagent.sysagent_backend.model.entity.TaskEntity;
+import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.TaskHistoryDto;
 import com.sysagent.sysagent_backend.model.dto.TaskExecutionResponseDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
@@ -19,6 +20,7 @@ import com.sysagent.sysagent_backend.model.response.ApiResponse;
 import com.sysagent.sysagent_backend.security.CurrentUserProvider;
 import com.sysagent.sysagent_backend.security.ScriptPolicyValidator;
 import com.sysagent.sysagent_backend.service.DeviceService;
+import com.sysagent.sysagent_backend.service.DeviceContextService;
 import com.sysagent.sysagent_backend.service.NodeCommandService;
 import com.sysagent.sysagent_backend.service.TaskService;
 import com.sysagent.sysagent_backend.service.ScriptExecutionService;
@@ -41,6 +43,7 @@ public class TaskController {
     private final ScriptPolicyValidator scriptPolicyValidator;
     private final DeviceService deviceService;
     private final NodeCommandService nodeCommandService;
+    private final DeviceContextService deviceContextService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskHistoryDto>>> getTaskHistory() {
@@ -66,6 +69,26 @@ public class TaskController {
         }
         NodeCommandStatusDto status = nodeCommandService.getLatestStatusForTask(taskId, ownerId).orElse(null);
         return ResponseEntity.ok(ApiResponse.success(status, "Remote command status loaded"));
+    }
+
+    @GetMapping("/{id}/post-command-context")
+    public ResponseEntity<ApiResponse<DeviceContextSnapshotDto>> getTaskPostCommandContext(@PathVariable("id") String taskId) {
+        TaskEntity task = taskService.getTaskById(taskId);
+        String ownerId = currentUserProvider.getCurrentUserId();
+        if (!ownerId.equals(task.getOwnerId())) {
+            return ResponseEntity.status(403).body(ApiResponse.<DeviceContextSnapshotDto>builder()
+                    .status("ERROR")
+                    .message("Task does not belong to the current user.")
+                    .build());
+        }
+        if (task.getTargetDeviceId() == null) {
+            return ResponseEntity.ok(ApiResponse.success(null, "Task does not target a remote device"));
+        }
+        deviceService.getOwnedDevice(task.getTargetDeviceId(), ownerId);
+        DeviceContextSnapshotDto context = deviceContextService
+                .getLatestPostCommandContext(task.getTargetDeviceId(), ownerId, taskId)
+                .orElse(null);
+        return ResponseEntity.ok(ApiResponse.success(context, "Post-command context loaded"));
     }
 
     @PostMapping("/{id}/execute")
