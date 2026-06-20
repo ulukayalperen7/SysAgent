@@ -9,9 +9,6 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Callable
 
-from langchain_core.messages import HumanMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 from core.config import settings
 
 ScreenSummarizer = Callable[[str, str], str | None]
@@ -64,6 +61,9 @@ def redact_device_context_for_audit(device_context: dict[str, Any] | None) -> di
 
 
 def summarize_screen_image(mime_type: str, image_base64: str) -> str | None:
+    from langchain_core.messages import HumanMessage
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
     api_key = settings.google_api_key or settings.gemini_api_key
     if not api_key:
         raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY is not set.")

@@ -10,7 +10,9 @@ class RuntimeHealthTests(unittest.TestCase):
         self.assertIn("fastapi", status)
         self.assertIn("langgraph", status)
         self.assertIn("mcp", status)
+        self.assertIn("langchain_google_genai", status)
         self.assertTrue(status["langgraph"]["required"])
+        self.assertTrue(status["langchain_google_genai"]["required"])
         self.assertIsInstance(status["langgraph"]["available"], bool)
         self.assertEqual(status["langgraph"]["module"], "langgraph")
 

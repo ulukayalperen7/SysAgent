@@ -23,6 +23,7 @@ RUNTIME_DEPENDENCIES: tuple[RuntimeDependency, ...] = (
     RuntimeDependency("crewai", "crewai", True, "diagnostics specialist agents"),
     RuntimeDependency("mcp", "mcp", True, "MCP transport and tool protocol"),
     RuntimeDependency("psutil", "psutil", True, "local read-only system inspection"),
+    RuntimeDependency("langchain_google_genai", "langchain_google_genai", True, "Gemini LLM and screen-vision summaries"),
     RuntimeDependency("psycopg", "psycopg", False, "PostgreSQL/Supabase Agent Hub access"),
     RuntimeDependency(
         "langgraph_checkpoint_postgres",

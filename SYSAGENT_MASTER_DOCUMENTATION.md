@@ -129,6 +129,8 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - The installable `sysagent-node` CLI package exists under `node_runtime`; it can register, run interactively, and generate/apply native background runtime setup for Windows, Linux, and macOS.
 - Remote command status is visible through owner-scoped task APIs and the Angular terminal/history surfaces refresh queued node work until completion or failure.
 - The Devices page can open the terminal with a selected target device and inspect owner-scoped task logs for each registered node.
+- Node desktop context is now part of the remote-device foundation: the node can submit active-window/process metadata and a bounded screenshot snapshot; the backend stores it owner-scoped and the Devices page can preview the latest context.
+- Screen images are not blindly persisted through AI state. For screen-context requests, the backend may include the latest bounded screenshot, AI Engine summarizes it into text with a vision-capable model when enabled, and raw base64 is removed before LangGraph state and Agent Hub audit metadata.
 
 ## 8. Self-Healing Model
 When an approved script fails:
@@ -156,7 +158,7 @@ This enables controlled autonomy without bypassing safety.
   - thread/session memory isolation,
   - robust self-healing routing,
   - consistent approval gating.
-- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, and the first installable node runtime CLI/background runtime setup are now in place; the next remote-access step is broader runtime packaging and screen/context-aware GUI automation.
+- Auth, owner scoping, device ownership, backend node command queue, live remote command status refresh, device task logs, installable node runtime CLI/background setup, desktop context snapshots, and controlled screen-summary context are now in place. The next remote-access step is explicit GUI action execution with approval boundaries, not silent remote control.
 
 ## 11. Why Supabase
 Supabase (PostgreSQL) is the source of truth for:
@@ -173,7 +175,7 @@ This makes behavior traceable and production-ready.
 3. Add a semantic MCP tool planner so tool selection is not limited to keyword and regex matching.
 4. Bind Agent Hub prompt versions into runtime prompt construction.
 5. Add an evaluation suite for read-only routing, risky approval gates, multi-step queues, Turkish/English commands, and self-healing.
-6. Build the installable remote node runtime that calls the existing heartbeat, command polling, and result callback endpoints.
+6. Harden desktop context and GUI action planning: keep screenshot capture bounded, summarize visuals into text, and route any click/type automation through explicit approval and backend/node audit.
 
 ## 13. Framework Posture
 Current core framework choices:

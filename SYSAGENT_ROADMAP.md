@@ -522,3 +522,4 @@ Notes:
 - Propagated lightweight screen context summaries into the AI Engine payload for selected remote devices without embedding large screenshot payloads in every analysis request.
 - Connected remote screen context to LangGraph script proposal prompts and deterministic app-reference resolution, so requests like "close this app" can resolve to the latest active process without hardcoding product-specific commands.
 - Added controlled screenshot-to-text preparation: backend only includes raw screen images for screen-context requests, AI Engine can summarize them with a vision-capable Gemini model, and raw base64 is removed before LangGraph state/audit storage.
+- Hardened screen-context observability and dependency safety by lazy-loading vision dependencies, exposing screen vision settings in runtime status, and documenting that raw screenshots are converted to bounded text summaries before LangGraph/audit storage.

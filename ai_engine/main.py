@@ -73,6 +73,12 @@ async def runtime_status(refresh_agent_hub: bool = False):
             "detail": mcp.detail,
             "tools": local_system_mcp_client.list_tools(),
         },
+        "screen_context": {
+            "vision_enabled": settings.screen_vision_enabled,
+            "vision_model": settings.llm_model,
+            "max_base64_chars": settings.screen_vision_max_base64_chars,
+            "raw_images_retained_in_graph_state": False,
+        },
     }
 
 class AnalyzeRequest(BaseModel):
