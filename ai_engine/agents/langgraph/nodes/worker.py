@@ -77,11 +77,12 @@ def generate_action_script_node(state: AgentState):
 
     # Prefer deterministic proposals for common terminal operations. This keeps
     # app/file/media commands stable and avoids unnecessary LLM variability.
+    context_messages = _messages_with_screen_context(state)
     deterministic = propose_deterministic_script(
         state["user_input"],
         intent,
         os_name,
-        context_messages=state.get("messages", []),
+        context_messages=context_messages,
     )
     if deterministic:
         return _finalize_script_proposal(state, deterministic.explanation, deterministic.script, os_name, intent)
@@ -213,8 +214,50 @@ def _format_target_context(state: AgentState) -> str:
         name = context.get("name") or f"Device #{state.get('target_device_id')}"
         device_type = context.get("type") or "Unknown"
         status = context.get("status") or "unknown"
-        return f"Remote device '{name}' ({device_type}, status={status})."
+        base = f"Remote device '{name}' ({device_type}, status={status})."
+        screen = _format_screen_context(context.get("screen_context") or {})
+        return f"{base} {screen}".strip()
     return "Local backend host."
+
+
+def _format_screen_context(screen: dict) -> str:
+    if not screen:
+        return "No recent desktop screen context is available."
+    active_window = screen.get("active_window_title") or "unknown window"
+    active_process = screen.get("active_process_name") or "unknown process"
+    captured_at = screen.get("captured_at") or "unknown time"
+    dimensions = ""
+    if screen.get("screen_width") and screen.get("screen_height"):
+        dimensions = f" Screen size: {screen.get('screen_width')}x{screen.get('screen_height')}."
+    has_screenshot = "yes" if screen.get("has_screenshot") else "no"
+    return (
+        f"Latest desktop context captured at {captured_at}: "
+        f"active window='{active_window}', active process='{active_process}', "
+        f"screenshot_available={has_screenshot}.{dimensions}"
+    )
+
+
+def _messages_with_screen_context(state: AgentState) -> list[dict]:
+    messages = list(state.get("messages", []))
+    context = state.get("device_context") or {}
+    screen = context.get("screen_context") or {}
+    active_process = screen.get("active_process_name")
+    if active_process:
+        messages.append(
+            {
+                "role": "system",
+                "content": f"Current desktop active application/process named '{active_process}'.",
+            }
+        )
+    active_window = screen.get("active_window_title")
+    if active_window:
+        messages.append(
+            {
+                "role": "system",
+                "content": f"Current desktop active window title is '{active_window}'.",
+            }
+        )
+    return messages
 
 
 def _target_os_name(state: AgentState) -> str:

@@ -144,7 +144,11 @@ def _propose_windows_script(
         )
 
     if intent == "APP_CONTROL" and _looks_like_close_app(lower):
-        app = _extract_app_name(user_input, close=True)
+        app = _resolve_app_reference(
+            _extract_app_name(user_input, close=True),
+            user_input,
+            context_messages,
+        )
         if app:
             process = _sanitize_process_name(app)
             return ScriptProposal(
@@ -481,6 +485,8 @@ def _extract_recent_app_name(context_messages: list[dict] | None) -> str | None:
     patterns = [
         r"local application ['\"]([^'\"]+)['\"]",
         r"application/process named ['\"]([^'\"]+)['\"]",
+        r"active application/process named ['\"]([^'\"]+)['\"]",
+        r"active process ['\"]([^'\"]+)['\"]",
         r"\$app\s*=\s*['\"]([^'\"]+)['\"]",
     ]
     for message in reversed(context_messages[-12:]):

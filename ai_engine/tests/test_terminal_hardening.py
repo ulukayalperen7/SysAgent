@@ -189,6 +189,20 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertIsNotNone(proposal)
         self.assertIn('$app = "notepad"', proposal.script)
 
+    def test_contextual_app_close_resolves_this_app_from_screen_context(self):
+        proposal = propose_deterministic_script(
+            "close this app",
+            "APP_CONTROL",
+            "Windows",
+            context_messages=[
+                {"role": "system", "content": "Current desktop active application/process named 'Code.exe'."},
+            ],
+        )
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('Stop-Process -Name "Code"', proposal.script)
+        self.assertNotIn('"this app"', proposal.script)
+
     def test_real_turkish_intent_detects_trailing_app_open(self):
         self.assertEqual(_detect_intent_deterministic("notepad'\u0131 a\u00e7"), "APP_CONTROL")
 

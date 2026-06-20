@@ -520,3 +520,4 @@ Notes:
 - Added cross-platform `sysagent-node service-install/service-uninstall` planning for Windows Scheduled Task, Linux systemd user service, and macOS LaunchAgent, with explicit `--apply` for execution.
 - Added the first desktop context foundation for remote nodes: node-token-protected snapshot submission, owner-scoped latest context API, active-window/process metadata, bounded screenshot storage, and Devices page preview.
 - Propagated lightweight screen context summaries into the AI Engine payload for selected remote devices without embedding large screenshot payloads in every analysis request.
+- Connected remote screen context to LangGraph script proposal prompts and deterministic app-reference resolution, so requests like "close this app" can resolve to the latest active process without hardcoding product-specific commands.
