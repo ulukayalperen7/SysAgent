@@ -37,6 +37,7 @@ class DeviceServiceTest {
         DeviceRegistrationTokenResponseDto response = service.createRegistrationToken("user-1", "Laptop");
 
         assertThat(response.getBootstrapCommand())
-                .startsWith("sysagent-node register --server https://sysagent.example.com --token ");
+                .startsWith("sysagent-node bootstrap --server https://sysagent.example.com --token ")
+                .endsWith(" --install-service");
     }
 }

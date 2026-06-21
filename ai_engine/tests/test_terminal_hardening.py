@@ -239,6 +239,8 @@ class TerminalHardeningTests(unittest.TestCase):
 
         self.assertIsNotNone(proposal)
         self.assertIn('$targetProcess = "Code"', proposal.script)
+        self.assertIn("Could not focus target process", proposal.script)
+        self.assertIn("GetForegroundWindow", proposal.script)
         self.assertIn("System.Windows.Forms", proposal.script)
         self.assertIn('SendWait("hello world")', proposal.script)
 
@@ -256,6 +258,8 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertIsNotNone(proposal)
         self.assertIn("$x = 120", proposal.script)
         self.assertIn("$y = 240", proposal.script)
+        self.assertIn("GetSystemMetrics", proposal.script)
+        self.assertIn("outside the visible screen bounds", proposal.script)
         self.assertIn("mouse_event", proposal.script)
 
     def test_gui_click_can_target_label_from_vision_summary(self):

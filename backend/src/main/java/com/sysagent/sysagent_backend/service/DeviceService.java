@@ -65,7 +65,7 @@ public class DeviceService {
         return DeviceRegistrationTokenResponseDto.builder()
                 .token(token)
                 .expiresAt(expiresAt)
-                .bootstrapCommand("sysagent-node register --server " + normalizedPublicBackendUrl() + " --token " + token)
+                .bootstrapCommand("sysagent-node bootstrap --server " + normalizedPublicBackendUrl() + " --token " + token + " --install-service")
                 .build();
     }
 

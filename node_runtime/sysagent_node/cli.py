@@ -27,6 +27,17 @@ def main(argv: list[str] | None = None) -> int:
     register.add_argument("--type", choices=["WINDOWS", "LINUX", "MACOS"], default=_default_type())
     register.add_argument("--config", type=Path)
 
+    bootstrap = subcommands.add_parser("bootstrap")
+    bootstrap.add_argument("--server", required=True)
+    bootstrap.add_argument("--token", required=True)
+    bootstrap.add_argument("--name", default=socket.gethostname())
+    bootstrap.add_argument("--type", choices=["WINDOWS", "LINUX", "MACOS"], default=_default_type())
+    bootstrap.add_argument("--config", type=Path)
+    bootstrap.add_argument("--install-service", action="store_true")
+    bootstrap.add_argument("--apply-service", action="store_true")
+    bootstrap.add_argument("--poll-interval", type=int, default=3)
+    bootstrap.add_argument("--context-interval", type=int, default=120)
+
     status = subcommands.add_parser("status")
     status.add_argument("--config", type=Path)
 
@@ -63,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "register":
             return _register(args)
+        if args.command == "bootstrap":
+            return _bootstrap(args)
         if args.command == "status":
             return _status(args.config)
         if args.command == "doctor":
@@ -106,6 +119,28 @@ def _register(args: argparse.Namespace) -> int:
     )
     saved = save_config(cfg, args.config)
     print(f"Registered device {cfg.device_id}. Config saved to {saved}.")
+    return 0
+
+
+def _bootstrap(args: argparse.Namespace) -> int:
+    registered = _register(args)
+    if registered != 0:
+        return registered
+
+    doctor_exit = _doctor(args.config, check_backend=True)
+    if doctor_exit != 0:
+        print("Bootstrap stopped because diagnostics failed.", file=sys.stderr)
+        return doctor_exit
+
+    if args.install_service:
+        apply_service = bool(args.apply_service)
+        service_exit = _service_install(args.config, args.poll_interval, args.context_interval, apply_service)
+        if service_exit != 0:
+            return service_exit
+        if not apply_service:
+            print("Service plan is ready. Re-run with --apply-service to enable always-on access.")
+    else:
+        print("Bootstrap complete. Run 'sysagent-node run' to keep this device online.")
     return 0
 
 

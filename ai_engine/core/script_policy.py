@@ -477,18 +477,21 @@ def _windows_focus_process_script(process_name: str) -> str:
     return (
         f'$targetProcess = "{safe_process}"\n'
         "$proc = Get-Process -Name $targetProcess -ErrorAction SilentlyContinue | "
-        "Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1\n"
-        "if ($proc) {\n"
+        "Where-Object { $_.MainWindowHandle -ne 0 } | Sort-Object Id -Descending | Select-Object -First 1\n"
+        "if (-not $proc) { throw \"Could not focus target process: $targetProcess\" }\n"
         '  Add-Type -TypeDefinition @"\n'
         "using System;\n"
         "using System.Runtime.InteropServices;\n"
         "public class SysAgentWindowFocus {\n"
         '  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);\n'
+        '  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);\n'
+        '  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();\n'
         "}\n"
         '"@\n'
-        "  [SysAgentWindowFocus]::SetForegroundWindow($proc.MainWindowHandle) | Out-Null\n"
-        "  Start-Sleep -Milliseconds 250\n"
-        "}\n"
+        "[SysAgentWindowFocus]::ShowWindow($proc.MainWindowHandle, 5) | Out-Null\n"
+        "[SysAgentWindowFocus]::SetForegroundWindow($proc.MainWindowHandle) | Out-Null\n"
+        "Start-Sleep -Milliseconds 300\n"
+        "if ([SysAgentWindowFocus]::GetForegroundWindow() -ne $proc.MainWindowHandle) { throw \"Could not bring target process to foreground: $targetProcess\" }\n"
     )
 
 
@@ -523,8 +526,12 @@ def _windows_gui_click_script(coords: tuple[int, int] | None, process_name: str)
         + "public class SysAgentMouseInput {\n"
         + '  [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);\n'
         + '  [DllImport("user32.dll")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, UIntPtr dwExtraInfo);\n'
+        + '  [DllImport("user32.dll")] public static extern int GetSystemMetrics(int nIndex);\n'
         + "}\n"
         + '"@\n'
+        + "$screenWidth = [SysAgentMouseInput]::GetSystemMetrics(0)\n"
+        + "$screenHeight = [SysAgentMouseInput]::GetSystemMetrics(1)\n"
+        + 'if ($x -lt 0 -or $y -lt 0 -or $x -ge $screenWidth -or $y -ge $screenHeight) { throw "Click coordinates are outside the visible screen bounds." }\n'
         + "[SysAgentMouseInput]::SetCursorPos($x, $y) | Out-Null\n"
         + "Start-Sleep -Milliseconds 100\n"
         + "[SysAgentMouseInput]::mouse_event(0x0002, $x, $y, 0, [UIntPtr]::Zero)\n"

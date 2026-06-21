@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from sysagent_node.cli import _doctor, _poll_once, main
 from sysagent_node.config import NodeConfig
+from sysagent_node.diagnostics import DiagnosticCheck
 
 
 class FakeApi:
@@ -16,6 +17,15 @@ class FakeApi:
         self.node_token = node_token
         self.command_result_payload = None
         FakeApi.instances.append(self)
+
+    def register(self, token, name, ip_address, node_type):
+        return {
+            "data": {
+                "device": {"id": 42},
+                "nodeToken": "node-token",
+                "heartbeatIntervalSeconds": 30,
+            }
+        }
 
     def next_command(self, device_id):
         return {
@@ -88,6 +98,38 @@ class CliPollingTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 1)
         self.assertIn("Node is not registered yet", error_output.getvalue())
+
+    def test_bootstrap_registers_runs_diagnostics_and_prepares_service_plan(self):
+        class Plan:
+            path = Path("service-file")
+            commands = ["enable service"]
+
+        with TemporaryDirectory() as temp:
+            config = Path(temp) / "config.json"
+            with patch("sysagent_node.cli.SysAgentApi", FakeApi), \
+                 patch(
+                     "sysagent_node.cli.run_diagnostics",
+                     return_value=[
+                         DiagnosticCheck("config", True, "ok"),
+                         DiagnosticCheck("backend-auth", True, "ok"),
+                     ],
+                 ) as diagnostics, \
+                 patch("sysagent_node.cli.create_install_plan", return_value=Plan()) as install_plan, \
+                 patch("sys.stdout", new_callable=StringIO) as output:
+                exit_code = main([
+                    "bootstrap",
+                    "--server", "http://localhost:8080",
+                    "--token", "registration-token",
+                    "--config", str(config),
+                    "--type", "WINDOWS",
+                    "--install-service",
+                ])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Registered device 42", output.getvalue())
+        self.assertIn("Service plan is ready", output.getvalue())
+        diagnostics.assert_called_once()
+        install_plan.assert_called_once()
 
 
 if __name__ == "__main__":

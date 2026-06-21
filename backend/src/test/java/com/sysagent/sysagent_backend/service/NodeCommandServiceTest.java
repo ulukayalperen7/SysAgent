@@ -103,6 +103,31 @@ class NodeCommandServiceTest {
     }
 
     @Test
+    void rejectsResultWhenCommandBelongsToDifferentDevice() {
+        nodeCommandService = service();
+        DeviceEntity device = device("node-token");
+        NodeCommandEntity command = NodeCommandEntity.builder()
+                .id(UUID.randomUUID())
+                .taskId("task-1")
+                .deviceId(99L)
+                .ownerId("user-1")
+                .script("Write-Output ok")
+                .status(NodeCommandStatus.CLAIMED)
+                .createdAt(LocalDateTime.now())
+                .build();
+        NodeCommandResultRequestDto result = new NodeCommandResultRequestDto();
+        result.setDeviceId(10L);
+        result.setSuccess(true);
+
+        when(deviceRepository.findById(10L)).thenReturn(Optional.of(device));
+        when(nodeCommandRepository.findById(command.getId())).thenReturn(Optional.of(command));
+
+        assertThatThrownBy(() -> nodeCommandService.recordCommandResult("node-token", command.getId().toString(), result))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Command does not belong to this device.");
+    }
+
+    @Test
     void rejectsQueueWhenDeviceOwnerDoesNotMatchTaskOwner() {
         nodeCommandService = service();
         when(deviceRepository.findById(10L)).thenReturn(Optional.of(device("correct-token")));

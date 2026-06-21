@@ -15,6 +15,7 @@ export interface TerminalLog {
     remoteCommandStatus?: string;
     failed?: boolean;   // Track if the execution failed (for self-healing UI State)
     pendingCount?: number; // Number of tasks remaining in the queue
+    verificationRepairAttempt?: boolean; // Prevent repeated visual-repair loops for the same step
 }
 
 @Injectable({

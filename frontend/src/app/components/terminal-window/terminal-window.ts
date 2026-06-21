@@ -402,6 +402,14 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
           type
         });
         if (verification.status === 'failed' || verification.status === 'uncertain') {
+          if (logEntry.verificationRepairAttempt) {
+            this.terminalService.addLog({
+              sender: 'system',
+              text: 'Verification repair already ran once for this step. Stopping the queue so you can review manually.',
+              type: 'warning'
+            });
+            return;
+          }
           this.selfHealVerification(verification, logEntry);
           return;
         }
@@ -465,6 +473,7 @@ Please analyze the latest visible desktop state and generate one corrected minim
             targetDeviceId,
             targetDeviceName,
             pendingCount: failedLogEntry.pendingCount ?? response.pendingCount ?? 0,
+            verificationRepairAttempt: true,
             type: verification.status === 'failed' ? 'error' : 'warning'
           });
           return;
