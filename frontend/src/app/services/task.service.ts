@@ -5,7 +5,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { NodeCommandStatus, TaskHistoryItem, TaskPostCommandContext } from '../models/task.model';
+import { NodeCommandStatus, PostCommandVerification, TaskHistoryItem, TaskPostCommandContext } from '../models/task.model';
 
 @Injectable({
     providedIn: 'root'
@@ -55,6 +55,21 @@ export class TaskService {
             }),
             catchError(error => {
                 console.error('TaskService: Error loading post-command context', error);
+                throw error;
+            })
+        );
+    }
+
+    getPostCommandVerification(taskId: string): Observable<PostCommandVerification | null> {
+        return this.http.get<ApiResponse<PostCommandVerification>>(`${this.apiUrl}/${taskId}/post-command-verification`).pipe(
+            map(response => {
+                if (response.status !== 'SUCCESS') {
+                    throw new Error(response.message || 'Post-command verification response was not successful.');
+                }
+                return response.data ?? null;
+            }),
+            catchError(error => {
+                console.error('TaskService: Error loading post-command verification', error);
                 throw error;
             })
         );

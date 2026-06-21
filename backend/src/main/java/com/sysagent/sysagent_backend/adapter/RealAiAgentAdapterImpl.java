@@ -18,6 +18,7 @@ import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
+import com.sysagent.sysagent_backend.model.dto.PostCommandVerificationDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
 import lombok.RequiredArgsConstructor;
@@ -141,6 +142,44 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         }
     }
 
+    @Override
+    public PostCommandVerificationDto verifyPostCommand(
+            String taskId,
+            String expectedAction,
+            String commandOutput,
+            String commandError,
+            DeviceDto targetDevice,
+            DeviceContextSnapshotDto targetContext) {
+        String endpoint = aiEngine.getUrl().replaceAll("/$", "") + "/verify-action";
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("task_id", taskId);
+        payload.put("expected_action", expectedAction);
+        payload.put("command_output", commandOutput);
+        payload.put("command_error", commandError);
+        payload.put("device_context", buildDeviceContext(targetDevice, targetContext, true));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(endpoint, new HttpEntity<>(payload, headers), Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> body = response.getBody();
+                return PostCommandVerificationDto.builder()
+                        .taskId(taskId)
+                        .status(normalizeText(body.get("status")))
+                        .reason(normalizeText(body.get("reason")))
+                        .screenSummary(normalizeText(body.get("screen_summary")))
+                        .build();
+            }
+            return verificationFallback(taskId, "unknown", "AI verification returned " + response.getStatusCode());
+        } catch (Exception e) {
+            log.warn("AI post-command verification failed: {}", e.getMessage());
+            return verificationFallback(taskId, "unknown", "AI verification unavailable.");
+        }
+    }
+
     /**
      * Accepts JSON null or NONE; strips markdown fences from script text.
      */
@@ -195,6 +234,14 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             context.put("screen_context", screenContext);
         }
         return context;
+    }
+
+    private PostCommandVerificationDto verificationFallback(String taskId, String status, String reason) {
+        return PostCommandVerificationDto.builder()
+                .taskId(taskId)
+                .status(status)
+                .reason(reason)
+                .build();
     }
 
     private static boolean shouldIncludeScreenImage(String intent) {

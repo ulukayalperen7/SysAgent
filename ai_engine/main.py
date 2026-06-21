@@ -15,7 +15,7 @@ from core.langgraph_checkpoint import checkpoint_status
 from core.mcp_client import local_system_mcp_client
 from core.mcp_process import ensure_local_mcp_server
 from core.runtime_health import runtime_health_status
-from core.screen_context import prepare_device_context_for_graph, redact_device_context_for_audit
+from core.screen_context import prepare_device_context_for_graph, redact_device_context_for_audit, verify_action_outcome
 from core.security import SecurityAnalyzer
 from core.security_guardian import SecurityGuardian
 
@@ -99,6 +99,19 @@ class AnalyzeResponse(BaseModel):
     active_step: str | None = None
     pending_count: int = 0  # Number of tasks remaining in the execution queue
 
+class VerifyActionRequest(BaseModel):
+    task_id: str | None = None
+    expected_action: str
+    command_output: str | None = None
+    command_error: str | None = None
+    device_context: Dict[str, Any] = Field(default_factory=dict)
+
+class VerifyActionResponse(BaseModel):
+    task_id: str | None = None
+    status: str
+    reason: str
+    screen_summary: str | None = None
+
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_system(request: AnalyzeRequest):
     sanitized_prompt = SecurityAnalyzer.sanitize_prompt(request.user_prompt)
@@ -175,6 +188,25 @@ async def analyze_system(request: AnalyzeRequest):
             script="NONE",
             original_prompt=sanitized_prompt
         )
+
+
+@app.post("/verify-action", response_model=VerifyActionResponse)
+async def verify_action(request: VerifyActionRequest):
+    device_context = prepare_device_context_for_graph(
+        request.device_context or {"execution_mode": "local_backend"}
+    )
+    verification = verify_action_outcome(
+        expected_action=request.expected_action,
+        command_output=request.command_output,
+        command_error=request.command_error,
+        prepared_device_context=device_context,
+    )
+    return VerifyActionResponse(
+        task_id=request.task_id,
+        status=verification.get("status") or "uncertain",
+        reason=verification.get("reason") or "Verification did not produce a reason.",
+        screen_summary=verification.get("screen_summary"),
+    )
 
 
 def _agent_slug_for_route(target_langgraph_node: str | None) -> str | None:

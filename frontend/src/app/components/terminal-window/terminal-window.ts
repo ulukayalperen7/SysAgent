@@ -345,7 +345,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
             text: `Fresh desktop context captured after command: ${active}${size}.`,
             type: 'success'
           });
-          done();
+          this.verifyPostCommandContext(logEntry, done);
           return;
         }
         if (attempt + 1 >= POST_COMMAND_CONTEXT_MAX_ATTEMPTS) {
@@ -366,6 +366,46 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
         this.terminalService.addLog({
           sender: 'system',
           text: this.extractApiErrorMessage(err, 'Fresh desktop context refresh failed. Continuing.'),
+          type: 'warning'
+        });
+        done();
+      }
+    });
+  }
+
+  private verifyPostCommandContext(logEntry: TerminalLog, done: () => void): void {
+    if (!logEntry.taskId) {
+      done();
+      return;
+    }
+    this.taskService.getPostCommandVerification(logEntry.taskId).subscribe({
+      next: verification => {
+        if (!verification) {
+          done();
+          return;
+        }
+        const label = verification.status === 'verified'
+          ? 'verified'
+          : verification.status === 'failed'
+            ? 'failed'
+            : 'uncertain';
+        const type = verification.status === 'verified'
+          ? 'success'
+          : verification.status === 'failed'
+            ? 'error'
+            : 'warning';
+        const reason = verification.reason || 'No verification reason was returned.';
+        this.terminalService.addLog({
+          sender: 'system',
+          text: `Post-command verification ${label}: ${reason}`,
+          type
+        });
+        done();
+      },
+      error: err => {
+        this.terminalService.addLog({
+          sender: 'system',
+          text: this.extractApiErrorMessage(err, 'Post-command verification failed. Continuing.'),
           type: 'warning'
         });
         done();

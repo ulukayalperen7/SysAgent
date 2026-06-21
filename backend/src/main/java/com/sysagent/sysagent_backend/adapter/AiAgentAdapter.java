@@ -4,6 +4,7 @@ import com.sysagent.sysagent_backend.model.dto.AgentIntentResponseDto;
 import com.sysagent.sysagent_backend.model.dto.AiRuntimeStatusDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceContextSnapshotDto;
 import com.sysagent.sysagent_backend.model.dto.DeviceDto;
+import com.sysagent.sysagent_backend.model.dto.PostCommandVerificationDto;
 import com.sysagent.sysagent_backend.model.dto.SystemMetricsDto;
 
 public interface AiAgentAdapter {
@@ -17,5 +18,12 @@ public interface AiAgentAdapter {
             DeviceContextSnapshotDto targetContext);
 
     AiRuntimeStatusDto getRuntimeStatus();
-}
 
+    PostCommandVerificationDto verifyPostCommand(
+            String taskId,
+            String expectedAction,
+            String commandOutput,
+            String commandError,
+            DeviceDto targetDevice,
+            DeviceContextSnapshotDto targetContext);
+}

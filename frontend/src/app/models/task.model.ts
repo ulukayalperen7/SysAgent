@@ -55,3 +55,10 @@ export interface TaskPostCommandContext {
     capturedAt?: string | null;
     createdAt?: string | null;
 }
+
+export interface PostCommandVerification {
+    taskId: string;
+    status: 'verified' | 'failed' | 'uncertain' | string;
+    reason?: string | null;
+    screenSummary?: string | null;
+}

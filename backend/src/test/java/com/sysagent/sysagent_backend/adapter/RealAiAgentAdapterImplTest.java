@@ -169,4 +169,36 @@ class RealAiAgentAdapterImplTest {
         assertThat((Map<String, Object>) deviceContext.get("screen_context"))
                 .containsEntry("screen_image_base64", "abc");
     }
+
+    @Test
+    void mapsPostCommandVerificationResponse() {
+        when(aiEngineProperties.getUrl()).thenReturn("http://localhost:8001");
+        when(restTemplate.postForEntity(eq("http://localhost:8001/verify-action"), any(), eq(Map.class)))
+                .thenReturn(ResponseEntity.ok(Map.of(
+                        "status", "verified",
+                        "reason", "The app is visible.",
+                        "screen_summary", "The application opened and is visible.")));
+
+        var response = adapter.verifyPostCommand(
+                "task-5",
+                "open app",
+                "ok",
+                null,
+                DeviceDto.builder().id(7L).name("Office PC").type(DeviceType.WINDOWS).status("online").build(),
+                DeviceContextSnapshotDto.builder()
+                        .screenshotMimeType("image/jpeg")
+                        .screenshotBase64("abc")
+                        .build());
+
+        assertThat(response.getStatus()).isEqualTo("verified");
+        assertThat(response.getReason()).contains("visible");
+
+        ArgumentCaptor<HttpEntity<Map<String, Object>>> captor = ArgumentCaptor.forClass(HttpEntity.class);
+        org.mockito.Mockito.verify(restTemplate).postForEntity(eq("http://localhost:8001/verify-action"), captor.capture(), eq(Map.class));
+        Map<String, Object> payload = captor.getValue().getBody();
+        assertThat(payload).containsEntry("expected_action", "open app");
+        Map<String, Object> deviceContext = (Map<String, Object>) payload.get("device_context");
+        assertThat((Map<String, Object>) deviceContext.get("screen_context"))
+                .containsEntry("screen_image_base64", "abc");
+    }
 }

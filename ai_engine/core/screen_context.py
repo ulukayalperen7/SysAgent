@@ -60,6 +60,61 @@ def redact_device_context_for_audit(device_context: dict[str, Any] | None) -> di
     return context
 
 
+def verify_action_outcome(
+    expected_action: str,
+    command_output: str | None,
+    command_error: str | None,
+    prepared_device_context: dict[str, Any] | None,
+) -> dict[str, str | None]:
+    context = prepared_device_context or {}
+    screen = context.get("screen_context") if isinstance(context, dict) else {}
+    screen = screen if isinstance(screen, dict) else {}
+    summary = str(screen.get("vision_summary") or "").strip()
+    active = str(screen.get("active_window_title") or screen.get("active_process_name") or "").strip()
+    error_text = str(command_error or "").strip()
+    output_text = str(command_output or "").strip()
+
+    if error_text:
+        return {
+            "status": "failed",
+            "reason": f"The node command reported an error: {error_text[:240]}",
+            "screen_summary": summary or None,
+        }
+
+    lower_summary = summary.lower()
+    failure_terms = ("error", "failed", "failure", "denied", "blocked", "not found", "cannot", "unable", "exception")
+    success_terms = ("success", "completed", "created", "saved", "opened", "visible", "done", "ready")
+    if any(term in lower_summary for term in failure_terms):
+        return {
+            "status": "failed",
+            "reason": "The post-command screen summary contains visible failure or blocked-state cues.",
+            "screen_summary": summary,
+        }
+    if any(term in lower_summary for term in success_terms):
+        return {
+            "status": "verified",
+            "reason": "The command completed and the post-command screen summary contains success-state cues.",
+            "screen_summary": summary,
+        }
+    if output_text and summary:
+        return {
+            "status": "uncertain",
+            "reason": "The command completed and a fresh screen was captured, but the visual summary is not conclusive.",
+            "screen_summary": summary,
+        }
+    if active:
+        return {
+            "status": "uncertain",
+            "reason": f"The command completed and the active desktop context is now '{active}', but no clear success cue was detected.",
+            "screen_summary": summary or None,
+        }
+    return {
+        "status": "uncertain",
+        "reason": f"The command completed, but there is not enough visual evidence to verify '{expected_action}'.",
+        "screen_summary": summary or None,
+    }
+
+
 def summarize_screen_image(mime_type: str, image_base64: str) -> str | None:
     from langchain_core.messages import HumanMessage
     from langchain_google_genai import ChatGoogleGenerativeAI

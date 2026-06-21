@@ -1,6 +1,6 @@
 import unittest
 
-from core.screen_context import prepare_device_context_for_graph, redact_device_context_for_audit
+from core.screen_context import prepare_device_context_for_graph, redact_device_context_for_audit, verify_action_outcome
 
 
 class ScreenContextTests(unittest.TestCase):
@@ -40,6 +40,28 @@ class ScreenContextTests(unittest.TestCase):
         self.assertEqual(screen["vision_summary"], "A terminal is open.")
         self.assertNotIn("screen_image_base64", screen)
         self.assertNotIn("screen_image_mime_type", screen)
+
+    def test_verification_marks_command_error_as_failed(self):
+        result = verify_action_outcome(
+            expected_action="open app",
+            command_output="",
+            command_error="Application not found",
+            prepared_device_context={"screen_context": {"vision_summary": "Desktop is unchanged."}},
+        )
+
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("Application not found", result["reason"])
+
+    def test_verification_uses_success_screen_cues(self):
+        result = verify_action_outcome(
+            expected_action="open app",
+            command_output="ok",
+            command_error=None,
+            prepared_device_context={"screen_context": {"vision_summary": "The application opened and is visible."}},
+        )
+
+        self.assertEqual(result["status"], "verified")
+        self.assertIn("visible", result["screen_summary"])
 
 
 if __name__ == "__main__":
