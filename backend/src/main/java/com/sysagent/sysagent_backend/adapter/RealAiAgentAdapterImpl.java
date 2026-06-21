@@ -212,6 +212,10 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
                 || lower.contains("sunu")
                 || lower.contains("current")
                 || lower.contains("active")
+                || lower.contains("continue")
+                || lower.contains("devam")
+                || lower.contains("next")
+                || lower.contains("sonraki")
                 || lower.contains("click")
                 || lower.contains("tikla");
     }

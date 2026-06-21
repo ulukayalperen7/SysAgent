@@ -140,4 +140,33 @@ class RealAiAgentAdapterImplTest {
         assertThat((Map<String, Object>) deviceContext.get("screen_context"))
                 .containsEntry("screen_image_base64", "abc");
     }
+
+    @Test
+    void includesScreenImageForQueueResumeRequests() {
+        when(aiEngineProperties.getUrl()).thenReturn("http://localhost:8001");
+        when(restTemplate.postForEntity(eq("http://localhost:8001/analyze"), any(), eq(Map.class)))
+                .thenReturn(ResponseEntity.ok(Map.of(
+                        "explanation", "Understanding:\nContinue next step.",
+                        "script", "NONE",
+                        "active_step", "continue",
+                        "pending_count", 0)));
+
+        adapter.analyzeIntent(
+                "task-4",
+                "devam",
+                SystemMetricsDto.builder().osName("Windows 11").build(),
+                "thread-1",
+                "user-1",
+                DeviceDto.builder().id(7L).name("Office PC").type(DeviceType.WINDOWS).status("online").build(),
+                DeviceContextSnapshotDto.builder()
+                        .screenshotMimeType("image/jpeg")
+                        .screenshotBase64("abc")
+                        .build());
+
+        ArgumentCaptor<HttpEntity<Map<String, Object>>> captor = ArgumentCaptor.forClass(HttpEntity.class);
+        org.mockito.Mockito.verify(restTemplate).postForEntity(eq("http://localhost:8001/analyze"), captor.capture(), eq(Map.class));
+        Map<String, Object> deviceContext = (Map<String, Object>) captor.getValue().getBody().get("device_context");
+        assertThat((Map<String, Object>) deviceContext.get("screen_context"))
+                .containsEntry("screen_image_base64", "abc");
+    }
 }
