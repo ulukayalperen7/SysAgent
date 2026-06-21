@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.sysagent.sysagent_backend.model.dto.DeviceNodeRegistrationRequestDto;
@@ -27,6 +28,9 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final DeviceRegistrationTokenRepository registrationTokenRepository;
     private final TokenHashingService tokenHashingService;
+
+    @Value("${sysagent.public-backend-url:http://localhost:8080}")
+    private String publicBackendUrl;
 
     /**
      * Replaced getAllDevices with a tenant-aware method.
@@ -61,7 +65,7 @@ public class DeviceService {
         return DeviceRegistrationTokenResponseDto.builder()
                 .token(token)
                 .expiresAt(expiresAt)
-                .bootstrapCommand("sysagent-node register --server http://localhost:8080 --token " + token)
+                .bootstrapCommand("sysagent-node register --server " + normalizedPublicBackendUrl() + " --token " + token)
                 .build();
     }
 
@@ -142,5 +146,12 @@ public class DeviceService {
             return "unknown";
         }
         return value.length() > 120 ? value.substring(0, 120) : value;
+    }
+
+    private String normalizedPublicBackendUrl() {
+        String value = publicBackendUrl == null || publicBackendUrl.isBlank()
+                ? "http://localhost:8080"
+                : publicBackendUrl.trim();
+        return value.replaceAll("/+$", "");
     }
 }

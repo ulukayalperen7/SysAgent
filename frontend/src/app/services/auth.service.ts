@@ -24,6 +24,7 @@ export class AuthService {
     private readonly apiUrl = `${environment.apiUrl}/auth`;
     private readonly tokenKey = 'sysagent_auth_token';
     private readonly userKey = 'sysagent_auth_user';
+    private readonly expiresAtKey = 'sysagent_auth_expires_at';
     private readonly userSubject = new BehaviorSubject<AuthUser | null>(this.loadStoredUser());
 
     readonly user$ = this.userSubject.asObservable();
@@ -38,8 +39,25 @@ export class AuthService {
         return this.userSubject.value;
     }
 
+    get tokenExpired(): boolean {
+        const raw = localStorage.getItem(this.expiresAtKey);
+        if (!raw) {
+            return !!localStorage.getItem(this.tokenKey);
+        }
+        const expiresAt = Number(raw);
+        return !Number.isFinite(expiresAt) || Date.now() >= expiresAt;
+    }
+
     isAuthenticated(): boolean {
-        return !!this.token && !!this.currentUser;
+        if (!this.token || !this.currentUser) {
+            return false;
+        }
+        if (this.tokenExpired) {
+            this.clearStoredSession();
+            this.userSubject.next(null);
+            return false;
+        }
+        return true;
     }
 
     register(email: string, password: string, displayName: string): Observable<AuthResponse> {
@@ -57,9 +75,7 @@ export class AuthService {
     }
 
     logout(): void {
-        localStorage.removeItem(this.tokenKey);
-        localStorage.removeItem(this.userKey);
-        localStorage.removeItem('sysagent_terminal_thread_id');
+        this.clearStoredSession();
         this.userSubject.next(null);
         this.router.navigate(['/login']);
     }
@@ -74,8 +90,16 @@ export class AuthService {
     private storeSession(response: AuthResponse): void {
         localStorage.setItem(this.tokenKey, response.token);
         localStorage.setItem(this.userKey, JSON.stringify(response.user));
+        localStorage.setItem(this.expiresAtKey, String(Date.now() + response.expiresInSeconds * 1000));
         localStorage.removeItem('sysagent_terminal_thread_id');
         this.userSubject.next(response.user);
+    }
+
+    private clearStoredSession(): void {
+        localStorage.removeItem(this.tokenKey);
+        localStorage.removeItem(this.userKey);
+        localStorage.removeItem(this.expiresAtKey);
+        localStorage.removeItem('sysagent_terminal_thread_id');
     }
 
     private loadStoredUser(): AuthUser | null {

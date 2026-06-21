@@ -31,6 +31,16 @@ class TerminalHardeningTests(unittest.TestCase):
 
         self.assertEqual(result["task_queue"], ["previous song pls ?"])
 
+    def test_planner_keeps_gui_click_task_deterministic(self):
+        result = decompose_task_node({"user_input": "Submit butonuna t\u0131kla", "task_queue": []})
+
+        self.assertEqual(result["task_queue"], ["Submit butonuna t\u0131kla"])
+
+    def test_planner_resumes_queue_with_turkish_continue(self):
+        result = decompose_task_node({"user_input": "devam", "task_queue": ["open notepad"]})
+
+        self.assertEqual(result["task_queue"], ["open notepad"])
+
     def test_chat_shortcut_does_not_need_llm(self):
         result = direct_chat_node(
             {

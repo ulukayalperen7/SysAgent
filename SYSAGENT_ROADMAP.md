@@ -530,3 +530,4 @@ Notes:
 - Added screen-summary label targeting for GUI clicks, so requests such as "click Submit" or "Submit butonuna tikla" can resolve to coordinates from vision context without hardcoding application-specific workflows.
 - Added Linux and macOS GUI helper plans for click/type automation: Linux uses `xdotool`; macOS uses `cliclick` for coordinates and System Events for typing, with explicit missing-tool errors.
 - Added an owner-scoped post-command context lookup endpoint and Angular terminal retry loop so completed remote commands can surface fresh desktop context before queued multi-step automation continues.
+- Hardened the auth/orchestration path with frontend JWT expiry checks, cleaner backend 400/401 request errors, Turkish queue-resume keywords, and a configurable public backend URL for node bootstrap commands.

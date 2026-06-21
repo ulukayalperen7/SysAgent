@@ -16,7 +16,10 @@ def decompose_task_node(state: AgentState):
     
     # RESUMPTION LOGIC: If user says "continue", "next", "ok" etc. 
     # and we have a queue, don't re-decompose.
-    resumption_keywords = ["continue", "next", "ok", "proceed", "resume", "yes", "go", "go on", "let's go"]
+    resumption_keywords = [
+        "continue", "next", "ok", "proceed", "resume", "yes", "go", "go on", "let's go",
+        "devam", "sonraki", "tamam", "evet", "olur",
+    ]
     if existing_queue and any(k == user_msg or user_msg.startswith(k) for k in resumption_keywords):
         return {"task_queue": existing_queue}
 
@@ -108,6 +111,7 @@ def _looks_like_single_terminal_task(user_msg: str) -> bool:
         "open ", "launch ", "start ", "close ", "kill ", "quit ",
         " ac", "ac ", "kapat", "sonlandir", "sarki",
         "song", "track", "previous", "next", "skip", "play pause",
+        "click", "tikla", "type ", "send keys", "write into", "klavyeden yaz",
         "create", "touch", "delete", "remove", "write", "olustur", "sil", "yaz",
         "desktop", "masaustu", ".txt", ".py", ".log",
         "top memory", "process", "network", "connection", "cpu", "ram",

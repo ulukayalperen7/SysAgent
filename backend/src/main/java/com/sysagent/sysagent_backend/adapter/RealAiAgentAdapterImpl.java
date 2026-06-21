@@ -2,6 +2,7 @@ package com.sysagent.sysagent_backend.adapter;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.context.annotation.Primary;
@@ -49,7 +50,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         if (intent.length() > 4000) {
             return fallbackResponse(taskId, "Prompt is too long (max 4000 chars).");
         }
-        String lowerIntent = intent.toLowerCase();
+        String lowerIntent = intent.toLowerCase(Locale.ROOT);
         if (lowerIntent.contains("system.exit") || lowerIntent.contains("runtime.exec")) {
             return fallbackResponse(taskId, "Potential Java-level code injection detected.");
         }
@@ -200,22 +201,29 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         if (intent == null) {
             return false;
         }
-        String lower = intent.toLowerCase();
+        String lower = normalizeForMatching(intent);
         return lower.contains("screen")
                 || lower.contains("screenshot")
                 || lower.contains("ekran")
-                || lower.contains("görü")
                 || lower.contains("goru")
                 || lower.contains("this")
                 || lower.contains("that")
                 || lower.contains("bunu")
-                || lower.contains("şunu")
                 || lower.contains("sunu")
                 || lower.contains("current")
                 || lower.contains("active")
                 || lower.contains("click")
-                || lower.contains("tıkla")
                 || lower.contains("tikla");
+    }
+
+    private static String normalizeForMatching(String value) {
+        return value.toLowerCase(Locale.ROOT)
+                .replace('ç', 'c')
+                .replace('ğ', 'g')
+                .replace('ı', 'i')
+                .replace('ö', 'o')
+                .replace('ş', 's')
+                .replace('ü', 'u');
     }
 
     private static String stripCodeFences(String raw) {
