@@ -136,7 +136,7 @@ def generate_action_script_node(state: AgentState):
     - Include only the current step; the LangGraph queue handles future steps.
     - If you are targeting a specific application, ALWAYS prioritize commands that find, focus, and target that application's Window or Process directly.
     - AVOID using ambiguous global hotkeys (like MediaPlayPause or Spacebar) unless you have first ensured the correct window is in focus.
-    - If the user had a failure previously, analyze the Context History and do not repeat the same failed strategy.
+    - If User Input contains EXEC_FAILED, VERIFICATION_FAILED, or VERIFICATION_UNCERTAIN, repair only that same current step and do not repeat the same failed strategy.
     - GENERATE COMMANDS ONLY FOR THE CURRENT "User Input" STEP. Do not include actions from previous or future tasks.
     - If Context History mentions old tasks, ignore them unless User Input explicitly asks for them now.
     - Never combine unrelated operations in one script.

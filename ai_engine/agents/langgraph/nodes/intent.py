@@ -69,7 +69,7 @@ def _detect_intent_deterministic(user_input: str) -> str | None:
     lower = _normalize_for_matching(user_input).strip()
     if lower in CHAT_SHORTCUTS:
         return "CHAT"
-    if "exec_failed:" in lower:
+    if _is_repair_feedback(lower):
         return "UNKNOWN"
 
     write_terms = ("create", "touch", "delete", "remove", "write", "set content", "move", "rename", "olustur", "sil", "yaz")
@@ -117,6 +117,14 @@ def _contains_devops_write_term(lower: str, terms: tuple[str, ...]) -> bool:
     if any(term in lower for term in terms):
         return True
     return bool(re.search(r"\binstall\b", lower))
+
+
+def _is_repair_feedback(lower: str) -> bool:
+    return (
+        "exec_failed:" in lower
+        or "verification_failed:" in lower
+        or "verification_uncertain:" in lower
+    )
 
 
 def _normalize_for_matching(text: str) -> str:

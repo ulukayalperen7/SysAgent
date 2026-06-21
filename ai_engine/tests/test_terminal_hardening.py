@@ -41,6 +41,13 @@ class TerminalHardeningTests(unittest.TestCase):
 
         self.assertEqual(result["task_queue"], ["open notepad"])
 
+    def test_planner_keeps_verification_repair_prompt_atomic(self):
+        prompt = "VERIFICATION_FAILED: The previous approved desktop action did not verify cleanly.\nPrevious script:\nclick 120,240"
+
+        result = decompose_task_node({"user_input": prompt, "task_queue": ["create note.txt"]})
+
+        self.assertEqual(result["task_queue"], [prompt])
+
     def test_chat_shortcut_does_not_need_llm(self):
         result = direct_chat_node(
             {
@@ -69,6 +76,12 @@ class TerminalHardeningTests(unittest.TestCase):
     def test_deterministic_intent_detects_app_and_file_write(self):
         self.assertEqual(_detect_intent_deterministic("open notepad"), "APP_CONTROL")
         self.assertEqual(_detect_intent_deterministic("delete test.txt from desktop"), "FILE_SYSTEM_WRITE")
+
+    def test_deterministic_intent_routes_verification_repair_to_worker(self):
+        self.assertEqual(
+            _detect_intent_deterministic("VERIFICATION_UNCERTAIN: button may not have been clicked"),
+            "UNKNOWN",
+        )
 
     def test_windows_open_app_proposal_is_review_only(self):
         proposal = propose_deterministic_script("open notepad", "APP_CONTROL", "Windows")

@@ -23,9 +23,9 @@ def decompose_task_node(state: AgentState):
     if existing_queue and any(k == user_msg or user_msg.startswith(k) for k in resumption_keywords):
         return {"task_queue": existing_queue}
 
-    # SELF-HEALING BYPASS: Error feedback from a failed WRITE/DELETE task
-    # Skip decomposition and send it directly for immediate script repair
-    if "exec_failed:" in user_msg:
+    # SELF-HEALING BYPASS: Error or verification feedback from the terminal
+    # must stay as one repair prompt for the worker.
+    if _is_repair_feedback(user_msg):
         return {"task_queue": [state['user_input']]}
 
     # Fast path for simple chat and common multi-step terminal commands. This
@@ -117,6 +117,14 @@ def _looks_like_single_terminal_task(user_msg: str) -> bool:
         "top memory", "process", "network", "connection", "cpu", "ram",
     )
     return any(marker in normalized for marker in markers)
+
+
+def _is_repair_feedback(user_msg: str) -> bool:
+    return (
+        "exec_failed:" in user_msg
+        or "verification_failed:" in user_msg
+        or "verification_uncertain:" in user_msg
+    )
 
 
 def _normalize_for_matching(text: str) -> str:

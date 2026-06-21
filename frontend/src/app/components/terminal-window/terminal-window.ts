@@ -8,6 +8,7 @@ import { Device, DeviceService } from '../../services/device.service';
 import { TaskService } from '../../services/task.service';
 import { AgentIntentResponse, TaskExecutionResponse } from '../../models/agent.model';
 import { ApiResponse } from '../../models/api-response.model';
+import { PostCommandVerification } from '../../models/task.model';
 
 // Maximum number of characters a user can send in one message
 const MAX_PROMPT_LENGTH = 4000;
@@ -226,7 +227,7 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
           });
         }
 
-        if (response.script) {
+        if (response.script && response.script !== 'NONE') {
           this.terminalService.addLog({
             sender: 'ai',
             text: `Recommended Action:`,
@@ -400,6 +401,10 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
           text: `Post-command verification ${label}: ${reason}`,
           type
         });
+        if (verification.status === 'failed' || verification.status === 'uncertain') {
+          this.selfHealVerification(verification, logEntry);
+          return;
+        }
         done();
       },
       error: err => {
@@ -409,6 +414,74 @@ export class TerminalWindow implements AfterViewChecked, OnInit {
           type: 'warning'
         });
         done();
+      }
+    });
+  }
+
+  private selfHealVerification(verification: PostCommandVerification, failedLogEntry: TerminalLog): void {
+    this.isThinking = true;
+    failedLogEntry.executed = true;
+    failedLogEntry.failed = verification.status === 'failed';
+
+    const failedScript = this.truncateForAiContext(failedLogEntry.script || 'UNKNOWN', 1200);
+    const reason = this.truncateForAiContext(verification.reason || 'No verification reason was returned.', 1200);
+    const screenSummary = this.truncateForAiContext(verification.screenSummary || 'No screen summary was returned.', 1200);
+    const status = verification.status === 'failed' ? 'FAILED' : 'UNCERTAIN';
+    const repairPrompt = `VERIFICATION_${status}: The previous approved desktop action did not verify cleanly.
+
+Previous script:
+${failedScript}
+
+Verification status:
+${verification.status}
+
+Verification reason:
+${reason}
+
+Latest screen summary:
+${screenSummary}
+
+Please analyze the latest visible desktop state and generate one corrected minimal script for the same current step. Do not repeat the same failed strategy. If no safe correction is possible, return Script: NONE.`;
+
+    const targetDeviceId = failedLogEntry.targetDeviceId ?? this.selectedDeviceId;
+    const targetDeviceName = failedLogEntry.targetDeviceName ?? this.getSelectedDeviceName();
+
+    this.agentService.processIntent(repairPrompt, this.threadId, targetDeviceId).subscribe({
+      next: (response: AgentIntentResponse) => {
+        this.isThinking = false;
+        if (response.explanation && response.explanation.trim() !== '') {
+          this.terminalService.addLog({
+            sender: 'ai',
+            text: `> ${response.explanation}`,
+            type: 'success'
+          });
+        }
+        if (response.script && response.script !== 'NONE') {
+          this.terminalService.addLog({
+            sender: 'ai',
+            text: `Recommended Action (Verification Repair):`,
+            script: response.script,
+            taskId: response.taskId,
+            targetDeviceId,
+            targetDeviceName,
+            pendingCount: failedLogEntry.pendingCount ?? response.pendingCount ?? 0,
+            type: verification.status === 'failed' ? 'error' : 'warning'
+          });
+          return;
+        }
+        this.terminalService.addLog({
+          sender: 'system',
+          text: 'Verification repair did not produce a safe command. Review the desktop state before continuing.',
+          type: 'warning'
+        });
+      },
+      error: (err: any) => {
+        this.isThinking = false;
+        this.terminalService.addLog({
+          sender: 'system',
+          text: this.extractApiErrorMessage(err, 'Verification repair failed: Could not reach the AI engine.'),
+          type: 'error'
+        });
       }
     });
   }
@@ -457,7 +530,7 @@ Please analyze the exact error, generate a corrected minimal script for the same
             taskId: response.taskId,
             targetDeviceId,
             targetDeviceName,
-            pendingCount: response.pendingCount ?? 0,
+            pendingCount: failedLogEntry.pendingCount ?? response.pendingCount ?? 0,
             type: 'warning'
           });
         }

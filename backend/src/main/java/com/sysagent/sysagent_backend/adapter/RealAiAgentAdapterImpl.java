@@ -264,7 +264,11 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
                 || lower.contains("next")
                 || lower.contains("sonraki")
                 || lower.contains("click")
-                || lower.contains("tikla");
+                || lower.contains("tikla")
+                || lower.contains("verification")
+                || lower.contains("verify")
+                || lower.contains("uncertain")
+                || lower.contains("failed");
     }
 
     private static String normalizeForMatching(String value) {
