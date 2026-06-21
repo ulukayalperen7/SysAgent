@@ -8,6 +8,7 @@ from pathlib import Path
 
 from sysagent_node import __version__
 from sysagent_node.config import NodeConfig, config_path, load_config, save_config
+from sysagent_node.diagnostics import run_diagnostics
 from sysagent_node.desktop_context import collect_desktop_context
 from sysagent_node.executor import execute_script
 from sysagent_node.http_client import ApiError, SysAgentApi
@@ -28,6 +29,10 @@ def main(argv: list[str] | None = None) -> int:
 
     status = subcommands.add_parser("status")
     status.add_argument("--config", type=Path)
+
+    doctor = subcommands.add_parser("doctor")
+    doctor.add_argument("--config", type=Path)
+    doctor.add_argument("--skip-backend", action="store_true")
 
     heartbeat = subcommands.add_parser("heartbeat")
     heartbeat.add_argument("--config", type=Path)
@@ -60,6 +65,8 @@ def main(argv: list[str] | None = None) -> int:
             return _register(args)
         if args.command == "status":
             return _status(args.config)
+        if args.command == "doctor":
+            return _doctor(args.config, check_backend=not args.skip_backend)
         if args.command == "heartbeat":
             cfg = load_config(args.config)
             _heartbeat(cfg)
@@ -110,6 +117,18 @@ def _status(path: Path | None = None) -> int:
     cfg = load_config(target)
     print(f"Registered device {cfg.device_id} -> {cfg.server_url}")
     return 0
+
+
+def _doctor(path: Path | None = None, check_backend: bool = True) -> int:
+    target = path or config_path()
+    cfg = None
+    if target.exists():
+        cfg = load_config(target)
+    checks = run_diagnostics(cfg, target, _default_type(), check_backend=check_backend)
+    for check in checks:
+        status = "OK" if check.ok else "FAIL"
+        print(f"[{status}] {check.name}: {check.detail}")
+    return 0 if all(check.ok for check in checks) else 2
 
 
 def _heartbeat(cfg: NodeConfig) -> None:
@@ -203,6 +222,7 @@ def _submit_context_after_command(cfg: NodeConfig, command_id: str, task_id: str
 
 
 def _service_install(path: Path | None, poll_interval: int, context_interval: int, apply: bool) -> int:
+    load_config(path)
     plan = create_install_plan(path, poll_interval, context_interval, apply=apply)
     print(f"Service file written to {plan.path}.")
     for command in plan.commands:

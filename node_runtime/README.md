@@ -24,10 +24,18 @@ Then register and run:
 ```powershell
 sysagent-node register --server http://localhost:8080 --token <registration-token>
 sysagent-node status
+sysagent-node doctor
 sysagent-node heartbeat
 sysagent-node context
 sysagent-node poll-once
 sysagent-node run
+```
+
+Use `doctor` after registration to verify the local config, backend/node-token authentication, and platform GUI helper readiness:
+
+```powershell
+sysagent-node doctor
+sysagent-node doctor --skip-backend
 ```
 
 Install as an always-on background runtime:
@@ -56,4 +64,4 @@ python -m sysagent_node.cli status
 python -m unittest discover -s tests -q
 ```
 
-The runtime stores the backend-issued node token in `~/.sysagent-node/config.json`. Keep that file private. Heartbeats include basic CPU/RAM usage when `psutil` is available. Desktop context includes active window metadata and a downscaled screenshot when the OS allows capture; use `sysagent-node context --no-screenshot` or `sysagent-node run --context-interval 0` to disable periodic screenshot submission. After a queued command runs, the node still attempts a best-effort fresh context snapshot so the web UI and AI can see the latest state. GUI click/type proposals are platform-specific: Windows uses built-in Win32/PowerShell helpers, Linux requires `xdotool`, and macOS click coordinates require `cliclick` while typing uses System Events. The runtime has a local denylist for critical destructive command patterns, but the main approval and audit boundary remains the Spring backend.
+The runtime stores the backend-issued node token in `~/.sysagent-node/config.json`. Keep that file private. `service-install` now requires an existing config so an empty background service cannot be installed accidentally. Heartbeats include basic CPU/RAM usage when `psutil` is available. Desktop context includes active window metadata and a downscaled screenshot when the OS allows capture; use `sysagent-node context --no-screenshot` or `sysagent-node run --context-interval 0` to disable periodic screenshot submission. After a queued command runs, the node still attempts a best-effort fresh context snapshot so the web UI and AI can see the latest state. GUI click/type proposals are platform-specific: Windows uses built-in Win32/PowerShell helpers, Linux requires `xdotool`, and macOS click coordinates require `cliclick` while typing uses System Events. The runtime has a local denylist for critical destructive command patterns, but the main approval and audit boundary remains the Spring backend.

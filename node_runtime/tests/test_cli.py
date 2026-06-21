@@ -1,8 +1,10 @@
 import unittest
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from sysagent_node.cli import _poll_once
+from sysagent_node.cli import _doctor, _poll_once, main
 from sysagent_node.config import NodeConfig
 
 
@@ -68,6 +70,24 @@ class CliPollingTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         submit_context.assert_not_called()
+
+    def test_doctor_reports_missing_config(self):
+        with TemporaryDirectory() as temp:
+            missing = Path(temp) / "missing.json"
+            with patch("sys.stdout", new_callable=StringIO) as output:
+                exit_code = _doctor(missing, check_backend=False)
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("[FAIL] config", output.getvalue())
+
+    def test_service_install_requires_registered_config(self):
+        with TemporaryDirectory() as temp:
+            missing = Path(temp) / "missing.json"
+            with patch("sys.stderr", new_callable=StringIO) as error_output:
+                exit_code = main(["service-install", "--config", str(missing)])
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn("Node is not registered yet", error_output.getvalue())
 
 
 if __name__ == "__main__":

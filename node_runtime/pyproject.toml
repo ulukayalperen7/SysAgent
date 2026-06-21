@@ -2,10 +2,23 @@
 name = "sysagent-node"
 version = "0.1.0"
 description = "SysAgent remote node runtime"
+readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "SysAgent" },
+]
 dependencies = [
     "pillow>=10,<12",
     "psutil>=5.9,<8",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
 ]
 
 [project.scripts]
