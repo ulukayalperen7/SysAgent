@@ -606,11 +606,11 @@ def _extract_app_name(text: str, close: bool) -> str | None:
     if not match:
         trailing_app = _extract_app_before_trailing_verb(text, close)
         if trailing_app:
-            return _strip_turkish_object_suffix(trailing_app)
+            return _strip_bare_turkish_suffix(_strip_turkish_object_suffix(trailing_app))
         return None
     app = match.group(1).strip(" .")
     app = re.split(r"\s+(?:then|sonra|and then|ardından)\s+", app, maxsplit=1, flags=re.IGNORECASE)[0]
-    return _strip_turkish_object_suffix(app.strip()) or None
+    return _strip_bare_turkish_suffix(_strip_turkish_object_suffix(app.strip())) or None
 
 
 def _extract_gui_type_text(text: str) -> str | None:
@@ -777,6 +777,17 @@ def _strip_turkish_object_suffix(app: str) -> str:
     cleaned = app.strip(" .'\"")
     cleaned = re.sub(r"(?:['\s]+)(?:i|ı|u|ü|yi|yı|yu|yü)$", "", cleaned, flags=re.IGNORECASE)
     return cleaned.strip(" .'\"")
+
+
+def _strip_bare_turkish_suffix(app: str | None) -> str | None:
+    if not app:
+        return app
+    cleaned = app.strip(" .'\"")
+    normalized = _normalize_for_matching(cleaned)
+    preserve = {"safari", "spotify", "unity", "notion", "figma", "jira", "anki"}
+    if normalized in preserve:
+        return cleaned
+    return re.sub(r"(?<=[bcdfghjklmnpqrstvwxyz])(?:i|\u0131|u|\u00fc)$", "", cleaned, flags=re.IGNORECASE).strip(" .'\"")
 
 
 def _extract_file_name(text: str) -> str | None:

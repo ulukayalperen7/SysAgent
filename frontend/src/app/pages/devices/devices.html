@@ -16,14 +16,17 @@
         </label>
         <div class="token-box" *ngIf="registrationToken">
             <span>Registration token expires at {{ registrationToken.expiresAt | date:'short' }}</span>
+            <span>Run this command on the computer you want to connect, then refresh this page.</span>
             <code>{{ registrationToken.bootstrapCommand }}</code>
+            <button class="btn-secondary btn-sm" type="button" (click)="copyBootstrapCommand()">Copy command</button>
+            <span class="copy-message" *ngIf="copyMessage">{{ copyMessage }}</span>
         </div>
     </div>
 
     <div class="state-panel" *ngIf="loading">Loading devices...</div>
     <div class="state-panel error" *ngIf="errorMessage">{{ errorMessage }}</div>
     <div class="state-panel" *ngIf="!loading && !errorMessage && devices.length === 0">
-        No devices are registered yet.
+        No devices are registered yet. Generate a token, install the node runtime on the target machine, and run the bootstrap command there.
     </div>
 
     <div class="device-grid" *ngIf="!loading && !errorMessage">

@@ -103,6 +103,18 @@ class TerminalHardeningTests(unittest.TestCase):
         self.assertNotIn('"teams:"', proposal.script)
         self.assertIn("Could not start application or verify process", proposal.script)
 
+    def test_turkish_object_suffix_is_removed_from_app_open(self):
+        proposal = propose_deterministic_script("teamsi a\u00e7", "APP_CONTROL", "Windows")
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('$app = "teams"', proposal.script)
+
+    def test_app_names_ending_with_i_are_preserved(self):
+        proposal = propose_deterministic_script("safari a\u00e7", "APP_CONTROL", "Windows")
+
+        self.assertIsNotNone(proposal)
+        self.assertIn('$app = "safari"', proposal.script)
+
     def test_windows_media_next_proposal_uses_virtual_key(self):
         proposal = propose_deterministic_script("next song", "APP_CONTROL", "Windows")
 

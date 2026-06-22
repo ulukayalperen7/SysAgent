@@ -20,6 +20,7 @@ export class Devices implements OnInit {
   registrationLabel = '';
   registrationToken?: DeviceRegistrationToken;
   creatingToken = false;
+  copyMessage = '';
   selectedDevice?: Device;
   deviceTasks: TaskHistoryItem[] = [];
   loadingTasks = false;
@@ -63,6 +64,7 @@ export class Devices implements OnInit {
     this.deviceService.createRegistrationToken(this.registrationLabel || 'New SysAgent node').subscribe({
       next: token => {
         this.registrationToken = token;
+        this.copyMessage = '';
         this.creatingToken = false;
         this.cdr.detectChanges();
       },
@@ -72,6 +74,20 @@ export class Devices implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  copyBootstrapCommand(): void {
+    const command = this.registrationToken?.bootstrapCommand;
+    if (!command) return;
+    navigator.clipboard?.writeText(command)
+      .then(() => {
+        this.copyMessage = 'Command copied. Run it in a terminal on the machine you want to connect.';
+        this.cdr.detectChanges();
+      })
+      .catch(() => {
+        this.copyMessage = 'Copy failed. Select the command text manually.';
+        this.cdr.detectChanges();
+      });
   }
 
   openTerminal(device: Device) {
