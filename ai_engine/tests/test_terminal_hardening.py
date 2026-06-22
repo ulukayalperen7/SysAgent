@@ -107,7 +107,9 @@ class TerminalHardeningTests(unittest.TestCase):
         proposal = propose_deterministic_script("teamsi a\u00e7", "APP_CONTROL", "Windows")
 
         self.assertIsNotNone(proposal)
-        self.assertIn('$app = "teams"', proposal.script)
+        self.assertIn('$app = "teamsi"', proposal.script)
+        self.assertIn("$needleVariants", proposal.script)
+        self.assertIn("Substring(0, $needle.Length - 1)", proposal.script)
 
     def test_app_names_ending_with_i_are_preserved(self):
         proposal = propose_deterministic_script("safari a\u00e7", "APP_CONTROL", "Windows")

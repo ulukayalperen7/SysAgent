@@ -380,6 +380,16 @@ def _windows_open_app_script(app: str) -> str:
         "  }\n"
         "$needle = Normalize-Name $app\n"
         "$fallbackProcess = ($app -replace '\\.exe$', '')\n"
+        "$needleVariants = New-Object System.Collections.Generic.List[string]\n"
+        "function Add-NeedleVariant([string]$value) {\n"
+        "  $normalized = Normalize-Name $value\n"
+        "  if ($normalized -and -not $needleVariants.Contains($normalized)) { $needleVariants.Add($normalized) | Out-Null }\n"
+        "}\n"
+        "Add-NeedleVariant $app\n"
+        "if ($needle.Length -gt 3 -and $needle -match '[bcdfghjklmnpqrstvwxyz][aeiou]$') {\n"
+        "  Add-NeedleVariant $needle.Substring(0, $needle.Length - 1)\n"
+        "}\n"
+        "$fallbackProcesses = @($fallbackProcess) + @($needleVariants)\n"
         "$candidates = New-Object System.Collections.Generic.List[object]\n"
         "function Add-Candidate([string]$target, [string[]]$processNames) {\n"
         "  if ([string]::IsNullOrWhiteSpace($target)) { return }\n"
@@ -388,7 +398,11 @@ def _windows_open_app_script(app: str) -> str:
         "}\n"
         "function Matches-App([string]$value) {\n"
         "  $normalized = Normalize-Name $value\n"
-        "  return $normalized -and ($normalized.Contains($needle) -or $needle.Contains($normalized))\n"
+        "  if (-not $normalized) { return $false }\n"
+        "  foreach ($variant in $needleVariants) {\n"
+        "    if ($variant -and ($normalized.Contains($variant) -or $variant.Contains($normalized))) { return $true }\n"
+        "  }\n"
+        "  return $false\n"
         "}\n"
         "function Test-AppRunning([string[]]$processNames) {\n"
         "  foreach ($name in $processNames) {\n"
@@ -396,12 +410,14 @@ def _windows_open_app_script(app: str) -> str:
         "  }\n"
         "  foreach ($proc in Get-Process -ErrorAction SilentlyContinue) {\n"
         "    $procName = Normalize-Name $proc.ProcessName\n"
-        "    if ($procName -and ($procName.Contains($needle) -or $needle.Contains($procName))) { return $true }\n"
+        "    foreach ($variant in $needleVariants) {\n"
+        "      if ($procName -and $variant -and ($procName.Contains($variant) -or $variant.Contains($procName))) { return $true }\n"
+        "    }\n"
         "  }\n"
         "  return $false\n"
         "}\n"
-        "Add-Candidate $app @($fallbackProcess)\n"
-        "Add-Candidate \"$app.exe\" @($fallbackProcess)\n"
+        "Add-Candidate $app $fallbackProcesses\n"
+        "Add-Candidate \"$app.exe\" $fallbackProcesses\n"
         "$appPathRoots = @(\n"
         "  'Registry::HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths',\n"
         "  'Registry::HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths',\n"
@@ -429,11 +445,11 @@ def _windows_open_app_script(app: str) -> str:
         "  if (-not (Test-Path -LiteralPath $menu)) { continue }\n"
         "  foreach ($shortcut in Get-ChildItem -LiteralPath $menu -Filter *.lnk -Recurse -ErrorAction SilentlyContinue) {\n"
         "    if (-not (Matches-App $shortcut.BaseName)) { continue }\n"
-        "    $procNames = @($fallbackProcess)\n"
+        "    $procNames = $fallbackProcesses\n"
         "    if ($shell) {\n"
         "      try {\n"
         "        $targetPath = $shell.CreateShortcut($shortcut.FullName).TargetPath\n"
-        "        if ($targetPath) { $procNames = @([IO.Path]::GetFileNameWithoutExtension($targetPath), $fallbackProcess) }\n"
+        "        if ($targetPath) { $procNames = @([IO.Path]::GetFileNameWithoutExtension($targetPath)) + $fallbackProcesses }\n"
         "      } catch { }\n"
         "    }\n"
         "    Add-Candidate $shortcut.FullName $procNames\n"
@@ -442,7 +458,7 @@ def _windows_open_app_script(app: str) -> str:
         "try {\n"
         "  foreach ($startApp in Get-StartApps -ErrorAction Stop) {\n"
         "    if (Matches-App $startApp.Name) {\n"
-        "      Add-Candidate \"shell:AppsFolder\\$($startApp.AppID)\" @($fallbackProcess)\n"
+        "      Add-Candidate \"shell:AppsFolder\\$($startApp.AppID)\" $fallbackProcesses\n"
         "    }\n"
         "  }\n"
         "} catch { }\n"
@@ -452,12 +468,12 @@ def _windows_open_app_script(app: str) -> str:
         "      $props = Get-ItemProperty -LiteralPath $protocol.PSPath -ErrorAction Stop\n"
         "      $label = (Get-Item -LiteralPath $protocol.PSPath -ErrorAction SilentlyContinue).GetValue('')\n"
         "      if ($null -ne $props.'URL Protocol' -and ((Matches-App $protocol.PSChildName) -or (Matches-App $label))) {\n"
-        "        Add-Candidate \"$($protocol.PSChildName):\" @($fallbackProcess)\n"
+        "        Add-Candidate \"$($protocol.PSChildName):\" $fallbackProcesses\n"
         "      }\n"
         "    } catch { }\n"
         "  }\n"
         "} catch { }\n"
-        "if (Test-AppRunning @($fallbackProcess)) { return }\n"
+        "if (Test-AppRunning $fallbackProcesses) { return }\n"
         "$started = $false\n"
         "foreach ($candidate in $candidates) {\n"
         "  try {\n"
@@ -606,11 +622,11 @@ def _extract_app_name(text: str, close: bool) -> str | None:
     if not match:
         trailing_app = _extract_app_before_trailing_verb(text, close)
         if trailing_app:
-            return _strip_bare_turkish_suffix(_strip_turkish_object_suffix(trailing_app))
+            return _strip_turkish_object_suffix(trailing_app)
         return None
     app = match.group(1).strip(" .")
     app = re.split(r"\s+(?:then|sonra|and then|ardından)\s+", app, maxsplit=1, flags=re.IGNORECASE)[0]
-    return _strip_bare_turkish_suffix(_strip_turkish_object_suffix(app.strip())) or None
+    return _strip_turkish_object_suffix(app.strip()) or None
 
 
 def _extract_gui_type_text(text: str) -> str | None:
@@ -777,17 +793,6 @@ def _strip_turkish_object_suffix(app: str) -> str:
     cleaned = app.strip(" .'\"")
     cleaned = re.sub(r"(?:['\s]+)(?:i|ı|u|ü|yi|yı|yu|yü)$", "", cleaned, flags=re.IGNORECASE)
     return cleaned.strip(" .'\"")
-
-
-def _strip_bare_turkish_suffix(app: str | None) -> str | None:
-    if not app:
-        return app
-    cleaned = app.strip(" .'\"")
-    normalized = _normalize_for_matching(cleaned)
-    preserve = {"safari", "spotify", "unity", "notion", "figma", "jira", "anki"}
-    if normalized in preserve:
-        return cleaned
-    return re.sub(r"(?<=[bcdfghjklmnpqrstvwxyz])(?:i|\u0131|u|\u00fc)$", "", cleaned, flags=re.IGNORECASE).strip(" .'\"")
 
 
 def _extract_file_name(text: str) -> str | None:
