@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -68,8 +69,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         requestPayload.put("target_device_id", targetDevice == null ? null : targetDevice.getId());
         requestPayload.put("device_context", buildDeviceContext(targetDevice, targetContext, shouldIncludeScreenImage(intent)));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpHeaders headers = aiEngineHeaders();
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestPayload, headers);
 
@@ -127,7 +127,11 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         String statusEndpoint = aiEngine.getUrl().replaceAll("/$", "") + "/runtime/status";
 
         try {
-            ResponseEntity<Map> response = restTemplate.getForEntity(statusEndpoint, Map.class);
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    statusEndpoint,
+                    HttpMethod.GET,
+                    new HttpEntity<>(aiEngineHeaders()),
+                    Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return AiRuntimeStatusDto.fromPayload(response.getBody());
             }
@@ -159,8 +163,7 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
         payload.put("command_error", commandError);
         payload.put("device_context", buildDeviceContext(targetDevice, targetContext, true));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpHeaders headers = aiEngineHeaders();
 
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(endpoint, new HttpEntity<>(payload, headers), Map.class);
@@ -195,6 +198,15 @@ public class RealAiAgentAdapterImpl implements AiAgentAdapter {
             return null;
         }
         return stripCodeFences(raw);
+    }
+
+    private HttpHeaders aiEngineHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (aiEngine.getApiKey() != null && !aiEngine.getApiKey().isBlank()) {
+            headers.set("X-SysAgent-AI-Key", aiEngine.getApiKey());
+        }
+        return headers;
     }
 
     private static String normalizeText(Object textObj) {

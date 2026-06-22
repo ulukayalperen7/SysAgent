@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # API Settings
     port: int = Field(default=8001, env="PORT")
     host: str = Field(default="0.0.0.0", env="HOST")
+    api_key: str = Field(default="", env="AI_ENGINE_API_KEY")
     # Default to stable server mode. Set DEBUG=true locally if hot reload is needed.
     debug_mode: bool = Field(default=False, env="DEBUG")
 

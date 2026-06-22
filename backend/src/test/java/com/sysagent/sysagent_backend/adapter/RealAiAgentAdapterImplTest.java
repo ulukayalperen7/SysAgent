@@ -81,6 +81,31 @@ class RealAiAgentAdapterImplTest {
     }
 
     @Test
+    void sendsSharedAiEngineKeyWhenConfigured() {
+        when(aiEngineProperties.getUrl()).thenReturn("http://localhost:8001");
+        when(aiEngineProperties.getApiKey()).thenReturn("shared-secret");
+        when(restTemplate.postForEntity(eq("http://localhost:8001/analyze"), any(), eq(Map.class)))
+                .thenReturn(ResponseEntity.ok(Map.of(
+                        "explanation", "Understanding:\nOpen app.",
+                        "script", "Start-Process notepad",
+                        "active_step", "open notepad",
+                        "pending_count", 0)));
+
+        adapter.analyzeIntent(
+                "task-key",
+                "open notepad",
+                SystemMetricsDto.builder().osName("Windows 11").build(),
+                "thread-1",
+                "user-1",
+                null,
+                null);
+
+        ArgumentCaptor<HttpEntity<Map<String, Object>>> captor = ArgumentCaptor.forClass(HttpEntity.class);
+        org.mockito.Mockito.verify(restTemplate).postForEntity(eq("http://localhost:8001/analyze"), captor.capture(), eq(Map.class));
+        assertThat(captor.getValue().getHeaders().getFirst("X-SysAgent-AI-Key")).isEqualTo("shared-secret");
+    }
+
+    @Test
     void includesScreenImageOnlyForScreenContextRequests() {
         when(aiEngineProperties.getUrl()).thenReturn("http://localhost:8001");
         when(restTemplate.postForEntity(eq("http://localhost:8001/analyze"), any(), eq(Map.class)))

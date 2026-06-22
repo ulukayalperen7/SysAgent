@@ -5,7 +5,8 @@ Updated to use LangGraph Orchestrator as the primary intelligent router,
 managing the interaction between Intent Nodes, Direct Chat, and CrewAI Tools.
 """
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Dict, Any
 
@@ -26,6 +27,15 @@ app = FastAPI(
 )
 
 _orchestrator_graph = None
+
+
+@app.middleware("http")
+async def require_ai_engine_key(request: Request, call_next):
+    if settings.api_key:
+        provided = request.headers.get("X-SysAgent-AI-Key", "")
+        if provided != settings.api_key:
+            return JSONResponse(status_code=401, content={"detail": "Invalid AI Engine API key."})
+    return await call_next(request)
 
 
 @app.on_event("startup")

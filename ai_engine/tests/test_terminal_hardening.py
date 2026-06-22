@@ -83,6 +83,9 @@ class TerminalHardeningTests(unittest.TestCase):
             "UNKNOWN",
         )
 
+    def test_deterministic_intent_falls_back_for_unknown_language(self):
+        self.assertIsNone(_detect_intent_deterministic("打开记事本"))
+
     def test_windows_open_app_proposal_is_review_only(self):
         proposal = propose_deterministic_script("open notepad", "APP_CONTROL", "Windows")
 

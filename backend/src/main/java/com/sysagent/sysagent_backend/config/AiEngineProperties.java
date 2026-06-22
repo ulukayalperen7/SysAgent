@@ -25,4 +25,9 @@ public class AiEngineProperties {
      * Milliseconds to wait for the full HTTP response (Crew runs can be slow).
      */
     private int readTimeoutMs = 120_000;
+
+    /**
+     * Optional shared secret sent to the AI Engine as X-SysAgent-AI-Key.
+     */
+    private String apiKey = "";
 }

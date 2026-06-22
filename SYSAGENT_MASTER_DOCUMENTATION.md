@@ -121,6 +121,9 @@ MCP must not become the execution boundary. Write, delete, install, kill, firewa
 - Auth endpoints are rate-limited in-process to slow brute-force login/register attempts.
 - API and WebSocket CORS are controlled by `SYSAGENT_CORS_ALLOWED_ORIGINS`; wildcard origins are rejected in production mode.
 - `SYSAGENT_PRODUCTION=true` requires a strong `SYSAGENT_AUTH_JWT_SECRET` before the backend starts.
+- SQL statement logging is disabled by default so task/device data is not printed into shared terminals or deployment logs unless explicitly enabled for local debugging.
+- If the AI Engine is deployed away from the backend host, `SYSAGENT_AI_ENGINE_API_KEY` must be configured on both Spring Boot and FastAPI; the backend sends it as `X-SysAgent-AI-Key`, and the AI Engine rejects requests without it.
+- Secret/config files such as `.env.*`, `application-secret.properties`, private keys, node config, and packaged runtime artifacts must stay out of Git.
 - Devices are registered to a user through short-lived one-time registration tokens.
 - Terminal requests can carry an optional target device ID; backend validates that the selected device belongs to the authenticated user before creating the task.
 - Remote-device tasks are stored with `target_device_id`; approved scripts can now be queued to the registered node runtime through the secure backend polling transport.
@@ -179,6 +182,7 @@ This makes behavior traceable and production-ready.
 4. Bind Agent Hub prompt versions into runtime prompt construction.
 5. Add an evaluation suite for read-only routing, risky approval gates, multi-step queues, Turkish/English commands, and self-healing.
 6. Harden desktop context and GUI action planning: keep screenshot capture bounded, summarize visuals into text, and route any click/type automation through explicit approval and backend/node audit.
+7. Replace the remaining deterministic language shortcuts with Agent Hub or model-backed semantic routing when reliability data shows they are becoming a product limitation. The current shortcuts are only latency fast paths and must fall back to the LLM for unclear or unsupported-language input.
 
 ## 13. Framework Posture
 Current core framework choices:

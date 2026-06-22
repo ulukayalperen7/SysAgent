@@ -105,6 +105,8 @@ def _looks_like_single_terminal_task(user_msg: str) -> bool:
     The worker and intent nodes already know how to handle these requests
     deterministically, so asking an external model just adds latency/failure
     points before we even reach the safe script proposal layer.
+    Unknown languages or unclear phrasing should fall through to the LLM
+    decomposer rather than being forced into an English/Turkish shortcut.
     """
     normalized = _normalize_for_matching(user_msg)
     markers = (

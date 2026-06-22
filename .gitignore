@@ -1,5 +1,18 @@
 # User-specific files
 .env
+.env.*
+!.env.example
+application-secret.properties
+backend/src/main/resources/application-secret.properties
+**/application-secret.properties
+*.local
+*.secret
+*.key
+*.pem
+*.p12
+*.jks
+config.json
+.sysagent-node/
 .idea/
 .vscode/
 *.swp
@@ -11,6 +24,11 @@ frontend/node_modules/
 frontend/dist/
 ai_engine/.venv/
 ai_engine/__pycache__/
+ai_engine/**/__pycache__/
+node_runtime/build/
+node_runtime/dist/
+node_runtime/*.egg-info/
+node_runtime/**/__pycache__/
 
 # OS files
 .DS_Store

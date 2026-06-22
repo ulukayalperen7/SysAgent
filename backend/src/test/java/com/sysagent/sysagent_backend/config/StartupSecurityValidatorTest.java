@@ -13,7 +13,7 @@ class StartupSecurityValidatorTest {
         SecurityProperties security = new SecurityProperties();
         security.setProduction(false);
 
-        assertThatCode(() -> new StartupSecurityValidator(auth, security).run(null))
+        assertThatCode(() -> new StartupSecurityValidator(auth, security, new AiEngineProperties()).run(null))
                 .doesNotThrowAnyException();
     }
 
@@ -24,7 +24,7 @@ class StartupSecurityValidatorTest {
         SecurityProperties security = new SecurityProperties();
         security.setProduction(true);
 
-        assertThatThrownBy(() -> new StartupSecurityValidator(auth, security).run(null))
+        assertThatThrownBy(() -> new StartupSecurityValidator(auth, security, new AiEngineProperties()).run(null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("SYSAGENT_AUTH_JWT_SECRET");
     }
@@ -37,8 +37,26 @@ class StartupSecurityValidatorTest {
         security.setProduction(true);
         security.getCors().setAllowedOrigins(java.util.List.of("*"));
 
-        assertThatThrownBy(() -> new StartupSecurityValidator(auth, security).run(null))
+        assertThatThrownBy(() -> new StartupSecurityValidator(auth, security, new AiEngineProperties()).run(null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Wildcard CORS");
+    }
+
+    @Test
+    void requiresAiEngineApiKeyForRemoteProductionEngine() {
+        AuthProperties auth = new AuthProperties();
+        auth.setJwtSecret("this-secret-is-long-enough-for-production");
+        SecurityProperties security = new SecurityProperties();
+        security.setProduction(true);
+        AiEngineProperties ai = new AiEngineProperties();
+        ai.setUrl("https://ai.example.com");
+
+        assertThatThrownBy(() -> new StartupSecurityValidator(auth, security, ai).run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("SYSAGENT_AI_ENGINE_API_KEY");
+
+        ai.setApiKey("shared-secret");
+        assertThatCode(() -> new StartupSecurityValidator(auth, security, ai).run(null))
+                .doesNotThrowAnyException();
     }
 }

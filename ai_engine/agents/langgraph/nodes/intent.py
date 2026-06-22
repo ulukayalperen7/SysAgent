@@ -65,7 +65,13 @@ def _default_intent_prompt(current_input: str) -> str:
 
 
 def _detect_intent_deterministic(user_input: str) -> str | None:
-    """Classify common terminal intents without waiting for the LLM."""
+    """
+    Classify common terminal intents without waiting for the LLM.
+
+    This is only a latency fast path. It must return None for unclear or
+    unsupported-language input so the LLM/Agent Hub router can make the real
+    routing decision instead of forcing brittle hardcoded behavior.
+    """
     lower = _normalize_for_matching(user_input).strip()
     if lower in CHAT_SHORTCUTS:
         return "CHAT"
