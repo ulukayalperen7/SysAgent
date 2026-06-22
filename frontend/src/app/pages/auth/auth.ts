@@ -24,10 +24,17 @@ export class Auth {
   submit(): void {
     if (this.loading) return;
     this.errorMessage = '';
+
+    const validationError = this.validateForm();
+    if (validationError) {
+      this.errorMessage = validationError;
+      return;
+    }
+
     this.loading = true;
     const request = this.mode === 'login'
-      ? this.authService.login(this.email, this.password)
-      : this.authService.register(this.email, this.password, this.displayName);
+      ? this.authService.login(this.email.trim(), this.password)
+      : this.authService.register(this.email.trim(), this.password, this.displayName.trim());
 
     request.subscribe({
       next: () => {
@@ -36,7 +43,7 @@ export class Auth {
       },
       error: err => {
         this.loading = false;
-        this.errorMessage = err?.error?.message || err?.message || 'Authentication failed.';
+        this.errorMessage = this.extractErrorMessage(err);
       }
     });
   }
@@ -44,5 +51,35 @@ export class Auth {
   toggleMode(): void {
     this.mode = this.mode === 'login' ? 'register' : 'login';
     this.errorMessage = '';
+  }
+
+  private validateForm(): string | null {
+    const email = this.email.trim();
+    if (!email) {
+      return 'Email is required.';
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return 'Enter a valid email address.';
+    }
+    if (!this.password) {
+      return 'Password is required.';
+    }
+    if (this.password.length < 8 || this.password.length > 128) {
+      return 'Password must be between 8 and 128 characters.';
+    }
+    return null;
+  }
+
+  private extractErrorMessage(err: any): string {
+    const raw = err?.error;
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed?.message || parsed?.data || raw;
+      } catch {
+        return raw || 'Authentication failed.';
+      }
+    }
+    return raw?.message || raw?.data || err?.message || 'Authentication failed.';
   }
 }

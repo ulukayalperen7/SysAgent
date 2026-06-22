@@ -17,7 +17,14 @@
 
       <label>
         Password
-        <input name="password" type="password" [(ngModel)]="password" autocomplete="current-password" minlength="8" required>
+        <input
+          name="password"
+          type="password"
+          [(ngModel)]="password"
+          [autocomplete]="mode === 'register' ? 'new-password' : 'current-password'"
+          minlength="8"
+          maxlength="128"
+          required>
       </label>
 
       <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
